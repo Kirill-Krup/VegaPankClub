@@ -28,7 +28,7 @@ public class CacheConfig {
         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(defaultConfig)
-        .withCacheConfiguration("users", usersConfig)
+        .withCacheConfiguration("user", usersConfig)
         .build();
   }
 }
