@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="inventory_service_1" author="your_name">
+        <createTable tableName="rooms">
+            <column name="room_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_vip" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="inventory_service_2" author="your_name">
+        <createTable tableName="pc">
+            <column name="pc_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="room_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cpu" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gpu" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ram" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="monitor" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_enabled" type="BOOLEAN" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_occupied" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="pc"
+                baseColumnNames="room_id"
+                constraintName="fk_pc_room"
+                referencedTableName="rooms"
+                referencedColumnNames="room_id"/>
+    </changeSet>
+
+    <changeSet id="inventory_service_3" author="your_name">
+        <createIndex tableName="pc" indexName="idx_pc_room_id">
+            <column name="room_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
