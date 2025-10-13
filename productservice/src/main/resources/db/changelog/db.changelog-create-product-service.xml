@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="product_service_1" author="your_name">
+        <createTable tableName="category">
+            <column name="category_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="product_service_2" author="your_name">
+        <createTable tableName="products">
+            <column name="product_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_available" type="BOOLEAN" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="products"
+                baseColumnNames="category_id"
+                constraintName="fk_product_category"
+                referencedTableName="category"
+                referencedColumnNames="category_id"/>
+    </changeSet>
+
+    <changeSet id="product_service_3" author="your_name">
+        <createTable tableName="orders">
+            <column name="order_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_cost" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="product_service_4" author="your_name">
+        <createTable tableName="order_item">
+            <column name="order_item_id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INTEGER" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="order_item"
+                baseColumnNames="order_id"
+                constraintName="fk_order_item_order"
+                referencedTableName="orders"
+                referencedColumnNames="order_id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="order_item"
+                baseColumnNames="product_id"
+                constraintName="fk_order_item_product"
+                referencedTableName="products"
+                referencedColumnNames="product_id"/>
+    </changeSet>
+
+    <changeSet id="product_service_5" author="your_name">
+        <createIndex tableName="products" indexName="idx_products_category">
+            <column name="category_id"/>
+        </createIndex>
+        <createIndex tableName="order_item" indexName="idx_order_items_order">
+            <column name="order_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

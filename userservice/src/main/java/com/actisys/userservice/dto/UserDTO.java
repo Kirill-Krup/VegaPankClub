@@ -1,32 +1,57 @@
 package com.actisys.userservice.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import java.sql.Timestamp;
-import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+import java.sql.Timestamp;
 
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
+@RequiredArgsConstructor
 public class UserDTO {
 
-  private final Long id;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final Long id;
 
-  @NotBlank(message = "Name is required")
-  private final String name;
+    @NotBlank(message = "Login cannot be blank")
+    @Size(min = 3, max = 50, message = "Login must be between 3 and 50 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Login can only contain letters, numbers, underscores and hyphens")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final String login;
 
-  @NotBlank(message = "Surname is required")
-  private final String surname;
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Email must be valid")
+    private String email;
 
-  @NotBlank(message = "Birthday must be in the past")
-  private final Timestamp birthDate;
+    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Phone number must be valid")
+    private String phone;
 
-  @Email(message = "Email should be valid")
-  private final String email;
+    @Size(max = 100, message = "Full name cannot exceed 100 characters")
+    private String fullName;
 
-  private final List<CardInfoDTO> cards;
+    @Min(value = 0, message = "Wallet cannot be negative")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final double wallet;
+
+    private String photoPath;
+
+    @Min(value = 0, message = "Bonus coins cannot be negative")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final int bonusCoins;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final Timestamp registrationDate;
+
+    @Past(message = "Birth date must be in the past")
+    private Timestamp birthDate;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final Timestamp lastLogin;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final boolean isOnline;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final boolean isBanned;
 }
