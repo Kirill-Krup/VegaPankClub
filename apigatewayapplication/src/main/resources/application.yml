@@ -1,0 +1,91 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - RewritePath=/api/users/(?<segment>.*), /$\{segment}
+        - id: inventory-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - RewritePath=/api/inventory/(?<segment>.*), /$\{segment}
+        - id: billing-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/billing/**
+          filters:
+            - RewritePath=/api/billing/(?<segment>.*), /$\{segment}
+        - id: product-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+        - id: payment-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - RewritePath=/api/payments/(?<segment>.*), /$\{segment}
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            allowedHeaders: "*"
+            allowCredentials: false
+
+  # Static resources configuration for frontend
+  webflux:
+    static-path-pattern: "/**"
+  # Jackson configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+# Отключаем Eureka временно
+eureka:
+  client:
+    enabled: false
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    com.actisys.apigateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
