@@ -28,5 +28,5 @@ public class UserDTO {
   @Email(message = "Email should be valid")
   private final String email;
 
-  private final List<CardInfoDTO> cards;
+
 }

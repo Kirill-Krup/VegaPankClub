@@ -1,19 +1,10 @@
 package com.actisys.userservice.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import java.sql.Timestamp;
-import java.util.List;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.sql.Timestamp;
 
 @Setter
 @Getter
@@ -25,13 +16,37 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private String name;
-
-  private String surname;
-
-  private Timestamp birthDate;
+  @Column(unique = true)
+  private String login;
 
   @Column(unique = true)
   private String email;
 
+  private String phone;
+
+  @Column(name = "full_name")
+  private String fullName;
+
+  private double wallet;
+
+  @Column(name = "photo_path")
+  private String photoPath;
+
+  @Column(name = "bonus_coins")
+  private int bonusCoins;
+
+  @Column(name = "registration_date")
+  private Timestamp registrationDate;
+
+  @Column(name = "birthday_date")
+  private Timestamp birthDate;
+
+  @Column(name = "last_login")
+  private Timestamp lastLogin;
+
+  @Column(name = "is_online")
+  private boolean isOnline;
+
+  @Column(name = "is_banned")
+  private boolean isBanned;
 }
