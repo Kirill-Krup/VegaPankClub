@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-  @Mapping(target = "id", source = "id")
+  @Mapping(target = "password", ignore = true)
   UserDTO toDTO(User user);
 
-  @Mapping(target = "id", source = "id")
-  User toEntity(UserDTO userDTO);
+  @Mapping(target = "password", ignore = true)
+  User toEntity(UserDTO dto);
 }
