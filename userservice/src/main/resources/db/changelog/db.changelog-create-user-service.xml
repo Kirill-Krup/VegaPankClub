@@ -7,7 +7,7 @@
 
     <changeSet id="user_service_1" author="your_name">
         <createTable tableName="users">
-            <column name="user_id" type="SERIAL" autoIncrement="true">
+            <column name="id" type="SERIAL" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="login" type="VARCHAR(50)">

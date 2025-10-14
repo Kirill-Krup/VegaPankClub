@@ -1,5 +1,7 @@
 package com.actisys.userservice.controller;
 
+import com.actisys.userservice.dto.RegisterRequest;
+import com.actisys.userservice.dto.UpdateCoinsRequest;
 import com.actisys.userservice.dto.UserDTO;
 import com.actisys.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
+
   private final UserService userService;
 
   public UserController(UserService userService) {
@@ -25,8 +28,8 @@ public class UserController {
   }
 
   @PostMapping
-  public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
-    UserDTO newUser = userService.createUser(userDTO);
+  public ResponseEntity<UserDTO> createUser(@Valid @RequestBody RegisterRequest registerRequest) {
+    UserDTO newUser = userService.createUser(registerRequest);
     return ResponseEntity.ok().body(newUser);
   }
 
@@ -43,6 +46,12 @@ public class UserController {
   @GetMapping("/ids")
   public ResponseEntity<List<UserDTO>> getUsersByIds(@RequestParam List<Long> ids) {
     return ResponseEntity.ok(userService.getUsersByIds(ids));
+  }
+
+  @PutMapping("/{id}/coins")
+  public ResponseEntity<UserDTO> updateUserCoins(@PathVariable Long id, @RequestBody UpdateCoinsRequest request) {
+    UserDTO updated = userService.updateUserCoins(id, request.getCoins());
+    return ResponseEntity.ok(updated);
   }
 
   @PutMapping("/{id}")

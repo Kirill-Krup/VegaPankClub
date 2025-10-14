@@ -1,11 +1,13 @@
 package com.actisys.userservice.service.impl;
 
+import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.dto.UserDTO;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.UserService;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,10 +29,17 @@ public class UserServiceImpl implements UserService{
   }
 
   @Override
-  public UserDTO createUser(UserDTO userDTO) {
-    User entity = userMapper.toEntity(userDTO);
+  public UserDTO createUser(RegisterRequest registerRequest) {
+    User entity = userMapper.fromRegisterRequest(registerRequest);
+
+    entity.setRegistrationDate(new Timestamp(System.currentTimeMillis()));
+    entity.setBonusCoins(0);
+    entity.setWallet(0.0);
     User savedEntity = userRepository.save(entity);
-    return userMapper.toDTO(savedEntity);
+    UserDTO result = userMapper.toDTO(savedEntity);
+
+    System.out.println("Created user with ID: " + result.getId());
+    return result;
   }
 
   @Cacheable(value = "users", key = "#id")
@@ -41,7 +50,7 @@ public class UserServiceImpl implements UserService{
   @Override
   @Cacheable(value = "users", key = "#email")
   public UserDTO getUserByEmail(String email) {
-    User user = userRepository.findUserByEmailJPQL(email);   // ADD QUERY FOR EMAIL
+    User user = userRepository.findUserByEmail(email);
     if(user == null) {
       throw new UserNotFoundException(email);
     }
@@ -61,10 +70,10 @@ public class UserServiceImpl implements UserService{
   })
   public UserDTO updateUser(Long id, UserDTO updated) {
     User updatedEntity = userRepository.findById(id).map(user -> {
-      user.setName(updated.getName());
-      user.setSurname(updated.getSurname());
-      user.setBirthDate(updated.getBirthDate());
+      user.setFullName(updated.getFullName());
       user.setEmail(updated.getEmail());
+      user.setPhone(updated.getPhone());
+      user.setPhotoPath(updated.getPhotoPath());
       return user;
     }).orElseThrow(() -> new UserNotFoundException(id));
     User savedEntity = userRepository.save(updatedEntity);
@@ -85,6 +94,14 @@ public class UserServiceImpl implements UserService{
     UserDTO userDTO = userMapper.toDTO(user);
     userRepository.deleteById(id);
     return userDTO;
+  }
+
+  @Override
+  public UserDTO updateUserCoins(Long id, int coins) {
+    User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    user.setBonusCoins(user.getBonusCoins() + coins);
+    userRepository.save(user);
+    return userMapper.toDTO(user);
   }
 
 
