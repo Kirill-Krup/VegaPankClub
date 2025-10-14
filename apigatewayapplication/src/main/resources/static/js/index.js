@@ -1,124 +1,169 @@
-// Minimal mock auth state for demo; integrate with your backend later
-const state = {
-	isAuthenticated: false,
-	user: {
-		login: "player_one",
-		balance: 27.5,
-		avatar: "https://images.unsplash.com/photo-1545996124-0501ebae84d0?q=80&w=200&auto=format&fit=crop"
-	}
-};
+// Utilities
+const qs = (s, r = document) => r.querySelector(s);
+const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-const $ = (sel) => document.querySelector(sel);
+// State (mock auth for demo)
+const STORAGE_KEYS = { user: 'vegapank:user' };
 
-function updateAuthUI() {
-	const guest = $("#authGuest");
-	const profile = $("#authProfile");
-	if (!guest || !profile) return;
-	if (state.isAuthenticated) {
-		guest.classList.add("hidden");
-		profile.classList.remove("hidden");
-		$("#profileName").textContent = state.user.login;
-		$("#profileBalance").textContent = state.user.balance.toFixed(2);
-		$("#profileAvatar").src = state.user.avatar;
-	} else {
-		guest.classList.remove("hidden");
-		profile.classList.add("hidden");
-	}
+function getUser() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || 'null'); } catch { return null; }
+}
+function setUser(user) {
+  if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  else localStorage.removeItem(STORAGE_KEYS.user);
 }
 
-function animateCounters() {
-	const counters = document.querySelectorAll(".stat__num");
-	counters.forEach((el) => {
-		const target = parseFloat(el.getAttribute("data-count") || "0");
-		const isFloat = !Number.isInteger(target);
-		let start = 0;
-		const duration = 1000;
-		const startTime = performance.now();
-		function tick(now) {
-			const progress = Math.min((now - startTime) / duration, 1);
-			const value = start + (target - start) * progress;
-			el.textContent = isFloat ? value.toFixed(1) : Math.round(value).toString();
-			if (progress < 1) requestAnimationFrame(tick);
-		}
-		requestAnimationFrame(tick);
-	});
+// Auth / profile toggle
+function renderAuth() {
+  const user = getUser();
+  const guest = qs('[data-guest-section]');
+  const u = qs('[data-user-section]');
+  if (!guest || !u) return;
+  if (user) {
+    guest.hidden = true;
+    u.hidden = false;
+    const nameEl = qs('[data-username]');
+    const balEl = qs('[data-balance]');
+    const avatar = qs('[data-avatar]');
+    if (nameEl) nameEl.textContent = user.username || 'Гость';
+    if (balEl) balEl.textContent = (user.balance ?? 0).toFixed(2);
+    if (avatar && user.avatar) avatar.src = user.avatar;
+  } else {
+    guest.hidden = false;
+    u.hidden = true;
+  }
 }
 
-function parallaxHero() {
-	const img = document.querySelector(".hero__image");
-	if (!img) return;
-	let rafId = 0;
-	function onMove(e) {
-		if (rafId) cancelAnimationFrame(rafId);
-		rafId = requestAnimationFrame(() => {
-			const { innerWidth: w, innerHeight: h } = window;
-			const x = (e.clientX - w / 2) / w;
-			const y = (e.clientY - h / 2) / h;
-			img.style.transform = `perspective(1200px) rotateY(${x * -8}deg) rotateX(${y * 6}deg) translateY(${y * -6}px)`;
-		});
-	}
-	document.addEventListener("mousemove", onMove);
+// Demo login/register flows
+function attachAuthHandlers() {
+  const loginBtn = qs('[data-login]');
+  const regBtn = qs('[data-register]');
+  const logoutBtn = qs('[data-logout]');
+
+  loginBtn?.addEventListener('click', () => {
+    const username = prompt('Введите логин:', 'player1');
+    if (!username) return;
+    setUser({ username, balance: 15.5, avatar: `https://i.pravatar.cc/100?u=${encodeURIComponent(username)}` });
+    renderAuth();
+  });
+  regBtn?.addEventListener('click', () => {
+    const username = prompt('Придумайте логин:', 'newgamer');
+    if (!username) return;
+    setUser({ username, balance: 0, avatar: `https://i.pravatar.cc/100?u=${encodeURIComponent(username)}` });
+    renderAuth();
+  });
+  logoutBtn?.addEventListener('click', () => {
+    setUser(null);
+    renderAuth();
+  });
 }
 
-function setupTabs() {
-	const tabButtons = document.querySelectorAll('.tabs .tab');
-	const panes = document.querySelectorAll('.tabpane');
-	if (!tabButtons.length) return;
-
-	function activate(id) {
-		panes.forEach(p => p.classList.toggle('active', p.id === id));
-		tabButtons.forEach(b => {
-			const selected = b.getAttribute('aria-controls') === id;
-			b.classList.toggle('active', selected);
-			b.setAttribute('aria-selected', selected ? 'true' : 'false');
-		});
-	}
-
-	tabButtons.forEach(btn => {
-		btn.addEventListener('click', () => activate(btn.getAttribute('aria-controls')));
-	});
+// Smooth scroll
+function attachSmoothScroll() {
+  qsa('[data-scroll]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      const href = a.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      e.preventDefault();
+      const target = qs(href);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Close mobile menu if open
+      qs('[data-nav-list]')?.classList.remove('show');
+      const btn = qs('[data-nav-toggle]');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  });
 }
 
-function wireUI() {
-	const year = $("#year");
-	if (year) year.textContent = new Date().getFullYear().toString();
-
-	const btnLogin = $("#btnLogin");
-	const btnRegister = $("#btnRegister");
-	const btnLogout = $("#btnLogout");
-	const btnBook = $("#btnBook");
-	const btnCta = $("#btnCta");
-
-	btnLogin?.addEventListener("click", () => {
-		state.isAuthenticated = true;
-		updateAuthUI();
-	});
-
-	btnRegister?.addEventListener("click", () => {
-		state.isAuthenticated = true;
-		state.user.balance += 5; // welcome bonus
-		updateAuthUI();
-	});
-
-	btnLogout?.addEventListener("click", () => {
-		state.isAuthenticated = false;
-		updateAuthUI();
-	});
-
-	function pulse(el) {
-		if (!el) return;
-		el.style.transform = "scale(0.98)";
-		setTimeout(() => (el.style.transform = ""), 100);
-	}
-
-	btnBook?.addEventListener("click", () => pulse(btnBook));
-	btnCta?.addEventListener("click", () => pulse(btnCta));
+// Mobile nav toggle
+function attachNavToggle() {
+  const btn = qs('[data-nav-toggle]');
+  const list = qs('[data-nav-list]');
+  if (!btn || !list) return;
+  btn.addEventListener('click', () => {
+    const shown = list.classList.toggle('show');
+    btn.setAttribute('aria-expanded', String(shown));
+  });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-	updateAuthUI();
-	animateCounters();
-	parallaxHero();
-	setupTabs();
-	wireUI();
+// Intersection-based reveal animations
+function setupReveals() {
+  const items = qsa('.reveal');
+  if (!('IntersectionObserver' in window) || items.length === 0) {
+    items.forEach(i => i.classList.add('revealed'));
+    return;
+  }
+  const obs = new IntersectionObserver((entries, o) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        o.unobserve(entry.target);
+      }
+    });
+  }, { threshold: .12 });
+  items.forEach(i => obs.observe(i));
+}
+
+// Parallax-ish hero glow
+function attachParallax() {
+  const glow = qs('.hero__glow');
+  if (!glow) return;
+  let raf = null;
+  window.addEventListener('mousemove', (e) => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const x = (e.clientX / window.innerWidth - .5) * 18;
+      const y = (e.clientY / window.innerHeight - .5) * 18;
+      glow.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  });
+}
+
+// Pricing selection demo
+function attachPricing() {
+  qsa('[data-book]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = btn.getAttribute('data-plan');
+      alert(`Вы выбрали план: ${plan?.toUpperCase()}`);
+    });
+  });
+}
+
+// Contact form demo submit
+function attachContactForm() {
+  const form = qs('[data-contact-form]');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const name = data.get('name');
+    alert(`Спасибо, ${name}! Мы скоро свяжемся.`);
+    form.reset();
+  });
+}
+
+// Footer year
+function setYear() {
+  const y = qs('#year');
+  if (y) y.textContent = String(new Date().getFullYear());
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  renderAuth();
+  attachAuthHandlers();
+  attachSmoothScroll();
+  attachNavToggle();
+  setupReveals();
+  attachParallax();
+  attachPricing();
+  attachContactForm();
+  setYear();
+  // Navigate to profile on clicking profile container
+  const profileContainer = qs('.auth__profile');
+  profileContainer?.addEventListener('click', () => {
+    // resolve relative path no matter which html page: if current file is inside /html/, use ./profile.html
+    const href = './profile.html';
+    window.location.href = href;
+  });
 });
+

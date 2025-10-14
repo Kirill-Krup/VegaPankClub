@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VegaPank | Компьютерный клуб</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="#top" class="logo" data-scroll>
+        <span class="logo__accent">Vega</span>Pank
+      </a>
+      <nav class="nav" aria-label="Главная навигация">
+        <button class="nav__toggle" aria-label="Открыть меню" aria-expanded="false" data-nav-toggle>
+          <span></span><span></span><span></span>
+        </button>
+        <ul class="nav__list" data-nav-list>
+          <li><a href="#hero" data-scroll>Главная</a></li>
+          <li><a href="#zones" data-scroll>Зоны</a></li>
+          <li><a href="#pricing" data-scroll>Тарифы</a></li>
+          <li><a href="#gallery" data-scroll>Галерея</a></li>
+          <li><a href="#faq" data-scroll>FAQ</a></li>
+          <li><a href="#contacts" data-scroll>Контакты</a></li>
+          <li><a href="./aboutUs.html">О нас</a></li>
+        </ul>
+      </nav>
+      <div class="auth" data-auth>
+        <div class="auth__guest" data-guest-section>
+          <button class="btn btn--ghost" data-login>Вход</button>
+          <button class="btn btn--primary" data-register>Регистрация</button>
+        </div>
+        <div class="auth__user" data-user-section hidden>
+          <div class="auth__profile">
+            <div class="auth__text">
+              <div class="auth__login" data-username></div>
+              <div class="auth__balance"><span data-balance>0.00</span> BYN</div>
+            </div>
+            <img class="auth__avatar" data-avatar src="https://i.pravatar.cc/100?img=15" alt="Аватар">
+          </div>
+          <button class="btn btn--danger" data-logout>Выйти</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section id="hero" class="hero section">
+      <div class="container hero__inner">
+        <div class="hero__content reveal reveal--up">
+          <h1 class="hero__title">
+            Современный компьютерный клуб
+            <span class="gradient">VegaPank</span>
+          </h1>
+          <p class="hero__subtitle">Киберспорт, комфорт и стиль в одном месте. Мощные ПК, VR, консоли, премиальные кресла и дружелюбная атмосфера.</p>
+          <div class="hero__actions">
+            <a href="#pricing" class="btn btn--primary" data-scroll>Забронировать</a>
+            <a href="#zones" class="btn btn--ghost" data-scroll>Узнать больше</a>
+          </div>
+        </div>
+        <div class="hero__media reveal reveal--right">
+          <div class="hero__glow"></div>
+          <div class="hero__card">
+            <div class="hero__stat"><span>240Hz</span> мониторы</div>
+            <div class="hero__stat"><span>RTX</span> графика</div>
+            <div class="hero__stat"><span>1 мс</span> отклик</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero__scroll" aria-hidden="true">Пролистывай</div>
+    </section>
+
+    <section id="zones" class="section section--alt">
+      <div class="container">
+        <h2 class="section__title reveal">Игровые зоны</h2>
+        <div class="grid grid--3">
+          <article class="card reveal">
+            <h3 class="card__title">Esports Arena</h3>
+            <p class="card__text">12 топовых сетапов для рейтингов и турниров. Индивидуальные кабины и анти-строб освещение.</p>
+          </article>
+          <article class="card reveal">
+            <h3 class="card__title">VR Corner</h3>
+            <p class="card__text">Полноценная VR-зона с контроллерами и свободным пространством. Библиотека иммерсивных игр.</p>
+          </article>
+          <article class="card reveal">
+            <h3 class="card__title">Console Lounge</h3>
+            <p class="card__text">PS5 и Nintendo Switch с 4K OLED. Диваны, бар и кооперативные игры для компании.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section">
+      <div class="container">
+        <h2 class="section__title reveal">Тарифы</h2>
+        <div class="grid grid--3 pricing">
+          <article class="price reveal">
+            <h3 class="price__title">Старт</h3>
+            <div class="price__value">4 BYN/час</div>
+            <ul class="price__list">
+              <li>Будние дни</li>
+              <li>До 120Hz</li>
+              <li>Бонусы лояльности</li>
+            </ul>
+            <button class="btn btn--primary" data-book data-plan="start">Выбрать</button>
+          </article>
+          <article class="price price--popular reveal">
+            <div class="price__badge">Популярно</div>
+            <h3 class="price__title">Про</h3>
+            <div class="price__value">6 BYN/час</div>
+            <ul class="price__list">
+              <li>Ежедневно</li>
+              <li>240Hz мониторы</li>
+              <li>Приоритетная бронь</li>
+            </ul>
+            <button class="btn btn--primary" data-book data-plan="pro">Выбрать</button>
+          </article>
+          <article class="price reveal">
+            <h3 class="price__title">Ночь</h3>
+            <div class="price__value">25 BYN/ночь</div>
+            <ul class="price__list">
+              <li>С 23:00 до 8:00</li>
+              <li>Напиток в подарок</li>
+              <li>Спец. ивенты</li>
+            </ul>
+            <button class="btn btn--primary" data-book data-plan="night">Выбрать</button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="section section--alt">
+      <div class="container">
+        <h2 class="section__title reveal">Галерея</h2>
+        <div class="masonry" data-gallery>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop" alt="ПК зона 1"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1200&auto=format&fit=crop" alt="ПК зона 2"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1542751110-97427bbecf20?q=80&w=1200&auto=format&fit=crop" alt="Консольная зона"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1542751371-5bf62db74116?q=80&w=1200&auto=format&fit=crop" alt="VR"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop" alt="Атмосфера"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1521417531772-7014d0d15618?q=80&w=1200&auto=format&fit=crop" alt="Периферия"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1593642634443-44adaa06623a?q=80&w=1200&auto=format&fit=crop" alt="Рабочие станции"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=1200&auto=format&fit=crop" alt="Подсветка"></figure>
+          <figure class="masonry__item reveal"><img src="https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=1200&auto=format&fit=crop" alt="Команда"></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section">
+      <div class="container">
+        <h2 class="section__title reveal">FAQ</h2>
+        <div class="accordion" data-accordion>
+          <details class="accordion__item reveal">
+            <summary>Нужна ли предоплата?</summary>
+            <p>Для онлайн-бронирования списывается небольшая предоплата, в клубе можно доплатить наличными или картой.</p>
+          </details>
+          <details class="accordion__item reveal">
+            <summary>Есть ли скидки студентам?</summary>
+            <p>Да, по будням действует -15% при предъявлении студенческого билета.</p>
+          </details>
+          <details class="accordion__item reveal">
+            <summary>Можно ли принести свою периферию?</summary>
+            <p>Да, подключим вашу клавиатуру/мышь/наушники. Для безопасности – проверка на стойке.</p>
+          </details>
+          <details class="accordion__item reveal">
+            <summary>Есть ли корпоративные или клубные мероприятия?</summary>
+            <p>Мы регулярно проводим мини-турниры, тематические ночи и ивенты для компаний. Можно арендовать зал целиком.</p>
+          </details>
+          <details class="accordion__item reveal">
+            <summary>Какие способы оплаты принимаете?</summary>
+            <p>Наличные, банковские карты, Apple Pay/Google Pay. Баланс аккаунта можно пополнять на стойке.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacts" class="section section--alt">
+      <div class="container">
+        <h2 class="section__title reveal">Контакты</h2>
+        <div class="contacts reveal">
+          <div class="contacts__info">
+            <p><strong>Адрес:</strong> пр-т Независимости, 123, Минск</p>
+            <p><strong>Телефон:</strong> +375 29 123-45-67</p>
+            <p><strong>Время работы:</strong> Ежедневно 10:00–08:00</p>
+          </div>
+          <form class="contacts__form" data-contact-form>
+            <input type="text" name="name" placeholder="Ваше имя" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <textarea name="message" rows="4" placeholder="Сообщение" required></textarea>
+            <button class="btn btn--primary" type="submit">Отправить</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a href="#top" class="logo" data-scroll><span class="logo__accent">Vega</span>Pank</a>
+        <p class="footer__desc">Современный компьютерный клуб: киберспорт, VR, консоли и уютная атмосфера.</p>
+        <div class="footer__copy">© <span id="year"></span> VegaPank</div>
+      </div>
+      <nav class="footer__nav" aria-label="Разделы">
+        <h4>Разделы</h4>
+        <ul>
+          <li><a href="#hero" data-scroll>Главная</a></li>
+          <li><a href="#zones" data-scroll>Зоны</a></li>
+          <li><a href="#pricing" data-scroll>Тарифы</a></li>
+          <li><a href="#gallery" data-scroll>Галерея</a></li>
+          <li><a href="#faq" data-scroll>FAQ</a></li>
+          <li><a href="#contacts" data-scroll>Контакты</a></li>
+          <li><a href="./aboutUs.html">О нас</a></li>
+        </ul>
+      </nav>
+      <div class="footer__contacts">
+        <h4>Контакты</h4>
+        <ul>
+          <li><a href="tel:+375291234567">+375 (29) 123-45-67</a></li>
+          <li><a href="tel:+375441112233">+375 (44) 111-22-33</a></li>
+          <li><a href="mailto:hello@vegapank.club">hello@vegapank.club</a></li>
+          <li>Минск, пр-т Независимости, 123</li>
+        </ul>
+      </div>
+      <div class="footer__socials">
+        <h4>Мы в соцсетях</h4>
+        <div class="socials">
+          <a class="socials__item" href="https://t.me/" target="_blank" rel="noopener" aria-label="Telegram">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M9.03 15.47 8.9 19.1c.5 0 .72-.22.98-.48l2.36-2.27 4.89 3.58c.9.5 1.53.24 1.77-.83l3.21-15.03h.01c.29-1.36-.49-1.9-1.37-1.57L1.4 9.2C.08 9.72.1 10.49 1.18 10.82l5.22 1.63 12.13-7.66c.57-.35 1.08-.16.66.22"/></svg>
+          </a>
+          <a class="socials__item" href="https://vk.com/" target="_blank" rel="noopener" aria-label="VK">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M22.54 7.2c.17-.56 0-.97-.82-.97h-2.73c-.69 0-1 .36-1.17.76 0 0-1.37 3.33-3.32 5.5-.63.63-.91.83-1.25.83-.16 0-.4-.2-.4-.77V7.2c0-.68-.2-.97-.76-.97H8.58c-.43 0-.69.32-.69.62 0 .64.96.79 1.06 2.6v3.92c0 .86-.15 1.02-.47 1.02-.91 0-3.12-3.34-4.43-7.16-.26-.76-.52-1.06-1.22-1.06H.9c-.77 0-.93.36-.93.76 0 .71.91 4.23 4.23 8.87 2.2 3.1 5.3 4.78 8.12 4.78 1.69 0 1.9-.38 1.9-1.03v-2.38c0-.77.16-.93.72-.93.41 0 1.11.2 2.74 1.77 1.87 1.86 2.18 2.7 3.24 2.7h2.73c.77 0 1.16-.38.94-1.13-.25-.75-1.14-1.84-2.32-3.13-.64-.73-1.61-1.52-1.9-1.91-.41-.53-.29-.77 0-1.24 0 0 3.35-4.73 3.7-6.34Z"/></svg>
+          </a>
+          <a class="socials__item" href="https://discord.com/" target="_blank" rel="noopener" aria-label="Discord">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37A18.36 18.36 0 0 0 15.96 3c-.21.38-.45.88-.62 1.28a16.36 16.36 0 0 0-5.68 0c-.17-.4-.41-.9-.62-1.28A18.25 18.25 0 0 0 3.68 4.37C1.4 7.71.82 10.94 1.07 14.13a18.52 18.52 0 0 0 5.66 2.86c.46-.63.88-1.3 1.25-2a11.78 11.78 0 0 1-1.96-.95c.17-.13.33-.27.49-.41a13 13 0 0 0 10.98 0c.16.14.32.28.49.41-.63.38-1.3.7-1.98.96.37.7.78 1.37 1.25 2a18.52 18.52 0 0 0 5.66-2.86c.26-3.2-.33-6.42-2.59-9.76ZM9.6 12.88c-.88 0-1.6-.83-1.6-1.85 0-1.02.71-1.85 1.6-1.85.89 0 1.6.83 1.6 1.85 0 1.02-.72 1.85-1.6 1.85Zm4.8 0c-.88 0-1.6-.83-1.6-1.85 0-1.02.71-1.85 1.6-1.85.89 0 1.6.83 1.6 1.85 0 1.02-.71 1.85-1.6 1.85Z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/index.js" defer></script>
+</body>
+</html>

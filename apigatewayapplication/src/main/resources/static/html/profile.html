@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - ПК Клуб</title>
+    <link rel="stylesheet" href="../css/profile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="../js/profile.js" defer></script>
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ae.png">
+    <meta name="theme-color" content="#0ea5e9">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <a class="nav-logo" href="index.html" title="На главную">
+                    <i class="fas fa-gamepad"></i>
+                    <span>VegaPank Club</span>
+                </a>
+                <ul class="nav-menu">
+                    <li><a href="index.html" class="nav-link">Главная</a></li>
+                    <li><a href="#catalog" class="nav-link">ПК зоны</a></li>
+                    <li><a href="#new" class="nav-link">Тарифы</a></li>
+                    <li><a href="aboutUs.html" class="nav-link">О нас</a></li>
+                    <li><a href="#contact" class="nav-link">Контакты</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <img class="user-avatar" alt="Avatar" id="userAvatar">
+                            <div class="user-details">
+                                <div class="user-name" id="userName"></div>
+                                <div class="user-balance" id="userBalance"></div>
+                            </div>
+                            <button class="logout-btn" id="logoutBtn" title="Выйти">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="menu-toggle" aria-label="Открыть меню">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <aside class="profile-sidebar">
+            <div class="profile-header">
+                <img class="profile-avatar" id="profileAvatar" alt="Avatar">
+                <h2 class="profile-name" id="profileName"></h2>
+                <p class="profile-email" id="profileEmail"></p>
+                <div class="profile-balance">
+                    <span class="balance-label">Баланс:</span>
+                    <span class="balance-amount" id="balanceAmount"></span>
+                    <button class="topup-btn" id="topupBtn">
+                        <i class="fas fa-plus"></i>
+                        Пополнить
+                    </button>
+                </div>
+            </div>
+
+            <nav class="profile-nav" aria-label="Навигация профиля">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-section="overview">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Обзор</span>
+                    </li>
+                    <li class="nav-item" data-section="orders">
+                        <i class="fas fa-chair"></i>
+                        <span>Брони</span>
+                    </li>
+                    <li class="nav-item" data-section="history">
+                        <i class="fas fa-history"></i>
+                        <span>История</span>
+                    </li>
+                    <li class="nav-item" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Настройки</span>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="profile-content">
+            <!-- Overview Section -->
+            <section class="profile-section active" id="overview">
+                <div class="section-header">
+                    <h2 class="section-title">Обзор аккаунта</h2>
+                    <p class="section-subtitle">Добро пожаловать в ваш профиль ПК клуба</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chair"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-number" id="stat-number-orders"></h3>
+                            <p class="stat-label">Всего броней</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-number" id="stat-number-hours"></h3>
+                            <p class="stat-label">Часов отыграно</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 class="stat-number" id="stat-number-days"></h3>
+                            <p class="stat-label">Дней с нами</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3 class="activity-title">Последняя активность</h3>
+                    <div class="activity-list" id="activity-list"></div>
+                </div>
+            </section>
+
+            <!-- Orders/Sessions Section -->
+            <section class="profile-section" id="orders">
+                <div class="section-header">
+                    <h2 class="section-title">Активные брони</h2>
+                    <p class="section-subtitle">Отслеживайте ваши текущие игровые сессии</p>
+                </div>
+
+                <div class="orders-list">
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-info">
+                                <h3 class="order-number">Бронь #8421</h3>
+                                <span class="order-date">15 января 2025, 18:00–20:00</span>
+                            </div>
+                            <div class="order-status status-processing">
+                                <i class="fas fa-clock"></i>
+                                Ожидается
+                            </div>
+                        </div>
+                        <div class="order-items">
+                            <div class="order-item">
+                                <div class="item-image">
+                                    <i class="fas fa-desktop"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h4 class="item-name">Зона: High FPS</h4>
+                                    <p class="item-description">RTX 4070 • 240Hz • DXR</p>
+                                </div>
+                                <div class="item-price">24 BYN</div>
+                            </div>
+                        </div>
+                        <div class="order-footer">
+                            <div class="order-total">
+                                <span class="total-label">Итого:</span>
+                                <span class="total-amount">24 BYN</span>
+                            </div>
+                            <div class="order-actions">
+                                <button class="btn btn-secondary">Отменить</button>
+                                <button class="btn btn-primary">Подробнее</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="profile-section" id="history">
+                <div class="section-header">
+                    <h2 class="section-title">История посещений</h2>
+                    <p class="section-subtitle">Все ваши игровые сессии</p>
+                </div>
+
+                <div class="history-filters">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="fps">FPS</button>
+                    <button class="filter-btn" data-filter="moba">MOBA</button>
+                    <button class="filter-btn" data-filter="coop">Co-op</button>
+                </div>
+
+                <div class="history-list">
+                    <div class="history-item" data-category="fps">
+                        <div class="history-image">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="history-info">
+                            <h4 class="history-name">CS2 — 2 часа</h4>
+                            <p class="history-description">Зона High FPS • 240Hz</p>
+                            <span class="history-date">10 января 2025</span>
+                        </div>
+                        <div class="history-price">18 BYN</div>
+                        <div class="history-status status-delivered">
+                            <i class="fas fa-check-circle"></i>
+                            Завершено
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Settings Section -->
+            <section class="profile-section" id="settings">
+                <div class="section-header">
+                    <h2 class="section-title">Настройки профиля</h2>
+                    <p class="section-subtitle">Управляйте настройками вашего аккаунта</p>
+                </div>
+
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="firstName" class="form-label">Имя</label>
+                        <input type="text" id="firstName" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName" class="form-label">Фамилия</label>
+                        <input type="text" id="lastName" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Телефон</label>
+                        <input type="text" id="phone" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address" class="form-label">Адрес</label>
+                        <input type="text" id="address" class="form-input">
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary">Сохранить изменения</button>
+                        <button class="btn btn-secondary">Отмена</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Top-up Modal -->
+    <div class="modal" id="topupModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Пополнение баланса</h3>
+                <button class="modal-close" id="modalClose" aria-label="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="topup-amounts">
+                    <button class="amount-btn" data-amount="5">5 BYN</button>
+                    <button class="amount-btn" data-amount="10">10 BYN</button>
+                    <button class="amount-btn" data-amount="20">20 BYN</button>
+                    <button class="amount-btn" data-amount="50">50 BYN</button>
+                </div>
+                <div class="custom-amount">
+                    <label for="customAmount" class="form-label">Или введите сумму:</label>
+                    <input type="number" id="customAmount" class="form-input" placeholder="Введите сумму" min="1" max="1000">
+                </div>
+                <div class="payment-methods">
+                    <h4 class="payment-title">Способ оплаты:</h4>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="card" checked>
+                            <span class="payment-label">
+                                <i class="fas fa-credit-card"></i>
+                                Банковская карта
+                            </span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="wallet">
+                            <span class="payment-label">
+                                <i class="fas fa-wallet"></i>
+                                Электронный кошелек
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelTopup">Отмена</button>
+                <button class="btn btn-primary" id="confirmTopup">Пополнить</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
