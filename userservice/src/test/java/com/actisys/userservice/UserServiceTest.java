@@ -1,7 +1,8 @@
 package com.actisys.userservice;
 
+
+import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
-import com.actisys.userservice.dto.UserDTO;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;

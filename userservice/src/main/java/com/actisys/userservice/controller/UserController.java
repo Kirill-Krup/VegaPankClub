@@ -1,8 +1,8 @@
 package com.actisys.userservice.controller;
 
+import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.dto.UpdateCoinsRequest;
-import com.actisys.userservice.dto.UserDTO;
 import com.actisys.userservice.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;

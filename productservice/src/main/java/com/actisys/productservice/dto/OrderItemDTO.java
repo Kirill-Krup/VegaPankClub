@@ -1,6 +1,7 @@
 package com.actisys.productservice.dto;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Negative;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +16,11 @@ public class OrderItemDTO {
   @NotNull(message = "Order ID is required")
   private final Long orderId;
 
-  @NotNull(message = "Product ID is required")
-  private final Long productId;
+  @NotNull(message = "Product is required")
+  private final ProductDTO productDTO;
 
-  private final String productName;
-
+  @NotNull(message = "Product price is required")
+  @Negative(message = "Product price can not be negative")
   private final BigDecimal productPrice;
 
   @NotNull(message = "Quantity is required")

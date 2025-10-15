@@ -1,9 +1,7 @@
 package com.actisys.userservice.service;
 
+import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
-import com.actisys.userservice.dto.UserDTO;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
 

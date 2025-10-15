@@ -3,8 +3,8 @@ package com.actisys.userservice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
-import com.actisys.userservice.dto.UserDTO;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.service.UserService;
 import java.sql.Timestamp;
@@ -150,8 +150,8 @@ class UserServiceIntegrationTest {
         created.getRegistrationDate(),
         created.getBirthDate(),
         created.getLastLogin(),
-        created.getIsOnline(),
-        created.getIsBanned()
+        null,
+        null
     );
 
     UserDTO updated = userService.updateUser(userId, updateDto);

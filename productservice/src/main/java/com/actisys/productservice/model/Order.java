@@ -1,5 +1,6 @@
 package com.actisys.productservice.model;
 
+import com.actisys.productservice.dto.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +32,7 @@ public class Order {
   private LocalDateTime createdAt;
 
   @Column(name = "status", nullable = false, length = 50)
-  private String status;
+  private Status status;
 
   @Column(name = "total_cost", nullable = false, precision = 10, scale = 2)
   private BigDecimal totalCost;

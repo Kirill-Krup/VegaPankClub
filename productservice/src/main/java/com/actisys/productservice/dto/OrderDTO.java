@@ -1,5 +1,6 @@
 package com.actisys.productservice.dto;
 
+import com.actisys.common.dto.user.UserDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,15 +17,15 @@ import java.util.List;
 public class OrderDTO {
   private final Long orderId;
 
-  @NotNull(message = "User ID is required")
-  private final Long userId;
+  @NotNull(message = "User is required")
+  private final UserDTO userDTO;
 
   @NotNull(message = "Creation date is required")
   @PastOrPresent(message = "Creation date must be in the past or present")
   private final LocalDateTime createdAt;
 
   @NotBlank(message = "Order status is required")
-  private final String status;
+  private final Status status;
 
   @NotNull(message = "Total cost is required")
   @DecimalMin(value = "0.01", message = "Total cost must be greater than 0")

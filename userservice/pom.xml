@@ -166,6 +166,12 @@
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.actisys</groupId>
+      <artifactId>common-lib</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <build>
