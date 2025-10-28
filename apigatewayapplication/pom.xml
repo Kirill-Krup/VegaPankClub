@@ -29,7 +29,11 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.actisys</groupId>
+            <artifactId>common-lib</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
         <!-- Eureka Client for Service Discovery -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

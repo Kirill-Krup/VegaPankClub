@@ -1,6 +1,6 @@
 package com.actisys.productservice.service.impl;
 
-import com.actisys.productservice.dto.OrderDTO;
+import com.actisys.productservice.dto.OrderDtos.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.exception.OrderNotFoundException;
 import com.actisys.productservice.mapper.OrderMapper;
@@ -9,13 +9,15 @@ import com.actisys.productservice.repository.OrderRepository;
 import com.actisys.productservice.service.OrderService;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-  private OrderMapper orderMapper;
-  private OrderRepository orderRepository;
+  private final OrderMapper orderMapper;
+  private final OrderRepository orderRepository;
 
   @Override
   public OrderDTO createOrder(OrderDTO order) {

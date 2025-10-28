@@ -1,6 +1,6 @@
 package com.actisys.productservice.mapper;
 
-import com.actisys.productservice.dto.OrderItemDTO;
+import com.actisys.productservice.dto.OrderDtos.OrderItemDTO;
 import com.actisys.productservice.model.OrderItem;
 import org.mapstruct.Mapper;
 

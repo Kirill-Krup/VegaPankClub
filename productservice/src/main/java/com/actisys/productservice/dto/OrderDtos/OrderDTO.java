@@ -1,6 +1,7 @@
-package com.actisys.productservice.dto;
+package com.actisys.productservice.dto.OrderDtos;
 
 import com.actisys.common.dto.user.UserDTO;
+import com.actisys.productservice.dto.Status;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

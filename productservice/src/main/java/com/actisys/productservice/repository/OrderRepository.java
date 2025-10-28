@@ -1,6 +1,5 @@
 package com.actisys.productservice.repository;
 
-import com.actisys.productservice.dto.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.model.Order;
 import java.util.List;

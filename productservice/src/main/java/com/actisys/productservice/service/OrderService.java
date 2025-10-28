@@ -1,6 +1,6 @@
 package com.actisys.productservice.service;
 
-import com.actisys.productservice.dto.OrderDTO;
+import com.actisys.productservice.dto.OrderDtos.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import java.util.List;
 

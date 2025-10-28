@@ -1,11 +1,11 @@
 package com.actisys.productservice.repository;
 
-import com.actisys.productservice.model.Product;
+import com.actisys.productservice.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface CategoryRepository extends JpaRepository<Category, Long> {
 
   boolean existsByName(String name);
 }
