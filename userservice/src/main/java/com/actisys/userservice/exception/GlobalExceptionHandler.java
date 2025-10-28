@@ -1,6 +1,6 @@
 package com.actisys.userservice.exception;
 
-import com.actisys.userservice.dto.ErrorResponse;
+import com.actisys.common.dto.ErrorResponse;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

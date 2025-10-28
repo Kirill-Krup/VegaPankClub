@@ -1,6 +1,6 @@
 package com.actisys.productservice.controller;
 
-import com.actisys.productservice.dto.OrderDTO;
+import com.actisys.productservice.dto.OrderDtos.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.service.OrderService;
 import java.util.List;
@@ -49,7 +49,7 @@ public class OrderController {
     return ResponseEntity.ok(orderDTOList);
   }
 
-  @PutMapping("/{orderId}/status")
+  @PutMapping("/status/{orderId}")
   public ResponseEntity<OrderDTO> updateOrderStatus(
       @PathVariable Long orderId,
       @RequestParam Status newStatus) {
@@ -58,8 +58,8 @@ public class OrderController {
     return ResponseEntity.ok(updatedOrder);
   }
 
-  @DeleteMapping
-  public ResponseEntity<Void> deleteOrder(@RequestParam Long id) {
+  @DeleteMapping("/deleteOrder/{id}")
+  public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
     orderService.deleteOrder(id);
     return ResponseEntity.noContent().build();
   }

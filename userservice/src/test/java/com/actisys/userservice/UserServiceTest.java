@@ -62,7 +62,6 @@ class UserServiceTest {
 
   }
 
-  // ====== 15 UNIT TESTS ======
 
   @Test
   void createUser_shouldReturnDTO() {

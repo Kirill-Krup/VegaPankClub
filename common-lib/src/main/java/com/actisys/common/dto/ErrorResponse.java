@@ -1,8 +1,5 @@
-package com.actisys.inventoryservice.dto;
+package com.actisys.common.dto;
 
-import lombok.Data;
-
-@Data
 public class ErrorResponse {
 
   private final String error;

@@ -1,11 +1,10 @@
 package com.actisys.productservice.repository;
 
-import com.actisys.productservice.model.Product;
+import com.actisys.productservice.model.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
-  boolean existsByName(String name);
 }

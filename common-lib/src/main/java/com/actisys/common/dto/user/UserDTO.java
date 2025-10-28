@@ -102,10 +102,10 @@ public class UserDTO {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final Timestamp lastLogin;
 
-  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  @JsonProperty(value = "online",access = JsonProperty.Access.READ_ONLY)
   private final Boolean isOnline;
 
-  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  @JsonProperty(value = "banned", access = JsonProperty.Access.READ_ONLY)
   private final Boolean isBanned;
 
   @JsonCreator
