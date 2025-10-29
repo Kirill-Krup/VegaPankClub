@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/v1/categories")
 public class CategoryController {
   private final CategoryService categoryService;
+
+  public CategoryController(final CategoryService categoryService) {
+    this.categoryService = categoryService;
+  }
 
   @GetMapping("/getAllCategories")
   public ResponseEntity<List<CategoryDTO>> getAllCategories() {

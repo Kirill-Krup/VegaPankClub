@@ -43,6 +43,9 @@
             <column name="is_banned" type="BOOLEAN" defaultValue="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="role" type="int" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 

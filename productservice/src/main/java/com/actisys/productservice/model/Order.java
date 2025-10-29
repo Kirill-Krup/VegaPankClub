@@ -31,6 +31,7 @@ public class Order {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 50)
   private Status status;
 

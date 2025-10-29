@@ -51,4 +51,7 @@ public class User {
 
   @Column(name = "is_banned")
   private boolean isBanned;
+
+  @Column(name = "role")
+  private int role;
 }

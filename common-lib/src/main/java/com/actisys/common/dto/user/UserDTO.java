@@ -12,101 +12,90 @@ import java.sql.Timestamp;
 
 public class UserDTO {
 
-  public Long getId() {
-    return id;
-  }
+  public Long getId() { return id; }
+  public String getLogin() { return login; }
+  public String getEmail() { return email; }
+  public String getPhone() { return phone; }
+  public String getFullName() { return fullName; }
+  public Double getWallet() { return wallet; }
+  public String getPhotoPath() { return photoPath; }
+  public Integer getBonusCoins() { return bonusCoins; }
+  public Timestamp getRegistrationDate() { return registrationDate; }
+  public Timestamp getBirthDate() { return birthDate; }
+  public Timestamp getLastLogin() { return lastLogin; }
+  public Boolean getOnline() { return isOnline; }
+  public Boolean getBanned() { return isBanned; }
 
-  public String getLogin() {
-    return login;
-  }
 
-  public String getEmail() {
-    return email;
-  }
-
-  public String getPhone() {
-    return phone;
-  }
-
-  public String getFullName() {
-    return fullName;
-  }
-
-  public Double getWallet() {
-    return wallet;
-  }
-
-  public String getPhotoPath() {
-    return photoPath;
-  }
-
-  public Integer getBonusCoins() {
-    return bonusCoins;
-  }
-
-  public Timestamp getRegistrationDate() {
-    return registrationDate;
-  }
-
-  public Timestamp getBirthDate() {
-    return birthDate;
-  }
-
-  public Timestamp getLastLogin() {
-    return lastLogin;
-  }
-
-  public Boolean getOnline() {
-    return isOnline;
-  }
-
-  public Boolean getBanned() {
-    return isBanned;
-  }
+  @JsonProperty("role")
+  public String getRole() { return role; }
 
   @JsonProperty
   private final Long id;
 
-  @NotBlank(message = "Login cannot be blank")
-  @Size(min = 3, max = 50, message = "Login must be between 3 and 50 characters")
-  @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Login can only contain letters, numbers, underscores and hyphens")
+  @NotBlank
+  @Size(min = 3, max = 50)
+  @Pattern(regexp = "^[a-zA-Z0-9_-]+$")
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final String login;
 
-  @NotBlank(message = "Email cannot be blank")
-  @Email(message = "Email must be valid")
+  @NotBlank
+  @Email
   private final String email;
 
-  @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Phone number must be valid")
+  @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$")
   private final String phone;
 
-  @Size(max = 100, message = "Full name cannot exceed 100 characters")
+  @Size(max = 100)
   private final String fullName;
 
-  @Min(value = 0, message = "Wallet cannot be negative")
+  @Min(0)
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final Double wallet;
 
   private final String photoPath;
 
-  @Min(value = 0, message = "Bonus coins cannot be negative")
+  @Min(0)
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final Integer bonusCoins;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final Timestamp registrationDate;
 
-  @Past(message = "Birth date must be in the past")
+  @Past
   private final Timestamp birthDate;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final Timestamp lastLogin;
 
-  @JsonProperty(value = "online",access = JsonProperty.Access.READ_ONLY)
+  @JsonProperty(value = "online", access = JsonProperty.Access.READ_ONLY)
   private final Boolean isOnline;
 
   @JsonProperty(value = "banned", access = JsonProperty.Access.READ_ONLY)
   private final Boolean isBanned;
+
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  private String role;
+
+  @Override
+  public String toString() {
+    return "UserDTO{" +
+        "id=" + id +
+        ", login='" + login + '\'' +
+        ", email='" + email + '\'' +
+        ", phone='" + phone + '\'' +
+        ", fullName='" + fullName + '\'' +
+        ", wallet=" + wallet +
+        ", photoPath='" + photoPath + '\'' +
+        ", bonusCoins=" + bonusCoins +
+        ", registrationDate=" + registrationDate +
+        ", birthDate=" + birthDate +
+        ", lastLogin=" + lastLogin +
+        ", isOnline=" + isOnline +
+        ", isBanned=" + isBanned +
+        ", role='" + role + '\'' +
+        '}';
+  }
 
   @JsonCreator
   public UserDTO(
@@ -122,7 +111,9 @@ public class UserDTO {
       @JsonProperty("birthDate") Timestamp birthDate,
       @JsonProperty("lastLogin") Timestamp lastLogin,
       @JsonProperty("isOnline") Boolean isOnline,
-      @JsonProperty("isBanned") Boolean isBanned) {
+      @JsonProperty("isBanned") Boolean isBanned,
+      @JsonProperty(value = "role", access = JsonProperty.Access.READ_ONLY) String role
+  ) {
     this.id = id;
     this.login = login;
     this.email = email;
@@ -136,5 +127,10 @@ public class UserDTO {
     this.lastLogin = lastLogin;
     this.isOnline = isOnline;
     this.isBanned = isBanned;
+    this.role = role;
   }
+
+  public void setRole(String role) { this.role = role; }
+
 }
+

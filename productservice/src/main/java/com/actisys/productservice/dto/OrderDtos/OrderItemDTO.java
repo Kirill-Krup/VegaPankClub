@@ -4,13 +4,16 @@ import com.actisys.productservice.dto.ProductDtos.ProductDTO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Negative;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Getter
-@RequiredArgsConstructor
+@NoArgsConstructor(force = true)
+@AllArgsConstructor
 public class OrderItemDTO {
   private final Long orderItemId;
 

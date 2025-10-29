@@ -18,10 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/products")
-@RequiredArgsConstructor
 public class ProductController {
 
   private final ProductService productService;
+
+  public ProductController(final ProductService productService) {
+    this.productService = productService;
+  }
 
   @GetMapping("getAllProducts")
   public ResponseEntity<List<ProductDTO>> getAllProducts() {

@@ -6,15 +6,17 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
-@RequiredArgsConstructor
+@NoArgsConstructor(force = true)
+@AllArgsConstructor
 public class OrderDTO {
   private final Long orderId;
 
