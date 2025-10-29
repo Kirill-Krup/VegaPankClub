@@ -26,8 +26,6 @@ public class UserDTO {
   public Boolean getOnline() { return isOnline; }
   public Boolean getBanned() { return isBanned; }
 
-  @JsonProperty("token")
-  public String getToken() { return token; }
 
   @JsonProperty("role")
   public String getRole() { return role; }
@@ -79,8 +77,25 @@ public class UserDTO {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private String role;
 
-  @JsonProperty
-  private transient String token;
+  @Override
+  public String toString() {
+    return "UserDTO{" +
+        "id=" + id +
+        ", login='" + login + '\'' +
+        ", email='" + email + '\'' +
+        ", phone='" + phone + '\'' +
+        ", fullName='" + fullName + '\'' +
+        ", wallet=" + wallet +
+        ", photoPath='" + photoPath + '\'' +
+        ", bonusCoins=" + bonusCoins +
+        ", registrationDate=" + registrationDate +
+        ", birthDate=" + birthDate +
+        ", lastLogin=" + lastLogin +
+        ", isOnline=" + isOnline +
+        ", isBanned=" + isBanned +
+        ", role='" + role + '\'' +
+        '}';
+  }
 
   @JsonCreator
   public UserDTO(
@@ -97,8 +112,7 @@ public class UserDTO {
       @JsonProperty("lastLogin") Timestamp lastLogin,
       @JsonProperty("isOnline") Boolean isOnline,
       @JsonProperty("isBanned") Boolean isBanned,
-      @JsonProperty(value = "role", access = JsonProperty.Access.READ_ONLY) String role,
-      @JsonProperty(value = "token", access = JsonProperty.Access.READ_ONLY) String token
+      @JsonProperty(value = "role", access = JsonProperty.Access.READ_ONLY) String role
   ) {
     this.id = id;
     this.login = login;
@@ -114,10 +128,9 @@ public class UserDTO {
     this.isOnline = isOnline;
     this.isBanned = isBanned;
     this.role = role;
-    this.token = token;
   }
 
   public void setRole(String role) { this.role = role; }
-  public void setToken(String token) { this.token = token; }
+
 }
 

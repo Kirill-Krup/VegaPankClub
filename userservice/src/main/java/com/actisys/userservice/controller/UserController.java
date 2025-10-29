@@ -28,6 +28,12 @@ public class UserController {
     this.userService = userService;
   }
 
+  @GetMapping("/test")
+  public ResponseEntity<String> test() {
+    System.out.println("test");
+    return ResponseEntity.ok("Hello World");
+  }
+
   @GetMapping("/{id}")
   public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
     return userService.getUserById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());

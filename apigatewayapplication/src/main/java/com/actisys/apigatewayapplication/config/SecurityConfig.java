@@ -25,9 +25,10 @@ public class SecurityConfig {
                 "/static/**",
                 "/html/**",
                 "/css/**",
-                "/js/**"
+                "/js/**",
+                "/api/v1/auth/**"
             ).permitAll()
-            .anyExchange().authenticated()
+            .anyExchange().permitAll()
         )
         .build();
   }

@@ -34,27 +34,41 @@ function renderAuth() {
   }
 }
 
-// Demo login/register flows
+// Auth handlers - redirect to registration page
 function attachAuthHandlers() {
   const loginBtn = qs('[data-login]');
   const regBtn = qs('[data-register]');
   const logoutBtn = qs('[data-logout]');
 
-  loginBtn?.addEventListener('click', () => {
-    const username = prompt('Введите логин:', 'player1');
-    if (!username) return;
-    setUser({ username, balance: 15.5, avatar: `https://i.pravatar.cc/100?u=${encodeURIComponent(username)}` });
-    renderAuth();
-  });
   regBtn?.addEventListener('click', () => {
-    const username = prompt('Придумайте логин:', 'newgamer');
-    if (!username) return;
-    setUser({ username, balance: 0, avatar: `https://i.pravatar.cc/100?u=${encodeURIComponent(username)}` });
-    renderAuth();
+    window.location.href = '/static/html/Authentication/registartion.html';
   });
-  logoutBtn?.addEventListener('click', () => {
-    setUser(null);
-    renderAuth();
+
+  // Redirect to login page (if needed)
+  loginBtn?.addEventListener('click', () => {
+    window.location.href = '/static/html/Authentication/login.html';
+  });
+
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/v1/users/test', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('Logout test response:', data);
+      window.location.href = '/static/html/index.html';
+
+    } catch (err) {
+      console.error('Logout error:', err);
+      window.location.href = '/static/html/index.html';
+    }
   });
 }
 
@@ -161,9 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Navigate to profile on clicking profile container
   const profileContainer = qs('.auth__profile');
   profileContainer?.addEventListener('click', () => {
-    // resolve relative path no matter which html page: if current file is inside /html/, use ./profile.html
     const href = './profile.html';
     window.location.href = href;
   });
 });
-

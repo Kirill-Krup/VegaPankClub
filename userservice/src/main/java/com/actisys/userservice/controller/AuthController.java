@@ -2,14 +2,14 @@ package com.actisys.userservice.controller;
 
 import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.AuthRequest;
+import com.actisys.userservice.dto.AuthResponse;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.service.AuthService;
-import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -17,20 +17,50 @@ public class AuthController {
 
   private final AuthService authService;
 
-  public AuthController(final AuthService authService) {
+  @Value("${jwt.ttl-seconds:860000}")
+  private long ttlSeconds;
+
+  public AuthController(AuthService authService) {
     this.authService = authService;
   }
 
   @PostMapping("/register")
-  public ResponseEntity<UserDTO> createUser(@Valid @RequestBody RegisterRequest registerRequest) {
-    UserDTO newUser = authService.createUser(registerRequest);
-    return ResponseEntity.ok().body(newUser);
+  public ResponseEntity<UserDTO> register(
+      @RequestBody RegisterRequest request,
+      HttpServletResponse response
+  ) {
+    AuthResponse authResponse = authService.createUser(request);
+
+    ResponseCookie cookie = ResponseCookie.from("auth_token", authResponse.getToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/")
+        .maxAge(ttlSeconds)
+        .sameSite("Lax")
+        .build();
+
+    response.addHeader("Set-Cookie", cookie.toString());
+
+    return ResponseEntity.ok(authResponse.getUser());
   }
 
   @PostMapping("/login")
-  public ResponseEntity<UserDTO> login(@RequestBody AuthRequest authRequest) {
-    UserDTO dto = authService.login(authRequest);
-    return ResponseEntity.ok().body(dto);
-  }
+  public ResponseEntity<UserDTO> login(
+      @RequestBody AuthRequest request,
+      HttpServletResponse response
+  ) {
+    AuthResponse authResponse = authService.login(request);
 
+    ResponseCookie cookie = ResponseCookie.from("auth_token", authResponse.getToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/")
+        .maxAge(ttlSeconds)
+        .sameSite("Lax")
+        .build();
+
+    response.addHeader("Set-Cookie", cookie.toString());
+
+    return ResponseEntity.ok(authResponse.getUser());
+  }
 }

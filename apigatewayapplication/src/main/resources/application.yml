@@ -12,15 +12,17 @@ spring:
       static-locations: classpath:/static/
   cloud:
     gateway:
-      routes:
-        - id: userservice-public
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/v1/auth/login,/api/v1/auth/register
-        - id: userservice-protected
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/**
+      server:
+        webflux:
+          routes:
+            - id: userservice-public
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/auth/login,/api/v1/auth/register
+            - id: userservice-protected
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/**
 jwt:
   secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxIiwiZXhwIjoxNzMwMjI1MzE3fQ8fK7j9Lm2N4p6Q1r3T5v7X8z0BcD9FgH2Jk4M6oP8q"
   ttl-seconds: 8600000

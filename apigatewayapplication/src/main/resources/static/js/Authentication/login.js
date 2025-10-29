@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hasError) return;
 
     try {
-      const res = await fetch('/auth/login', {
+      const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await safeJson(res);
         throw new Error(data?.message || 'Не удалось войти');
       }
-      window.location.href = '../../html/index.html';
+      console.log(res);
+      window.location.href = '/static/html/index.html';
     } catch (err) {
       globalError.textContent = err.message || 'Ошибка авторизации';
     }

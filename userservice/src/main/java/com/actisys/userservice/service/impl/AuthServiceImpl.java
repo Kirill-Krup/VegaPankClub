@@ -2,6 +2,7 @@ package com.actisys.userservice.service.impl;
 
 import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.AuthRequest;
+import com.actisys.userservice.dto.AuthResponse;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
@@ -37,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public UserDTO createUser(RegisterRequest registerRequest) {
+  public AuthResponse createUser(RegisterRequest registerRequest) {
     if (userRepository.existsByLogin(registerRequest.getLogin())) {
       throw new IllegalArgumentException("Username already taken");
     }
@@ -68,12 +69,12 @@ public class AuthServiceImpl implements AuthService {
 
     UserDTO dto = userMapper.toDTO(saved);
     dto.setRole(roleName);
-    dto.setToken(token);
-    return dto;
+
+    return new AuthResponse(dto, token);
   }
 
   @Override
-  public UserDTO login(AuthRequest authRequest) {
+  public AuthResponse login(AuthRequest authRequest) {
     Optional<User> opt;
     if (authRequest.getLogin().contains("@")) {
       opt = userRepository.findByEmail(authRequest.getLogin());
@@ -87,6 +88,9 @@ public class AuthServiceImpl implements AuthService {
       throw new IllegalArgumentException("Invalid credentials");
     }
 
+    user.setLastLogin(new Timestamp(System.currentTimeMillis()));
+    userRepository.save(user);
+
     String roleName = mapRole(user.getRole());
     String token = jwtTokenProvider.generate(
         String.valueOf(user.getId()),
@@ -97,8 +101,8 @@ public class AuthServiceImpl implements AuthService {
 
     UserDTO dto = userMapper.toDTO(user);
     dto.setRole(roleName);
-    dto.setToken(token);
-    return dto;
+
+    return new AuthResponse(dto, token);
   }
 
   private String mapRole(int code) {
