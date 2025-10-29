@@ -1,6 +1,7 @@
 package com.actisys.userservice.controller;
 
 import com.actisys.common.dto.user.UserDTO;
+import com.actisys.userservice.dto.AuthRequest;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.dto.UpdateCoinsRequest;
 import com.actisys.userservice.service.UserService;
@@ -25,12 +26,6 @@ public class UserController {
 
   public UserController(UserService userService) {
     this.userService = userService;
-  }
-
-  @PostMapping
-  public ResponseEntity<UserDTO> createUser(@Valid @RequestBody RegisterRequest registerRequest) {
-    UserDTO newUser = userService.createUser(registerRequest);
-    return ResponseEntity.ok().body(newUser);
   }
 
   @GetMapping("/{id}")

@@ -7,6 +7,7 @@ import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
+import com.actisys.userservice.service.impl.AuthServiceImpl;
 import com.actisys.userservice.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,9 @@ class UserServiceTest {
   private UserMapper userMapper;
   @InjectMocks
   private UserServiceImpl userService;
+
+  @InjectMocks
+  private AuthServiceImpl authServiceImpl;
 
   private User user;
   private UserDTO dto;
@@ -69,7 +73,7 @@ class UserServiceTest {
     when(userRepository.save(user)).thenReturn(user);
     when(userMapper.toDTO(user)).thenReturn(dto);
 
-    UserDTO result = userService.createUser(registerRequest);
+    UserDTO result = authServiceImpl.createUser(registerRequest);
 
     assertEquals(dto.getEmail(), result.getEmail());
     verify(userRepository).save(user);
@@ -170,7 +174,7 @@ class UserServiceTest {
     when(userMapper.fromRegisterRequest(any())).thenReturn(user);
     when(userRepository.save(any())).thenReturn(user);
     when(userMapper.toDTO(any())).thenReturn(dto);
-    UserDTO result = userService.createUser(registerRequest);
+    UserDTO result = authServiceImpl.createUser(registerRequest);
     assertEquals(dto.getEmail(), result.getEmail());
   }
 

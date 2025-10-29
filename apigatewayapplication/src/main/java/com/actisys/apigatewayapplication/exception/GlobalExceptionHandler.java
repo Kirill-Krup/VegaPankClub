@@ -55,7 +55,6 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
             return exchange.getResponse().writeWith(Mono.just(buffer));
         } catch (JsonProcessingException e) {
             log.error("Error serializing error response", e);
-            // Fallback error response
             String fallbackResponse = String.format(
                     "{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\",\"path\":\"%s\"}",
                     status.value(),

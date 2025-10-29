@@ -1,6 +1,7 @@
 package com.actisys.userservice.service.impl;
 
 import com.actisys.common.dto.user.UserDTO;
+import com.actisys.userservice.dto.AuthRequest;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
@@ -26,20 +27,6 @@ public class UserServiceImpl implements UserService{
   public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
-  }
-
-  @Override
-  public UserDTO createUser(RegisterRequest registerRequest) {
-    User entity = userMapper.fromRegisterRequest(registerRequest);
-
-    entity.setRegistrationDate(new Timestamp(System.currentTimeMillis()));
-    entity.setBonusCoins(0);
-    entity.setWallet(0.0);
-    User savedEntity = userRepository.save(entity);
-    UserDTO result = userMapper.toDTO(savedEntity);
-
-    System.out.println("Created user with ID: " + result.getId());
-    return result;
   }
 
   @Cacheable(value = "users", key = "#id")
@@ -103,6 +90,5 @@ public class UserServiceImpl implements UserService{
     userRepository.save(user);
     return userMapper.toDTO(user);
   }
-
 
 }

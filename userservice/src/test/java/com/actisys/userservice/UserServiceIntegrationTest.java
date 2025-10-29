@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.exception.UserNotFoundException;
+import com.actisys.userservice.service.AuthService;
 import com.actisys.userservice.service.UserService;
 import java.sql.Timestamp;
 import java.util.List;
@@ -58,6 +59,9 @@ class UserServiceIntegrationTest {
   private UserService userService;
 
   @Autowired
+  private AuthService authService;
+
+  @Autowired
   private CacheManager cacheManager;
 
   private int userCounter = 0;
@@ -87,7 +91,7 @@ class UserServiceIntegrationTest {
   void createAndFetchUser_shouldCacheResult() {
     RegisterRequest request = createUniqueRegisterRequest();
 
-    UserDTO created = userService.createUser(request);
+    UserDTO created = authService.createUser(request);
     System.out.println("=== CREATED USER ===");
     System.out.println("ID: " + created.getId());
     System.out.println("Login: " + created.getLogin());
@@ -136,7 +140,7 @@ class UserServiceIntegrationTest {
   @DisplayName("Update user - should update cache")
   void updateUser_shouldUpdateCache() {
     RegisterRequest request = createUniqueRegisterRequest();
-    UserDTO created = userService.createUser(request);
+    UserDTO created = authService.createUser(request);
     Long userId = created.getId();
     UserDTO updateDto = new UserDTO(
         userId,
@@ -151,7 +155,8 @@ class UserServiceIntegrationTest {
         created.getBirthDate(),
         created.getLastLogin(),
         null,
-        null
+        null,
+        "USER", ""
     );
 
     UserDTO updated = userService.updateUser(userId, updateDto);
@@ -169,7 +174,7 @@ class UserServiceIntegrationTest {
   @DisplayName("Delete user - should remove from cache")
   void deleteUser_shouldRemoveFromCache() {
     RegisterRequest request = createUniqueRegisterRequest();
-    UserDTO created = userService.createUser(request);
+    UserDTO created = authService.createUser(request);
     Long userId = created.getId();
     userService.getUserById(userId);
     UserDTO deleted = userService.deleteUser(userId);
@@ -183,7 +188,7 @@ class UserServiceIntegrationTest {
   @DisplayName("Get user by email - should use cache")
   void getUserByEmail_shouldUseCache() {
     RegisterRequest request = createUniqueRegisterRequest();
-    UserDTO created = userService.createUser(request);
+    UserDTO created = authService.createUser(request);
     String email = created.getEmail();
 
     UserDTO firstCall = userService.getUserByEmail(email);
@@ -201,7 +206,7 @@ class UserServiceIntegrationTest {
   @DisplayName("Update user coins - should update bonus coins")
   void updateUserCoins_shouldUpdateBonusCoins() {
     RegisterRequest request = createUniqueRegisterRequest();
-    UserDTO created = userService.createUser(request);
+    UserDTO created = authService.createUser(request);
     Long userId = created.getId();
     int initialCoins = created.getBonusCoins();
 
@@ -219,8 +224,8 @@ class UserServiceIntegrationTest {
   @Test
   @DisplayName("Get users by multiple ids - should return existing users")
   void getUsersByIds_shouldReturnMultipleUsers() {
-    UserDTO user1 = userService.createUser(createUniqueRegisterRequest());
-    UserDTO user2 = userService.createUser(createUniqueRegisterRequest());
+    UserDTO user1 = authService.createUser(createUniqueRegisterRequest());
+    UserDTO user2 = authService.createUser(createUniqueRegisterRequest());
 
     List<UserDTO> users = userService.getUsersByIds(List.of(user1.getId(), user2.getId()));
 

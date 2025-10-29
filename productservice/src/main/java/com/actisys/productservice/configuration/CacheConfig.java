@@ -26,9 +26,14 @@ public class CacheConfig {
         .entryTtl(Duration.ofHours(3))
         .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+    RedisCacheConfiguration orderConfig = RedisCacheConfiguration.defaultCacheConfig()
+        .entryTtl(Duration.ofMinutes(10))
+        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(defaultConfig)
         .withCacheConfiguration("products", productConfig)
+        .withCacheConfiguration("orders", orderConfig)
         .build();
   }
 }

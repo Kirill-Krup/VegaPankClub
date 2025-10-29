@@ -9,15 +9,18 @@ import com.actisys.productservice.repository.CategoryRepository;
 import com.actisys.productservice.service.CategoryService;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
   private final CategoryMapper categoryMapper;
   private final CategoryRepository categoryRepository;
+
+  public CategoryServiceImpl(CategoryMapper categoryMapper, CategoryRepository categoryRepository) {
+    this.categoryMapper = categoryMapper;
+    this.categoryRepository = categoryRepository;
+  }
 
   @Override
   public List<CategoryDTO> getAllCategies() {
