@@ -2,8 +2,10 @@ package com.actisys.userservice.mapper;
 
 import com.actisys.common.dto.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
+import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.model.User;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,9 +13,10 @@ import org.springframework.stereotype.Component;
 public interface UserMapper {
 
   UserDTO toDTO(User user);
-
-  User toEntity(UserDTO dto);
-
   User fromRegisterRequest(RegisterRequest registerRequest);
+
+  @Mapping(target = "totalBookings", ignore = true)
+  @Mapping(target = "gameHours", ignore = true)
+  UserAllProfileDTO toAllProfileDTO(User user);
 
 }

@@ -1,10 +1,11 @@
 package com.actisys.userservice.service;
 
 import com.actisys.common.dto.user.UserDTO;
-import com.actisys.userservice.dto.AuthRequest;
-import com.actisys.userservice.dto.RegisterRequest;
+import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
+import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import java.util.List;
 import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 public interface UserService {
 
@@ -16,7 +17,11 @@ public interface UserService {
 
   UserDTO updateUser(Long id, UserDTO updated);
 
-  UserDTO deleteUser(Long id);
+  void deleteUser(Long id);
 
   UserDTO updateUserCoins(Long id, int coins);
+
+  UserSimpleProfileDTO getProfile(Long userId);
+
+  Mono<UserAllProfileDTO> getAllProfile(Long userId);
 }

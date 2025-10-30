@@ -1,40 +1,76 @@
-// Utilities
 const qs = (s, r = document) => r.querySelector(s);
 const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-// State (mock auth for demo)
-const STORAGE_KEYS = { user: 'vegapank:user' };
+let currentUser = null;
 
-function getUser() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || 'null'); } catch { return null; }
-}
-function setUser(user) {
-  if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-  else localStorage.removeItem(STORAGE_KEYS.user);
-}
+async function fetchUserProfile() {
+  try {
+    console.log('Fetching user profile...');
 
-// Auth / profile toggle
-function renderAuth() {
-  const user = getUser();
-  const guest = qs('[data-guest-section]');
-  const u = qs('[data-user-section]');
-  if (!guest || !u) return;
-  if (user) {
-    guest.hidden = true;
-    u.hidden = false;
-    const nameEl = qs('[data-username]');
-    const balEl = qs('[data-balance]');
-    const avatar = qs('[data-avatar]');
-    if (nameEl) nameEl.textContent = user.username || 'Гость';
-    if (balEl) balEl.textContent = (user.balance ?? 0).toFixed(2);
-    if (avatar && user.avatar) avatar.src = user.avatar;
-  } else {
-    guest.hidden = false;
-    u.hidden = true;
+    const response = await fetch('/api/v1/profile/getProfile', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+
+    console.log('Profile response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        console.log('User not authenticated (401/403)');
+        renderAuth(null);
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const userData = await response.json();
+    console.log('User profile loaded:', userData);
+
+    const userProfile = {
+      username: userData.login || 'Пользователь',
+      balance: userData.wallet || 0,
+      avatar: userData.photoPath || `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`,
+      id: userData.id,
+      email: userData.email
+    };
+
+    renderAuth(userProfile);
+    return userProfile;
+
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    renderAuth(null);
+    return null;
   }
 }
 
-// Auth handlers - redirect to registration page
+function renderAuth(user) {
+  const guest = qs('[data-guest-section]');
+  const userSection = qs('[data-user-section]');
+
+  if (!guest || !userSection) return;
+
+  if (user) {
+    console.log('Rendering user section:', user);
+    guest.style.display = 'none';
+    userSection.style.display = 'flex';
+
+    const nameEl = qs('[data-username]');
+    const balEl = qs('[data-balance]');
+    const avatar = qs('[data-avatar]');
+
+    if (nameEl) nameEl.textContent = user.username || 'Пользователь';
+    if (balEl) balEl.textContent = (user.balance ?? 0).toFixed(2);
+    if (avatar) avatar.src = user.avatar || `https://i.pravatar.cc/100?img=15`;
+  } else {
+    console.log('Rendering guest section');
+    guest.style.display = 'flex';
+    userSection.style.display = 'none';
+  }
+}
+
+
 function attachAuthHandlers() {
   const loginBtn = qs('[data-login]');
   const regBtn = qs('[data-register]');
@@ -44,35 +80,34 @@ function attachAuthHandlers() {
     window.location.href = '/static/html/Authentication/registartion.html';
   });
 
-  // Redirect to login page (if needed)
   loginBtn?.addEventListener('click', () => {
     window.location.href = '/static/html/Authentication/login.html';
   });
 
   logoutBtn?.addEventListener('click', async () => {
     try {
-      const res = await fetch('/api/v1/users/test', {
-        method: 'GET',
+      console.log('Logging out...');
+
+      const res = await fetch('/api/v1/users/logout', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
+      console.log('Logout response:', res.status);
 
-      const data = await res.json();
-      console.log('Logout test response:', data);
+      currentUser = null;
+
       window.location.href = '/static/html/index.html';
 
     } catch (err) {
       console.error('Logout error:', err);
+      currentUser = null;
       window.location.href = '/static/html/index.html';
     }
   });
 }
 
-// Smooth scroll
 function attachSmoothScroll() {
   qsa('[data-scroll]').forEach(a => {
     a.addEventListener('click', (e) => {
@@ -81,7 +116,6 @@ function attachSmoothScroll() {
       e.preventDefault();
       const target = qs(href);
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Close mobile menu if open
       qs('[data-nav-list]')?.classList.remove('show');
       const btn = qs('[data-nav-toggle]');
       if (btn) btn.setAttribute('aria-expanded', 'false');
@@ -89,7 +123,6 @@ function attachSmoothScroll() {
   });
 }
 
-// Mobile nav toggle
 function attachNavToggle() {
   const btn = qs('[data-nav-toggle]');
   const list = qs('[data-nav-list]');
@@ -100,7 +133,6 @@ function attachNavToggle() {
   });
 }
 
-// Intersection-based reveal animations
 function setupReveals() {
   const items = qsa('.reveal');
   if (!('IntersectionObserver' in window) || items.length === 0) {
@@ -118,7 +150,6 @@ function setupReveals() {
   items.forEach(i => obs.observe(i));
 }
 
-// Parallax-ish hero glow
 function attachParallax() {
   const glow = qs('.hero__glow');
   if (!glow) return;
@@ -133,7 +164,6 @@ function attachParallax() {
   });
 }
 
-// Pricing selection demo
 function attachPricing() {
   qsa('[data-book]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -143,7 +173,6 @@ function attachPricing() {
   });
 }
 
-// Contact form demo submit
 function attachContactForm() {
   const form = qs('[data-contact-form]');
   form?.addEventListener('submit', (e) => {
@@ -155,15 +184,16 @@ function attachContactForm() {
   });
 }
 
-// Footer year
 function setYear() {
   const y = qs('#year');
   if (y) y.textContent = String(new Date().getFullYear());
 }
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-  renderAuth();
+async function initApp() {
+  console.log('Initializing app...');
+
+  await fetchUserProfile();
+
   attachAuthHandlers();
   attachSmoothScroll();
   attachNavToggle();
@@ -172,10 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
   attachPricing();
   attachContactForm();
   setYear();
-  // Navigate to profile on clicking profile container
+
   const profileContainer = qs('.auth__profile');
   profileContainer?.addEventListener('click', () => {
-    const href = './profile.html';
-    window.location.href = href;
+    window.location.href = '/static/html/profile.html';
   });
-});
+
+  console.log('App initialized');
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
