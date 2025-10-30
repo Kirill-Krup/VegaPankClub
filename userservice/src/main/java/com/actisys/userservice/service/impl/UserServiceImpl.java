@@ -1,14 +1,14 @@
 package com.actisys.userservice.service.impl;
 
 import com.actisys.common.dto.user.UserDTO;
-import com.actisys.userservice.dto.AuthRequest;
-import com.actisys.userservice.dto.RegisterRequest;
+import com.actisys.userservice.client.BillingServiceClient;
+import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
+import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.UserService;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,15 +18,18 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 @Service
 public class UserServiceImpl implements UserService{
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final BillingServiceClient billingServiceClient;
 
-  public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+  public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, BillingServiceClient billingServiceClient) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
+    this.billingServiceClient = billingServiceClient;
   }
 
   @Cacheable(value = "users", key = "#id")
@@ -73,14 +76,11 @@ public class UserServiceImpl implements UserService{
       @CacheEvict(value = "users", key = "#id"),
       @CacheEvict(value = "users", key = "#result.email")
   })
-  public UserDTO deleteUser(Long id) {
+  public void deleteUser(Long id) {
     if(!userRepository.existsById(id)) {
       throw new UserNotFoundException(id);
     }
-    User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
-    UserDTO userDTO = userMapper.toDTO(user);
     userRepository.deleteById(id);
-    return userDTO;
   }
 
   @Override
@@ -89,6 +89,34 @@ public class UserServiceImpl implements UserService{
     user.setBonusCoins(user.getBonusCoins() + coins);
     userRepository.save(user);
     return userMapper.toDTO(user);
+  }
+
+  @Override
+  public UserSimpleProfileDTO getProfile(Long userId) {
+    User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    return UserSimpleProfileDTO.builder()
+        .login(user.getLogin())
+        .wallet(user.getWallet())
+        .photoPath(user.getPhotoPath())
+        .isBanned(user.isBanned())
+        .build();
+  }
+
+  @Override
+  public Mono<UserAllProfileDTO> getAllProfile(Long userId) {
+    return Mono.fromSupplier(() -> {
+          User user = userRepository.findById(userId)
+              .orElseThrow(() -> new UserNotFoundException(userId));
+          return userMapper.toAllProfileDTO(user);
+        })
+        .flatMap(dto ->
+            billingServiceClient.getUserSessionStats(userId)
+                .map(sessionStats -> {
+                  dto.setSessionStats(sessionStats);
+                  return dto;
+                })
+                .onErrorReturn(dto)
+        );
   }
 
 }

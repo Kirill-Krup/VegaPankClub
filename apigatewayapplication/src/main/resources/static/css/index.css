@@ -31,32 +31,198 @@ body {
 .section__title { font-size: 36px; margin: 0 0 28px; letter-spacing: .4px; }
 
 /* Header */
-.header { position: fixed; top: 0; left:0; right:0; z-index: 1000; backdrop-filter: blur(8px); background: rgba(11,11,18,.65); border-bottom: 1px solid rgba(255,255,255,.06); }
-.header__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
-.logo { color: var(--text); text-decoration: none; font-weight: 800; font-size: 22px; letter-spacing: .6px; }
-.logo__accent { color: var(--accent); }
-
-.nav { display:flex; align-items:center; }
-.nav__toggle { display:none; background:transparent; border:none; cursor:pointer; padding:10px; }
-.nav__toggle span{ display:block; width:22px; height:2px; background:#fff; margin:4px 0; transition:.3s; }
-.nav__list { display:flex; gap:18px; list-style:none; margin:0; padding:0; }
-.nav__list a{ color:#cfd0ff; text-decoration:none; padding:8px 10px; border-radius:10px; transition:.25s; }
-.nav__list a:hover{ background: rgba(108,92,231,.15); color:#fff; }
-
-.auth { display:flex; align-items:center; gap:14px; }
-.auth__profile { display:flex; align-items:center; gap:12px; background: rgba(255,255,255,.04); padding:8px 12px; border-radius: 999px; border:1px solid rgba(255,255,255,.08); box-shadow: var(--shadow);
+.header { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  z-index: 1000; 
+  backdrop-filter: blur(8px); 
+  background: rgba(11,11,18,.65); 
+  border-bottom: 1px solid rgba(255,255,255,.06); 
 }
-.auth__login { font-weight:700; }
-.auth__balance { font-size: 13px; color: var(--muted); margin-top:-2px; }
-.auth__avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.2); }
 
-.btn { appearance:none; border:none; cursor:pointer; padding:10px 16px; border-radius: 12px; font-weight:700; transition:.25s; }
-.btn--primary{ background: linear-gradient(135deg, var(--primary), var(--accent)); color:#0b0b12; box-shadow: var(--glow); }
-.btn--primary:hover{ filter: brightness(1.05); transform: translateY(-1px); }
-.btn--ghost{ background: transparent; color:#fff; border:1px solid rgba(255,255,255,.18); }
-.btn--ghost:hover{ background: rgba(255,255,255,.06); }
-.btn--danger{ background: var(--danger); color:#fff; }
+.header__inner { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  height: 72px; 
+  gap: 20px; /* добавляем отступы между элементами */
+}
 
+.logo { 
+  color: var(--text); 
+  text-decoration: none; 
+  font-weight: 800; 
+  font-size: 22px; 
+  letter-spacing: .6px;
+  flex-shrink: 0; /* не сжимать логотип */
+}
+
+.logo__accent { 
+  color: var(--accent); 
+}
+
+
+/* Navigation */
+.nav { 
+  display: flex; 
+  align-items: center;
+  flex: 1; /* занимает доступное пространство */
+  justify-content: center; /* центрирует навигацию */
+}
+
+.nav__toggle { 
+  display: none; 
+  background: transparent; 
+  border: none; 
+  cursor: pointer; 
+  padding: 10px; 
+}
+
+.nav__toggle span { 
+  display: block; 
+  width: 22px; 
+  height: 2px; 
+  background: #fff; 
+  margin: 4px 0; 
+  transition: .3s; 
+}
+
+.nav__list { 
+  display: flex; 
+  gap: 18px; 
+  list-style: none; 
+  margin: 0; 
+  padding: 0; 
+  align-items: center; /* выравниваем по центру вертикально */
+}
+
+.nav__list a { 
+  color: #cfd0ff; 
+  text-decoration: none; 
+  padding: 8px 10px; 
+  border-radius: 10px; 
+  transition: .25s;
+  white-space: nowrap; /* не переносим текст */
+}
+
+.nav__list a:hover { 
+  background: rgba(108,92,231,.15); 
+  color: #fff; 
+}
+
+
+/* Auth section */
+.auth { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px;
+  flex-shrink: 0; /* не сжимать блок авторизации */
+}
+
+.auth__guest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth__user { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+}
+
+.auth__profile { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  background: rgba(255,255,255,.04); 
+  padding: 8px 12px; 
+  border-radius: 999px; 
+  border: 1px solid rgba(255,255,255,.08); 
+  box-shadow: var(--shadow);
+}
+
+.auth__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* центрируем текст вертикально */
+  line-height: 1.2;
+}
+
+.auth__login { 
+  font-weight: 700; 
+  font-size: 14px;
+}
+
+.auth__balance { 
+  font-size: 13px; 
+  color: var(--muted); 
+  margin-top: 2px;
+}
+
+.auth__avatar { 
+  width: 40px; 
+  height: 40px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+  border: 2px solid rgba(255,255,255,.2); 
+  flex-shrink: 0; /* не сжимать аватар */
+}
+
+
+/* Buttons */
+.btn { 
+  appearance: none; 
+  border: none; 
+  cursor: pointer; 
+  padding: 10px 16px; 
+  border-radius: 12px; 
+  font-weight: 700; 
+  transition: .25s;
+  font-size: 14px;
+  white-space: nowrap; /* текст в одну строку */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn--primary { 
+  background: linear-gradient(135deg, var(--primary), var(--accent)); 
+  color: #0b0b12; 
+  box-shadow: var(--glow); 
+}
+
+.btn--primary:hover { 
+  filter: brightness(1.05); 
+  transform: translateY(-1px); 
+}
+
+.btn--ghost { 
+  background: transparent; 
+  color: #fff; 
+  border: 1px solid rgba(255,255,255,.18); 
+}
+
+.btn--ghost:hover { 
+  background: rgba(255,255,255,.06); 
+}
+
+.btn--danger { 
+  background: var(--danger); 
+  color: #fff; 
+}
+
+.btn--danger:hover {
+  filter: brightness(1.1);
+}
+
+
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
 /* Keep logout inline with profile */
 .auth__user{ display:flex; align-items:center; gap:12px; }
 

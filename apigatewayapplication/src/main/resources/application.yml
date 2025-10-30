@@ -22,8 +22,16 @@ spring:
             - id: userservice-protected
               uri: http://localhost:8081
               predicates:
-                - Path=/api/**
+                - Path=/api/v1/users/**,/api/v1/profile/**
+
 jwt:
   secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxIiwiZXhwIjoxNzMwMjI1MzE3fQ8fK7j9Lm2N4p6Q1r3T5v7X8z0BcD9FgH2Jk4M6oP8q"
   ttl-seconds: 8600000
   issuer: actisys-auth
+
+logging:
+  level:
+    com.actisys.apigatewayapplication.filter: DEBUG
+    com.actisys.apigatewayapplication.util: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
