@@ -1,16 +1,18 @@
 package com.actisys.userservice.dto.UserResponseDtos;
 
 import com.actisys.common.dto.clientDtos.SessionStatsDTO;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.sql.Timestamp;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserAllProfileDTO {
   private final String login;
   private final String fullName;
@@ -22,4 +24,28 @@ public class UserAllProfileDTO {
   private final Timestamp registrationDate;
   private final Timestamp birthDate;
   private SessionStatsDTO sessionStats;
+
+  @JsonCreator
+  public UserAllProfileDTO(
+      @JsonProperty("login") String login,
+      @JsonProperty("fullName") String fullName,
+      @JsonProperty("email") String email,
+      @JsonProperty("phone") String phone,
+      @JsonProperty("wallet") double wallet,
+      @JsonProperty("photoPath") String photoPath,
+      @JsonProperty("bonusCoins") int bonusCoins,
+      @JsonProperty("registrationDate") Timestamp registrationDate,
+      @JsonProperty("birthDate") Timestamp birthDate,
+      @JsonProperty("sessionStats") SessionStatsDTO sessionStats) {
+    this.login = login;
+    this.fullName = fullName;
+    this.email = email;
+    this.phone = phone;
+    this.wallet = wallet;
+    this.photoPath = photoPath;
+    this.bonusCoins = bonusCoins;
+    this.registrationDate = registrationDate;
+    this.birthDate = birthDate;
+    this.sessionStats = sessionStats;
+  }
 }

@@ -7,7 +7,9 @@ import com.actisys.userservice.dto.UpdateCoinsRequest;
 import com.actisys.userservice.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,10 +30,11 @@ public class UserController {
     this.userService = userService;
   }
 
-  @GetMapping("/test")
-  public ResponseEntity<String> test() {
-    System.out.println("test");
-    return ResponseEntity.ok("Hello World");
+  @GetMapping("/getAllUsers")
+  @PreAuthorize("hasRole='ADMIN'")
+  public ResponseEntity<List<UserDTO>> getAllUsers() {
+    List<UserDTO> usersList = userService.getAllUsers();
+    return new ResponseEntity<>(usersList, HttpStatus.OK);
   }
 
   @GetMapping("/{id}")

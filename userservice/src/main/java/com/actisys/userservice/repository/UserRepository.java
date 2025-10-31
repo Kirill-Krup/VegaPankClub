@@ -23,4 +23,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Optional<User> findByLogin(@NotBlank(message = "Login cannot be blank") String login);
 
   Optional<User> findByEmail(@NotBlank(message = "Login cannot be blank") String login);
+
+  @Query("SELECT u FROM User u WHERE u.role=1 ")
+  List<User> findAllUsers();
 }

@@ -26,9 +26,14 @@ async function fetchUserProfile() {
 
     const userData = await response.json();
     console.log('User profile loaded:', userData);
-
+    if(userData.banned === true){
+      window.location.href = "/static/html/YouAreBlocked.html"
+    }
+    if(userData.role === 2){
+      window.location.href = "/static/html/admin.html"
+    }
     const userProfile = {
-      username: userData.login || 'Пользователь',
+      username: userData.login,
       balance: userData.wallet || 0,
       avatar: userData.photoPath || `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`,
       id: userData.id,

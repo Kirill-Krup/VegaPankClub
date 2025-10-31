@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ-панель - VegaPank Club</title>
+  <link rel="stylesheet" href="/static/css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/static/js/admin.js" defer></script>
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ae.png">
+  <meta name="theme-color" content="#0ea5e9">
+</head>
+<body>
+<!-- Header -->
+<header class="header">
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="nav-logo" href="index.html">
+        <i class="fas fa-shield-alt"></i>
+        <span>Админ-панель</span>
+      </a>
+      <div class="nav-actions">
+        <button class="btn btn--secondary" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          Выйти
+        </button>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Main Container -->
+<div class="admin-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="users">
+        <i class="fas fa-users"></i>
+        <span>Пользователи</span>
+      </button>
+      <button class="nav-item" data-section="products">
+        <i class="fas fa-shopping-cart"></i>
+        <span>Мини-бар</span>
+      </button>
+      <button class="nav-item" data-section="computers">
+        <i class="fas fa-desktop"></i>
+        <span>Компьютеры</span>
+      </button>
+      <button class="nav-item" data-section="tariffs">
+        <i class="fas fa-ticket-alt"></i>
+        <span>Тарифы</span>
+      </button>
+      <button class="nav-item" data-section="bookings">
+        <i class="fas fa-calendar-check"></i>
+        <span>Бронирования</span>
+      </button>
+      <button class="nav-item" data-section="orders">
+        <i class="fas fa-receipt"></i>
+        <span>Заказы мини-бара</span>
+      </button>
+      <button class="nav-item" data-section="reviews">
+        <i class="fas fa-star"></i>
+        <span>Отзывы</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+    <!-- Users Section -->
+    <section class="section active" id="users">
+      <div class="section-header">
+        <h1>Управление пользователями</h1>
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Поиск по имени или email..." id="userSearch">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Логин</th>
+            <th>Email</th>
+            <th>Баланс</th>
+            <th>Бонусы</th>
+            <th>Статус</th>
+            <th>Действия</th>
+          </tr>
+          </thead>
+          <tbody id="usersTableBody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+              <p style="margin-top: 1rem; color: var(--gray);">Загрузка пользователей...</p>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="section" id="products">
+      <div class="section-header">
+        <h1>Управление мини-баром</h1>
+        <button class="btn btn--primary" id="addProductBtn">
+          <i class="fas fa-plus"></i>
+          Добавить товар
+        </button>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Sample Product Card -->
+        <div class="product-card">
+          <img src="https://via.placeholder.com/150" alt="Товар" class="product-image">
+          <div class="product-info">
+            <h3>Coca-Cola 0.5л</h3>
+            <p class="product-price">3.50 BYN</p>
+            <p class="product-stock">В наличии: 50 шт</p>
+            <span class="status-badge status-active">Активен</span>
+          </div>
+          <div class="product-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-warning" title="В неактивные">
+              <i class="fas fa-pause"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img src="https://via.placeholder.com/150" alt="Товар" class="product-image">
+          <div class="product-info">
+            <h3>Red Bull 0.25л</h3>
+            <p class="product-price">5.00 BYN</p>
+            <p class="product-stock">В наличии: 10 шт</p>
+            <span class="status-badge status-inactive">Неактивен</span>
+          </div>
+          <div class="product-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-success" title="В активные">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img src="https://via.placeholder.com/150" alt="Товар" class="product-image">
+          <div class="product-info">
+            <h3>Чипсы Lays</h3>
+            <p class="product-price">4.00 BYN</p>
+            <p class="product-stock">В наличии: 30 шт</p>
+            <span class="status-badge status-active">Активен</span>
+          </div>
+          <div class="product-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-warning" title="В неактивные">
+              <i class="fas fa-pause"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Computers Section -->
+    <section class="section" id="computers">
+      <div class="section-header">
+        <h1>Управление компьютерами</h1>
+        <button class="btn btn--primary">
+          <i class="fas fa-plus"></i>
+          Добавить компьютер
+        </button>
+      </div>
+      <div class="placeholder-box">
+        <i class="fas fa-desktop"></i>
+        <p>Раздел в разработке</p>
+      </div>
+    </section>
+
+    <!-- Tariffs Section -->
+    <section class="section" id="tariffs">
+      <div class="section-header">
+        <h1>Управление тарифами</h1>
+        <button class="btn btn--primary" id="addTariffBtn">
+          <i class="fas fa-plus"></i>
+          Добавить тариф
+        </button>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Sample Tariff Card -->
+        <div class="tariff-card">
+          <div class="tariff-header">
+            <h3>Базовый</h3>
+            <span class="tariff-price">8 BYN/час</span>
+          </div>
+          <ul class="tariff-features">
+            <li><i class="fas fa-check"></i> GTX 1660</li>
+            <li><i class="fas fa-check"></i> 16GB RAM</li>
+            <li><i class="fas fa-check"></i> 144Hz монитор</li>
+          </ul>
+          <div class="tariff-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="tariff-card">
+          <div class="tariff-header">
+            <h3>Стандарт</h3>
+            <span class="tariff-price">12 BYN/час</span>
+          </div>
+          <ul class="tariff-features">
+            <li><i class="fas fa-check"></i> RTX 3060</li>
+            <li><i class="fas fa-check"></i> 32GB RAM</li>
+            <li><i class="fas fa-check"></i> 240Hz монитор</li>
+          </ul>
+          <div class="tariff-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="tariff-card">
+          <div class="tariff-header">
+            <h3>VIP</h3>
+            <span class="tariff-price">25 BYN/час</span>
+          </div>
+          <ul class="tariff-features">
+            <li><i class="fas fa-check"></i> RTX 4090</li>
+            <li><i class="fas fa-check"></i> 64GB RAM</li>
+            <li><i class="fas fa-check"></i> 4K 240Hz OLED</li>
+          </ul>
+          <div class="tariff-actions">
+            <button class="btn-icon btn-primary" title="Редактировать">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bookings Section -->
+    <section class="section" id="bookings">
+      <div class="section-header">
+        <h1>Управление бронированиями</h1>
+      </div>
+      <div class="placeholder-box">
+        <i class="fas fa-calendar-check"></i>
+        <p>Раздел в разработке</p>
+      </div>
+    </section>
+
+    <!-- Orders Section -->
+    <section class="section" id="orders">
+      <div class="section-header">
+        <h1>Заказы мини-бара</h1>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">Все</button>
+          <button class="filter-btn" data-filter="pending">В ожидании</button>
+          <button class="filter-btn" data-filter="completed">Завершённые</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>ID заказа</th>
+            <th>Пользователь</th>
+            <th>Товары</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+            <th>Дата</th>
+            <th>Действия</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>#1024</td>
+            <td>kirito</td>
+            <td>Coca-Cola x2, Чипсы x1</td>
+            <td>11.00 BYN</td>
+            <td><span class="status-badge status-pending">В ожидании</span></td>
+            <td>31.10.2025 17:30</td>
+            <td>
+              <button class="btn-icon btn-success" title="Выполнен">
+                <i class="fas fa-check"></i>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td>#1023</td>
+            <td>asuna</td>
+            <td>Red Bull x1</td>
+            <td>5.00 BYN</td>
+            <td><span class="status-badge status-completed">Завершён</span></td>
+            <td>31.10.2025 16:15</td>
+            <td>
+              <button class="btn-icon btn-primary" title="Детали">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section class="section" id="reviews">
+      <div class="section-header">
+        <h1>Управление отзывами</h1>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">Все</button>
+          <button class="filter-btn" data-filter="5">5 звёзд</button>
+          <button class="filter-btn" data-filter="4">4 звезды</button>
+          <button class="filter-btn" data-filter="3">3 звезды</button>
+          <button class="filter-btn" data-filter="2">2 звезды</button>
+          <button class="filter-btn" data-filter="1">1 звезда</button>
+        </div>
+      </div>
+
+      <div class="reviews-list">
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-user">
+              <img src="https://i.pravatar.cc/50?img=1" alt="User">
+              <div>
+                <h4>kirito</h4>
+                <div class="review-rating">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                </div>
+              </div>
+            </div>
+            <span class="review-date">30.10.2025</span>
+          </div>
+          <p class="review-text">
+            Отличный клуб! Мощные компьютеры, отзывчивый персонал.
+            Обязательно вернусь ещё!
+          </p>
+          <div class="review-actions">
+            <button class="btn-icon btn-danger" title="Удалить отзыв">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-user">
+              <img src="https://i.pravatar.cc/50?img=2" alt="User">
+              <div>
+                <h4>asuna</h4>
+                <div class="review-rating">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="far fa-star"></i>
+                </div>
+              </div>
+            </div>
+            <span class="review-date">29.10.2025</span>
+          </div>
+          <p class="review-text">
+            Хорошее место, но хотелось бы больше VIP комнат.
+            В остальном всё отлично!
+          </p>
+          <div class="review-actions">
+            <button class="btn-icon btn-danger" title="Удалить отзыв">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modals -->
+<!-- Add Bonus Modal -->
+<div class="modal" id="bonusModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Добавить бонусы</h3>
+      <button class="modal-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Пользователь</label>
+        <input type="text" class="form-input" value="kirito" readonly>
+      </div>
+      <div class="form-group">
+        <label>Количество бонусов</label>
+        <input type="number" class="form-input" placeholder="Введите количество" min="1">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--secondary">Отмена</button>
+      <button class="btn btn--primary">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal" id="productModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Добавить товар</h3>
+      <button class="modal-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" class="form-input" placeholder="Coca-Cola 0.5л">
+      </div>
+      <div class="form-group">
+        <label>Цена (BYN)</label>
+        <input type="number" class="form-input" placeholder="3.50" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Количество</label>
+        <input type="number" class="form-input" placeholder="50" min="0">
+      </div>
+      <div class="form-group">
+        <label>Изображение (URL)</label>
+        <input type="text" class="form-input" placeholder="https://...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--secondary">Отмена</button>
+      <button class="btn btn--primary">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Tariff Modal -->
+<div class="modal" id="tariffModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Добавить тариф</h3>
+      <button class="modal-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" class="form-input" placeholder="Премиум">
+      </div>
+      <div class="form-group">
+        <label>Цена за час (BYN)</label>
+        <input type="number" class="form-input" placeholder="16" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <textarea class="form-textarea" rows="4" placeholder="RTX 4070, 32GB RAM..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--secondary">Отмена</button>
+      <button class="btn btn--primary">Добавить</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
