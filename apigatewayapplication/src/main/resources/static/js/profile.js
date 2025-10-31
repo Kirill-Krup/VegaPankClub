@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function fetchAndFillProfile() {
   try {
-    const response = await fetch("/profile/getAllProfileInfo", {
+    const response = await fetch("/api/v1/profile/getAllProfile", {
       method: "GET",
       credentials: "include",
     });
@@ -17,38 +17,44 @@ async function fetchAndFillProfile() {
     setInfo(profile);
   } catch (err) {
     console.error(err);
+    alert("Ошибка загрузки профиля");
   }
 }
 
 function setInfo(profile) {
   const safe = (v) => (v === null || v === undefined ? "" : v);
 
+  // Аватары
   const avatar = document.getElementById("profileAvatar");
   if (avatar) avatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/160";
 
+  const userAvatar = document.getElementById("userAvatar");
+  if (userAvatar) userAvatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/80";
+
+  const previewAvatar = document.getElementById("previewAvatar");
+  if (previewAvatar) previewAvatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/160";
+
+  // Имя и логин
   const profileName = document.getElementById("profileName");
   if (profileName) profileName.textContent = safe(profile.login);
 
+  const userName = document.getElementById("userName");
+  if (userName) userName.textContent = safe(profile.login);
+
+  // Email
   const profileEmail = document.getElementById("profileEmail");
   if (profileEmail) profileEmail.textContent = safe(profile.email);
 
+  // Баланс
   const balanceAmount = document.getElementById("balanceAmount");
   if (balanceAmount) balanceAmount.textContent = `${safe(profile.wallet)} BYN`;
 
   const userBalance = document.getElementById("userBalance");
   if (userBalance) userBalance.textContent = `${safe(profile.wallet)} BYN`;
 
-  const userName = document.getElementById("userName");
-  if (userName) userName.textContent = safe(profile.login);
-
-  const userAvatar = document.getElementById("userAvatar");
-  if (userAvatar) userAvatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/80";
-
-  const firstName = document.getElementById("firstName");
-  if (firstName) firstName.value = safe(profile.firstName);
-
-  const lastName = document.getElementById("lastName");
-  if (lastName) lastName.value = safe(profile.lastName);
+  // Настройки
+  const fullName = document.getElementById("fullName");
+  if (fullName) fullName.value = safe(profile.fullName);
 
   const email = document.getElementById("email");
   if (email) email.value = safe(profile.email);
@@ -56,22 +62,27 @@ function setInfo(profile) {
   const phone = document.getElementById("phone");
   if (phone) phone.value = safe(profile.phone);
 
-  const address = document.getElementById("address");
-  if (address) address.value = safe(profile.deliveryAddress);
+  // Дата рождения (только для отображения, disabled)
+  const birthDate = document.getElementById("birthDate");
+  if (birthDate && profile.birthDate) {
+    const date = new Date(profile.birthDate);
+    birthDate.value = date.toISOString().split('T')[0];
+    birthDate.disabled = true;
+  }
 
+  // Статистика
   const statOrders = document.getElementById("stat-number-orders");
-  if (statOrders) statOrders.textContent = (profile.orders || []).length;
+  if (statOrders && profile.sessionStats) {
+    statOrders.textContent = profile.sessionStats.totalSessions || 0;
+  }
+
+  const statHours = document.getElementById("stat-number-hours");
+  if (statHours && profile.sessionStats) {
+    statHours.textContent = Math.round(profile.sessionStats.totalGameHours || 0);
+  }
 
   const statDays = document.getElementById("stat-number-days");
   if (statDays) statDays.textContent = calculateDaysSinceRegistration(profile.registrationDate);
-
-  const statHours = document.getElementById("stat-number-hours");
-  if (statHours) {
-    const hours = profile.totalPlayedHours || profile.playedHours || 0;
-    statHours.textContent = String(hours);
-  }
-
-  renderActivities(profile.activities || []);
 }
 
 function calculateDaysSinceRegistration(registrationDate) {
@@ -97,7 +108,63 @@ function initInteractions() {
     });
   });
 
-  // Responsive menu toggle (if used)
+  // Загрузка фото
+  const uploadAvatarBtn = document.getElementById("uploadAvatarBtn");
+  const avatarInput = document.getElementById("avatarInput");
+  const previewAvatar = document.getElementById("previewAvatar");
+
+  if (uploadAvatarBtn && avatarInput) {
+    uploadAvatarBtn.addEventListener("click", () => {
+      avatarInput.click();
+    });
+
+    avatarInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Показываем превью
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewAvatar.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        // Загружаем на сервер
+        try {
+          const photoPath = await uploadAvatar(file);
+
+          // Обновляем аватары на странице
+          const avatar = document.getElementById("profileAvatar");
+          if (avatar) avatar.src = photoPath;
+
+          const userAvatar = document.getElementById("userAvatar");
+          if (userAvatar) userAvatar.src = photoPath;
+
+          alert("Фото успешно загружено!");
+        } catch (err) {
+          console.error(err);
+          alert("Ошибка при загрузке фото");
+        }
+      }
+    });
+  }
+
+  // Сохранение настроек
+  const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener("click", async () => {
+      await saveProfileSettings();
+    });
+  }
+
+  // Отмена изменений
+  const cancelSettingsBtn = document.getElementById("cancelSettingsBtn");
+  if (cancelSettingsBtn) {
+    cancelSettingsBtn.addEventListener("click", () => {
+      fetchAndFillProfile();
+    });
+  }
+
+  // Responsive menu toggle
   const menuToggle = document.querySelector(".menu-toggle");
   const navMenu = document.querySelector(".nav-menu");
   if (menuToggle && navMenu) {
@@ -113,22 +180,22 @@ function initInteractions() {
   const cancelTopup = document.getElementById("cancelTopup");
 
   if (topupBtn && modal) {
-    topupBtn.addEventListener("click", function () {
+    topupBtn.addEventListener("click", () => {
       modal.style.display = "flex";
     });
   }
   if (modalClose && modal) {
-    modalClose.addEventListener("click", function () {
+    modalClose.addEventListener("click", () => {
       modal.style.display = "none";
     });
   }
   if (cancelTopup && modal) {
-    cancelTopup.addEventListener("click", function () {
+    cancelTopup.addEventListener("click", () => {
       modal.style.display = "none";
     });
   }
   if (modal) {
-    modal.addEventListener("click", function (e) {
+    modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.style.display = "none";
     });
   }
@@ -141,8 +208,6 @@ function initInteractions() {
       this.classList.add("active");
     });
   });
-
-  // cart interactions removed
 
   // History filters
   const filterBtns = document.querySelectorAll(".filter-btn");
@@ -161,60 +226,104 @@ function initInteractions() {
       });
     });
   });
-}
 
-function renderActivities(activities) {
-  const activitiesContainer = document.getElementById("activity-list");
-  if (!activitiesContainer) return;
-  if (!activities || activities.length === 0) {
-    activitiesContainer.innerHTML = '<p class="no-activities">Активности не найдены</p>';
-    return;
+  // Logout
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await fetch("/api/v1/auth/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+        window.location.href = "/static/html/index.html";
+      } catch (err) {
+        console.error("Logout error:", err);
+        window.location.href = "/static/html/index.html";
+      }
+    });
   }
-  const activitiesHTML = activities
-    .map((activity) => {
-      const iconClass = getActivityIcon(activity.type);
-      const title = getActivityTitle(activity.type);
-      return `
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="${iconClass}"></i>
-                </div>
-                <div class="activity-content">
-                    <h4 class="activity-title">${title}</h4>
-                    <p class="activity-description">${activity.description || ''}</p>
-                    <span class="activity-time">${activity.timeAgo || ''}</span>
-                </div>
-            </div>
-        `;
-    })
-    .join("");
-  activitiesContainer.innerHTML = activitiesHTML;
 }
 
-function getActivityIcon(activityType) {
-  const iconMap = {
-    BOOK_ADDED_TO_CART: "fas fa-shopping-cart",
-    REVIEW_ADDED: "fas fa-star",
-    BALANCE_TOP_UP: "fas fa-credit-card",
-    BOOK_PURCHASED: "fas fa-ticket",
-    PROFILE_UPDATED: "fas fa-user-edit",
-    SESSION_BOOKED: "fas fa-chair",
-    SESSION_COMPLETED: "fas fa-check-circle",
+// Обновление профиля (возвращает UserDTO)
+async function saveProfileSettings() {
+  const fullName = document.getElementById("fullName").value;
+  const email = document.getElementById("email").value;
+  const phone = document.getElementById("phone").value;
+
+  const data = {
+    fullName,
+    email,
+    phone
   };
-  return iconMap[activityType] || "fas fa-bell";
+
+  try {
+    const response = await fetch("/api/v1/profile/update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error("Не удалось сохранить изменения");
+    }
+
+    // Получаем обновлённые данные (UserDTO)
+    const updatedUser = await response.json();
+
+    // Обновляем UI с новыми данными
+    updateUIWithUserData(updatedUser);
+
+    alert("Настройки успешно сохранены!");
+  } catch (err) {
+    console.error(err);
+    alert("Ошибка при сохранении настроек");
+  }
 }
 
-function getActivityTitle(activityType) {
-  const titleMap = {
-    BOOK_ADDED_TO_CART: "Добавлено в корзину",
-    REVIEW_ADDED: "Оставлен отзыв",
-    BALANCE_TOP_UP: "Пополнен баланс",
-    BOOK_PURCHASED: "Покупка оформлена",
-    PROFILE_UPDATED: "Профиль обновлен",
-    SESSION_BOOKED: "Игровая сессия забронирована",
-    SESSION_COMPLETED: "Сессия завершена",
-  };
-  return titleMap[activityType] || "Новая активность";
+// Обновление UI после изменения профиля
+function updateUIWithUserData(user) {
+  const safe = (v) => (v === null || v === undefined ? "" : v);
+
+  // Обновляем fullName в форме
+  const fullName = document.getElementById("fullName");
+  if (fullName) fullName.value = safe(user.fullName);
+
+  // Обновляем email в форме и в sidebar
+  const email = document.getElementById("email");
+  if (email) email.value = safe(user.email);
+
+  const profileEmail = document.getElementById("profileEmail");
+  if (profileEmail) profileEmail.textContent = safe(user.email);
+
+  // Обновляем телефон
+  const phone = document.getElementById("phone");
+  if (phone) phone.value = safe(user.phone);
+
+  console.log("UI updated with new user data");
 }
 
+// Загрузка аватара (возвращает photoPath)
+async function uploadAvatar(file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
 
+  try {
+    const response = await fetch("/api/v1/profile/upload-avatar", {
+      method: "POST",
+      credentials: "include",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error("Не удалось загрузить фото");
+    }
+
+    const result = await response.json();
+    return result.photoPath;
+  } catch (err) {
+    console.error("Ошибка загрузки фото:", err);
+    throw err;
+  }
+}

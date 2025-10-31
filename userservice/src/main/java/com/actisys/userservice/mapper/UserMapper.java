@@ -15,8 +15,7 @@ public interface UserMapper {
   UserDTO toDTO(User user);
   User fromRegisterRequest(RegisterRequest registerRequest);
 
-  @Mapping(target = "totalBookings", ignore = true)
-  @Mapping(target = "gameHours", ignore = true)
+  @Mapping(target = "sessionStats", ignore = true)
   UserAllProfileDTO toAllProfileDTO(User user);
 
 }

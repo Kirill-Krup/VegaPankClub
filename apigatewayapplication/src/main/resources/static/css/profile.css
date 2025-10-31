@@ -832,3 +832,20 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary-dark); }
 
+.avatar-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+}
+
+.avatar-input {
+    display: none;
+}

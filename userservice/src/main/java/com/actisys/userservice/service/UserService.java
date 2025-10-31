@@ -1,6 +1,7 @@
 package com.actisys.userservice.service;
 
 import com.actisys.common.dto.user.UserDTO;
+import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import java.util.List;
@@ -15,7 +16,9 @@ public interface UserService {
 
   List<UserDTO> getUsersByIds(List<Long> ids);
 
-  UserDTO updateUser(Long id, UserDTO updated);
+  UserDTO updateUser(Long id, UpdateUserProfileDTO updated);
+
+  void updateUserPhoto(Long id, String photoPath);
 
   void deleteUser(Long id);
 

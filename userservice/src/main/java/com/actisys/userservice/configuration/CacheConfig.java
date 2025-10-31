@@ -22,13 +22,27 @@ public class CacheConfig {
         .entryTtl(Duration.ofMinutes(30))
         .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+
     RedisCacheConfiguration usersConfig = RedisCacheConfiguration.defaultCacheConfig()
         .entryTtl(Duration.ofHours(1))
         .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+
+    RedisCacheConfiguration simpleProfileConfig = RedisCacheConfiguration.defaultCacheConfig()
+        .entryTtl(Duration.ofMinutes(15))
+        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+
+    RedisCacheConfiguration allProfileConfig = RedisCacheConfiguration.defaultCacheConfig()
+        .entryTtl(Duration.ofMinutes(10))
+        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(defaultConfig)
         .withCacheConfiguration("users", usersConfig)
+        .withCacheConfiguration("userSimpleProfiles", simpleProfileConfig)
+        .withCacheConfiguration("userAllProfiles", allProfileConfig)
         .build();
   }
 }
