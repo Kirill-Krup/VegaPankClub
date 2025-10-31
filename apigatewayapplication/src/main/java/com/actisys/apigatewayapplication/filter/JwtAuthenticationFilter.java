@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
       String userId = claims.getSubject();
       String username = extractUsername(claims);
       List<String> roles = extractRoles(claims);
-
+      String primaryRole = roles.isEmpty() ? "USER" : roles.get(0);
       log.info("Authenticated user: {} (ID: {}) with roles: {}", username, userId, roles);
 
       ServerHttpRequest mutatedRequest = request.mutate()

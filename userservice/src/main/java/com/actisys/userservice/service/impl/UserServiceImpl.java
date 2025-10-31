@@ -138,12 +138,12 @@ public class UserServiceImpl implements UserService {
   public UserSimpleProfileDTO getProfile(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(userId));
-
     return UserSimpleProfileDTO.builder()
         .login(user.getLogin())
         .wallet(user.getWallet())
         .photoPath(user.getPhotoPath())
         .isBanned(user.isBanned())
+        .role(user.getRole())
         .build();
   }
 
@@ -166,5 +166,11 @@ public class UserServiceImpl implements UserService {
                 .onErrorReturn(dto)
         )
         .cache();
+  }
+
+  @Override
+  public List<UserDTO> getAllUsers() {
+    List<User> users = userRepository.findAllUsers();
+    return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
   }
 }

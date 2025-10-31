@@ -27,4 +27,6 @@ public interface UserService {
   UserSimpleProfileDTO getProfile(Long userId);
 
   Mono<UserAllProfileDTO> getAllProfile(Long userId);
+
+  List<UserDTO> getAllUsers();
 }

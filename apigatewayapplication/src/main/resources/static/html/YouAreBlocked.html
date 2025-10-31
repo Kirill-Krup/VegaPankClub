@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Доступ ограничен - VegaPank Club</title>
+  <link rel="stylesheet" href="/static/css/YouAreBlocked.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/static/js/banned.js" defer></script>
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ae.png">
+  <meta name="theme-color" content="#ef4444">
+</head>
+<body>
+<div class="banned-container">
+  <!-- Background Effects -->
+  <div class="bg-effects">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="banned-content">
+    <!-- Icon -->
+    <div class="banned-icon">
+      <i class="fas fa-ban"></i>
+    </div>
+
+    <!-- Title -->
+    <h1 class="banned-title">Доступ ограничен</h1>
+    <p class="banned-subtitle">Ваш аккаунт был заблокирован</p>
+
+    <!-- Info Card -->
+    <div class="info-card">
+      <div class="info-header">
+        <i class="fas fa-info-circle"></i>
+        <h2>Информация о блокировке</h2>
+      </div>
+
+      <div class="info-content">
+        <div class="info-item">
+          <div class="info-label">
+            <i class="fas fa-user"></i>
+            <span>Пользователь</span>
+          </div>
+          <div class="info-value" id="userName">Загрузка...</div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-label">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Дата блокировки</span>
+          </div>
+          <div class="info-value" id="banDate">--</div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-label">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Причина</span>
+          </div>
+          <div class="info-value" id="banReason">Нарушение правил пользования сервисом</div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-label">
+            <i class="fas fa-clock"></i>
+            <span>Тип блокировки</span>
+          </div>
+          <div class="info-value" id="banType">Постоянная</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reasons List -->
+    <div class="reasons-card">
+      <h3>Возможные причины блокировки:</h3>
+      <ul class="reasons-list">
+        <li>
+          <i class="fas fa-times-circle"></i>
+          <span>Нарушение правил поведения в клубе</span>
+        </li>
+        <li>
+          <i class="fas fa-times-circle"></i>
+          <span>Порча имущества</span>
+        </li>
+        <li>
+          <i class="fas fa-times-circle"></i>
+          <span>Неоплаченные счета</span>
+        </li>
+        <li>
+          <i class="fas fa-times-circle"></i>
+          <span>Мошенничество или попытка обмана</span>
+        </li>
+        <li>
+          <i class="fas fa-times-circle"></i>
+          <span>Нарушение условий использования</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-card">
+      <h3>Что делать?</h3>
+      <div class="actions-grid">
+        <div class="action-item">
+          <div class="action-icon">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <h4>Связаться с поддержкой</h4>
+          <p>Напишите нам для уточнения причины блокировки</p>
+          <a href="mailto:support@vegapank.club" class="action-link">
+            support@vegapank.club
+          </a>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">
+            <i class="fas fa-phone"></i>
+          </div>
+          <h4>Позвонить</h4>
+          <p>Свяжитесь с нами по телефону для разъяснений</p>
+          <a href="tel:+375291234567" class="action-link">
+            +375 (29) 123-45-67
+          </a>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <h4>Подать апелляцию</h4>
+          <p>Если считаете блокировку ошибочной</p>
+          <button class="action-link btn-appeal" id="appealBtn">
+            Подать апелляцию
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="warning-box">
+      <i class="fas fa-shield-alt"></i>
+      <p>
+        Попытка обхода блокировки или создание нового аккаунта может привести к
+        дополнительным санкциям. Пожалуйста, свяжитесь с нами для решения проблемы.
+      </p>
+    </div>
+
+    <!-- Logout Button -->
+    <button class="btn btn--secondary" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i>
+      Выйти из аккаунта
+    </button>
+  </div>
+</div>
+
+<!-- Appeal Modal -->
+<div class="modal" id="appealModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Подать апелляцию</h3>
+      <button class="modal-close" id="closeModal">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="appealForm">
+        <div class="form-group">
+          <label for="appealEmail">Email для связи</label>
+          <input type="email" id="appealEmail" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="appealReason">Опишите ситуацию</label>
+          <textarea id="appealReason" class="form-textarea" rows="6" required
+                    placeholder="Пожалуйста, подробно опишите причины, по которым вы считаете блокировку ошибочной..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--secondary" id="cancelAppeal">Отмена</button>
+          <button type="submit" class="btn btn--primary">
+            <i class="fas fa-paper-plane"></i>
+            Отправить апелляцию
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>
