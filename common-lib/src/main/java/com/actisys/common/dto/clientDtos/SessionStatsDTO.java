@@ -8,6 +8,7 @@ public class SessionStatsDTO {
     totalSessions = i;
     totalGameHour = v;
   }
+  public SessionStatsDTO() {}
 
   public int getTotalSessions() {
     return totalSessions;

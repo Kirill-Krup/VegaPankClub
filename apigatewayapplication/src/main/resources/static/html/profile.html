@@ -215,6 +215,7 @@
 
 
             <!-- Settings Section -->
+            <!-- Settings Section -->
             <section class="profile-section" id="settings">
                 <div class="section-header">
                     <h2 class="section-title">Настройки профиля</h2>
@@ -222,37 +223,47 @@
                 </div>
 
                 <div class="settings-form">
-                    <div class="form-group">
-                        <label for="firstName" class="form-label">Имя</label>
-                        <input type="text" id="firstName" class="form-input">
+                    <!-- Загрузка фото -->
+                    <div class="form-group avatar-upload">
+                        <label class="form-label">Фото профиля</label>
+                        <div class="avatar-upload-wrapper">
+                            <img id="previewAvatar" class="avatar-preview" alt="Avatar preview">
+                            <input type="file" id="avatarInput" class="avatar-input" accept="image/*" hidden>
+                            <button type="button" class="btn btn-secondary" id="uploadAvatarBtn">
+                                <i class="fas fa-camera"></i>
+                                Изменить фото
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="lastName" class="form-label">Фамилия</label>
-                        <input type="text" id="lastName" class="form-input">
+                        <label for="fullName" class="form-label">Полное имя</label>
+                        <input type="text" id="fullName" class="form-input" placeholder="Введите полное имя">
                     </div>
 
                     <div class="form-group">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" class="form-input">
+                        <input type="email" id="email" class="form-input" placeholder="example@mail.com">
                     </div>
 
                     <div class="form-group">
                         <label for="phone" class="form-label">Телефон</label>
-                        <input type="text" id="phone" class="form-input">
+                        <input type="tel" id="phone" class="form-input" placeholder="+375 (XX) XXX-XX-XX">
                     </div>
 
                     <div class="form-group">
-                        <label for="address" class="form-label">Адрес</label>
-                        <input type="text" id="address" class="form-input">
+                        <label for="birthDate" class="form-label">Дата рождения</label>
+                        <input type="date" id="birthDate" class="form-input" disabled readonly>
+                        <small style="color: #888; font-size: 0.85rem;">Дата рождения не может быть изменена</small>
                     </div>
 
                     <div class="form-actions">
-                        <button class="btn btn-primary">Сохранить изменения</button>
-                        <button class="btn btn-secondary">Отмена</button>
+                        <button class="btn btn-primary" id="saveSettingsBtn">Сохранить изменения</button>
+                        <button class="btn btn-secondary" id="cancelSettingsBtn">Отмена</button>
                     </div>
                 </div>
             </section>
+
         </main>
     </div>
 
