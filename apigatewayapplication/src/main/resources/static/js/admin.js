@@ -4,7 +4,6 @@ const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 let allUsers = [];
 let currentUser = null;
 
-// Fetch all users
 async function fetchAllUsers() {
   try {
     const response = await fetch('/api/v1/users/getAllUsers', {
@@ -25,7 +24,6 @@ async function fetchAllUsers() {
   }
 }
 
-// Render users table
 function renderUsers(users) {
   const tbody = qs('#usersTableBody');
   if (!tbody) return;
@@ -85,13 +83,12 @@ function renderUsers(users) {
   }).join('');
 }
 
-// Ban user
 async function handleBanUser(userId) {
   if (!confirm('Вы уверены, что хотите заблокировать пользователя?')) return;
 
   try {
-    const response = await fetch(`/api/v1/users/${userId}/ban`, {
-      method: 'POST',
+    const response = await fetch(`/api/v1/users/blockUser/${userId}`, {  // ← Твой путь
+      method: 'PUT',  // ← Твой метод
       credentials: 'include'
     });
 
@@ -100,20 +97,19 @@ async function handleBanUser(userId) {
     }
 
     showSuccess('Пользователь заблокирован');
-    await fetchAllUsers(); // Refresh list
+    await fetchAllUsers();
   } catch (error) {
     console.error('Error banning user:', error);
     showError('Не удалось заблокировать пользователя');
   }
 }
 
-// Unban user
 async function handleUnbanUser(userId) {
   if (!confirm('Вы уверены, что хотите разблокировать пользователя?')) return;
 
   try {
-    const response = await fetch(`/api/v1/users/${userId}/unban`, {
-      method: 'POST',
+    const response = await fetch(`/api/v1/users/unBlockUser/${userId}`, {
+      method: 'PUT',
       credentials: 'include'
     });
 
@@ -122,12 +118,50 @@ async function handleUnbanUser(userId) {
     }
 
     showSuccess('Пользователь разблокирован');
-    await fetchAllUsers(); // Refresh list
+    await fetchAllUsers();
   } catch (error) {
     console.error('Error unbanning user:', error);
     showError('Не удалось разблокировать пользователя');
   }
 }
+
+async function submitBonus() {
+  const modal = qs('#bonusModal');
+  const amountInput = modal?.querySelector('input[type="number"]');
+  const amount = parseInt(amountInput?.value);
+
+  if (!amount || amount <= 0) {
+    showError('Введите корректное количество бонусов');
+    return;
+  }
+
+  if (!currentUser) {
+    showError('Пользователь не выбран');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/v1/users/coins/${currentUser.id}`, {
+      method: 'PUT',  // ← Твой метод
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ coins: amount })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add bonus');
+    }
+
+    showSuccess(`Добавлено ${amount} бонусов пользователю ${currentUser.login}`);
+    modal.classList.remove('active');
+    amountInput.value = '';
+    await fetchAllUsers();
+  } catch (error) {
+    console.error('Error adding bonus:', error);
+    showError('Не удалось добавить бонусы');
+  }
+}
+
 
 // Delete user
 async function handleDeleteUser(userId) {
@@ -162,43 +196,6 @@ function handleAddBonus(userId, username) {
   if (modal) modal.classList.add('active');
 }
 
-// Submit bonus
-async function submitBonus() {
-  const modal = qs('#bonusModal');
-  const amountInput = modal?.querySelector('input[type="number"]');
-  const amount = parseInt(amountInput?.value);
-
-  if (!amount || amount <= 0) {
-    showError('Введите корректное количество бонусов');
-    return;
-  }
-
-  if (!currentUser) {
-    showError('Пользователь не выбран');
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/v1/users/${currentUser.id}/bonus`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ amount })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to add bonus');
-    }
-
-    showSuccess(`Добавлено ${amount} бонусов пользователю ${currentUser.login}`);
-    modal.classList.remove('active');
-    amountInput.value = '';
-    await fetchAllUsers(); // Refresh list
-  } catch (error) {
-    console.error('Error adding bonus:', error);
-    showError('Не удалось добавить бонусы');
-  }
-}
 
 // Search users
 function initSearch() {
@@ -411,13 +408,22 @@ function initFilters() {
   });
 }
 
-function initLogout() {
+/**
+ * Logout user and redirect to home page.
+ * Clears authentication cookie on the server.
+ */
+async function initLogout() {
   qs('#logoutBtn')?.addEventListener('click', async () => {
     try {
-      await fetch('/api/v1/users/logout', {
+      const response = await fetch('/api/v1/auth/logout', {  // ← Изменил путь
         method: 'POST',
         credentials: 'include'
       });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
       window.location.href = '/static/html/index.html';
     } catch (err) {
       console.error('Logout error:', err);
@@ -425,6 +431,7 @@ function initLogout() {
     }
   });
 }
+
 
 async function init() {
   initNavigation();
