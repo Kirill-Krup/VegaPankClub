@@ -91,24 +91,17 @@ function attachAuthHandlers() {
 
   logoutBtn?.addEventListener('click', async () => {
     try {
-      console.log('Logging out...');
-
-      const res = await fetch('/api/v1/users/logout', {
+      const response = await fetch('/api/v1/auth/logout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       });
 
-      console.log('Logout response:', res.status);
-
-      currentUser = null;
-
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
       window.location.href = '/static/html/index.html';
-
     } catch (err) {
       console.error('Logout error:', err);
-      currentUser = null;
-      window.location.href = '/static/html/index.html';
     }
   });
 }

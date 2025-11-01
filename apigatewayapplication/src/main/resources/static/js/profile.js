@@ -21,7 +21,25 @@ async function fetchAndFillProfile() {
   }
 }
 
+function parseDate(dateValue) {
+  if (!dateValue) return null;
+
+  if (Array.isArray(dateValue) && dateValue.length === 2 && dateValue[0] === "java.sql.Timestamp") {
+    dateValue = dateValue[1];
+  }
+
+  if (typeof dateValue === 'string' && dateValue.includes(' ')) {
+    dateValue = dateValue.replace(' ', 'T');
+  }
+
+  const date = new Date(dateValue);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+
 function setInfo(profile) {
+  console.log("Full profile data:", JSON.stringify(profile, null, 2));
+
   const safe = (v) => (v === null || v === undefined ? "" : v);
 
   // Аватары
@@ -62,36 +80,71 @@ function setInfo(profile) {
   const phone = document.getElementById("phone");
   if (phone) phone.value = safe(profile.phone);
 
-  // Дата рождения (только для отображения, disabled)
-  const birthDate = document.getElementById("birthDate");
-  if (birthDate && profile.birthDate) {
-    const date = new Date(profile.birthDate);
-    birthDate.value = date.toISOString().split('T')[0];
-    birthDate.disabled = true;
+  // Дата рождения
+  const birthDateInput = document.getElementById("birthDate");
+  if (birthDateInput) {
+    const birthDate = parseDate(profile.birthDate);
+    if (birthDate) {
+      birthDateInput.value = birthDate.toISOString().split('T')[0];
+      console.log("Birth date set:", birthDateInput.value);
+    } else {
+      console.warn("Invalid birthDate:", profile.birthDate);
+    }
+    birthDateInput.disabled = true;
   }
 
   // Статистика
   const statOrders = document.getElementById("stat-number-orders");
-  if (statOrders && profile.sessionStats) {
-    statOrders.textContent = profile.sessionStats.totalSessions || 0;
+  if (statOrders) {
+    const sessions = profile.sessionStats?.totalSessions || 0;
+    statOrders.textContent = sessions;
+    console.log("Total sessions:", sessions);
   }
 
   const statHours = document.getElementById("stat-number-hours");
-  if (statHours && profile.sessionStats) {
-    statHours.textContent = Math.round(profile.sessionStats.totalGameHours || 0);
+  if (statHours) {
+    const hours = profile.sessionStats?.totalGameHour || 0;
+    statHours.textContent = Math.round(hours);
+    console.log("Total hours:", hours);
   }
 
   const statDays = document.getElementById("stat-number-days");
-  if (statDays) statDays.textContent = calculateDaysSinceRegistration(profile.registrationDate);
+  if (statDays) {
+    const days = calculateDaysSinceRegistration(profile.registrationDate);
+    statDays.textContent = days;
+    console.log("Days since registration:", days, "from", profile.registrationDate);
+  }
+
+  const statBonus = document.getElementById("stat-number-bonus");
+  if (statBonus) {
+    const bonusCoins = profile.bonusCoins || 0;
+    statBonus.textContent = bonusCoins;
+    console.log("Bonus coins:", bonusCoins);
+  }
 }
 
+
 function calculateDaysSinceRegistration(registrationDate) {
-  if (!registrationDate) return 0;
-  const regDate = new Date(registrationDate);
+  if (!registrationDate) {
+    console.warn("No registration date provided");
+    return 0;
+  }
+
+  const regDate = parseDate(registrationDate);
+  if (!regDate) {
+    console.warn("Invalid registration date:", registrationDate);
+    return 0;
+  }
+
   const currentDate = new Date();
   const timeDiff = currentDate - regDate;
-  return Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+  console.log("Registration date:", regDate, "Current date:", currentDate, "Days:", days);
+
+  return days >= 0 ? days : 0;
 }
+
 
 function initInteractions() {
   const navItems = document.querySelectorAll(".nav-item");

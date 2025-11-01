@@ -10,17 +10,16 @@ import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.UserService;
+import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
+
 
 @Service
 @Slf4j
@@ -37,43 +36,18 @@ public class UserServiceImpl implements UserService {
     this.billingServiceClient = billingServiceClient;
   }
 
-  @Cacheable(value = "users", key = "#id")
-  public Optional<UserDTO> getUserById(Long id) {
-    return Optional.ofNullable(userRepository.findUserById(id))
-        .map(userMapper::toDTO);
-  }
-
-  @Override
-  @Cacheable(value = "users", key = "#email")
-  public UserDTO getUserByEmail(String email) {
-    User user = userRepository.findUserByEmail(email);
-    if (user == null) {
-      throw new UserNotFoundException(email);
-    }
-    return userMapper.toDTO(user);
-  }
-
-  @Override
-  public List<UserDTO> getUsersByIds(List<Long> ids) {
-    return ids.stream()
-        .map(this::getUserById)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toList());
-  }
-
+  /**
+   * Update user profile.
+   * Invalidates admin users list cache.
+   *
+   * @param id user identifier
+   * @param updated DTO with updated profile data
+   * @return updated UserDTO
+   * @throws UserNotFoundException if user not found
+   */
   @Override
   @Transactional
-  @Caching(
-      put = {
-          @CachePut(value = "users", key = "#id"),
-          @CachePut(value = "users", key = "#result.email", condition = "#result != null")
-      },
-      evict = {
-          @CacheEvict(value = "userSimpleProfiles", key = "#id"),
-          @CacheEvict(value = "userAllProfiles", key = "#id")
-      }
-  )
+  @CacheEvict(value = "allUsers", allEntries = true)
   public UserDTO updateUser(Long id, UpdateUserProfileDTO updated) {
     log.debug("Updating user profile: {}", id);
 
@@ -90,52 +64,82 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDTO(savedEntity);
   }
 
+  /**
+   * Delete user from the system.
+   * Invalidates admin users list cache.
+   *
+   * @param id user identifier to delete
+   * @throws UserNotFoundException if user not found
+   */
   @Override
   @Transactional
-  @Caching(evict = {
-      @CacheEvict(value = "users", key = "#id"),
-      @CacheEvict(value = "userSimpleProfiles", key = "#id"),
-      @CacheEvict(value = "userAllProfiles", key = "#id")
-  })
+  @CacheEvict(value = "allUsers", allEntries = true)
   public void deleteUser(Long id) {
+    log.debug("Deleting user: {}", id);
     if (!userRepository.existsById(id)) {
       throw new UserNotFoundException(id);
     }
     userRepository.deleteById(id);
   }
 
+  /**
+   * Update user's bonus coins amount.
+   * Adds specified amount to current balance.
+   * Invalidates admin users list cache.
+   *
+   * @param id user identifier
+   * @param coins amount of coins to add (can be negative to deduct)
+   * @return updated UserDTO
+   * @throws UserNotFoundException if user not found
+   */
   @Override
   @Transactional
-  @Caching(evict = {
-      @CacheEvict(value = "users", key = "#id"),
-      @CacheEvict(value = "userSimpleProfiles", key = "#id"),
-      @CacheEvict(value = "userAllProfiles", key = "#id")
-  })
+  @CacheEvict(value = "allUsers", allEntries = true)
   public UserDTO updateUserCoins(Long id, int coins) {
+    log.debug("Updating coins for user {}: adding {} coins", id, coins);
     User user = userRepository.findById(id)
         .orElseThrow(() -> new UserNotFoundException(id));
-    user.setBonusCoins(user.getBonusCoins() + coins);
+
+    int oldBalance = user.getBonusCoins();
+    user.setBonusCoins(oldBalance + coins);
+    User saved = userRepository.save(user);
+
+    log.debug("User {} coins updated: {} -> {}", id, oldBalance, saved.getBonusCoins());
+    return userMapper.toDTO(saved);
+  }
+
+  /**
+   * Update user's profile photo path.
+   * Invalidates admin users list cache.
+   *
+   * @param userId user identifier
+   * @param photoPath new photo path
+   * @throws UserNotFoundException if user not found
+   */
+  @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
+  public UserDTO updateUserPhoto(Long userId, String photoPath) {
+    log.debug("Updating photo for user {}: {}", userId, photoPath);
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new UserNotFoundException(userId));
+    user.setPhotoPath(photoPath);
     User saved = userRepository.save(user);
     return userMapper.toDTO(saved);
   }
 
+  /**
+   * Get simple user profile (without external service data).
+   * Contains only basic information: login, balance, photo, ban status.
+   * No caching - simple query.
+   *
+   * @param userId user identifier
+   * @return simple user profile
+   * @throws UserNotFoundException if user not found
+   */
   @Override
-  @Transactional
-  @Caching(evict = {
-      @CacheEvict(value = "users", key = "#userId"),
-      @CacheEvict(value = "userSimpleProfiles", key = "#userId"),
-      @CacheEvict(value = "userAllProfiles", key = "#userId")
-  })
-  public void updateUserPhoto(Long userId, String photoPath) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new UserNotFoundException(userId));
-    user.setPhotoPath(photoPath);
-    userRepository.save(user);
-  }
-
-  @Override
-  @Cacheable(value = "userSimpleProfiles", key = "#userId")
   public UserSimpleProfileDTO getProfile(Long userId) {
+    log.debug("Fetching simple profile from database: {}", userId);
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(userId));
     return UserSimpleProfileDTO.builder()
@@ -147,8 +151,18 @@ public class UserServiceImpl implements UserService {
         .build();
   }
 
+  /**
+   * Get full user profile with data from Billing Service.
+   * Includes session statistics and game time.
+   * Caching is done at Reactor level for external service calls.
+   *
+   * @param userId user identifier
+   * @return Mono with full user profile
+   * @throws UserNotFoundException if user not found
+   */
   @Override
   public Mono<UserAllProfileDTO> getAllProfile(Long userId) {
+    log.debug("Fetching full profile for user: {}", userId);
     return Mono.fromSupplier(() -> {
           User user = userRepository.findById(userId)
               .orElseThrow(() -> new UserNotFoundException(userId));
@@ -165,12 +179,76 @@ public class UserServiceImpl implements UserService {
                 )
                 .onErrorReturn(dto)
         )
-        .cache();
+        .cache(Duration.ofMinutes(10));  // Reactor-level cache, не Redis
   }
 
+  /**
+   * Get list of all users in the system.
+   * Cached for admin panel. Only this should be cached for production.
+   *
+   * @return list of all users
+   */
   @Override
+  @Cacheable(value = "allUsers")
   public List<UserDTO> getAllUsers() {
+    log.debug("Fetching all users from database");
     List<User> users = userRepository.findAllUsers();
-    return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
+    return users.stream()
+        .map(userMapper::toDTO)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Block user.
+   * Administrators cannot be blocked.
+   * Invalidates admin users list cache.
+   *
+   * @param id user identifier to block
+   * @return updated UserDTO
+   * @throws UserNotFoundException if user not found
+   * @throws RuntimeException if attempting to block administrator
+   */
+  @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
+  public UserDTO blockUser(Long id) {
+    log.debug("Blocking user: {}", id);
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new UserNotFoundException(id));
+
+    if (user.getRole() == 2) {
+      throw new RuntimeException("You can't block admin");
+    }
+
+    user.setBanned(true);
+    User saved = userRepository.save(user);
+    UserDTO result = userMapper.toDTO(saved);
+
+    log.debug("User blocked successfully: {}, isBanned={}", id, saved.isBanned());
+    return result;
+  }
+
+  /**
+   * Unblock user.
+   * Invalidates admin users list cache.
+   *
+   * @param id user identifier to unblock
+   * @return updated UserDTO
+   * @throws UserNotFoundException if user not found
+   */
+  @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
+  public UserDTO unBlockUser(Long id) {
+    log.debug("Unblocking user: {}", id);
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new UserNotFoundException(id));
+
+    user.setBanned(false);
+    User saved = userRepository.save(user);
+    UserDTO result = userMapper.toDTO(saved);
+
+    log.debug("User unblocked successfully: {}, isBanned={}", id, saved.isBanned());
+    return result;
   }
 }

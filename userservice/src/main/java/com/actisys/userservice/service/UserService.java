@@ -10,15 +10,9 @@ import reactor.core.publisher.Mono;
 
 public interface UserService {
 
-  Optional<UserDTO> getUserById(Long id);
-
-  UserDTO getUserByEmail(String email);
-
-  List<UserDTO> getUsersByIds(List<Long> ids);
-
   UserDTO updateUser(Long id, UpdateUserProfileDTO updated);
 
-  void updateUserPhoto(Long id, String photoPath);
+  UserDTO updateUserPhoto(Long id, String photoPath);
 
   void deleteUser(Long id);
 
@@ -29,4 +23,8 @@ public interface UserService {
   Mono<UserAllProfileDTO> getAllProfile(Long userId);
 
   List<UserDTO> getAllUsers();
+
+  UserDTO blockUser(Long id);
+
+  UserDTO unBlockUser(Long id);
 }

@@ -24,7 +24,6 @@ public class SessionServiceImpl implements SessionService {
     double totalHours = sessions.stream()
         .mapToDouble(s -> Duration.between(s.getStartTime(), s.getEndTime()).toMinutes() / 60.0)
         .sum();
-    System.out.println("HIIIIIIII"+totalSessions);
     return new SessionStatsDTO(totalSessions, totalHours);
   }
 }

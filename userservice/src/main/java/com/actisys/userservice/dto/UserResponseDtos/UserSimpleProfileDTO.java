@@ -21,7 +21,7 @@ public class UserSimpleProfileDTO {
       @JsonProperty("login") String login,
       @JsonProperty("wallet") double wallet,
       @JsonProperty("photoPath") String photoPath,
-      @JsonProperty("isBanned") boolean isBanned,
+      @JsonProperty("banned") boolean isBanned,
       @JsonProperty("role") int role) {
     this.login = login;
     this.wallet = wallet;

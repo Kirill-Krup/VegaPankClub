@@ -9,13 +9,18 @@ import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 @Component
-@Mapper(componentModel = "spring")
+@Mapper(
+    componentModel = "spring",
+    builder = @org.mapstruct.Builder(disableBuilder = true)
+)
 public interface UserMapper {
 
+  @Mapping(target = "banned", source = "banned")
+  @Mapping(target = "online", source = "online")
   UserDTO toDTO(User user);
+
   User fromRegisterRequest(RegisterRequest registerRequest);
 
   @Mapping(target = "sessionStats", ignore = true)
   UserAllProfileDTO toAllProfileDTO(User user);
-
 }

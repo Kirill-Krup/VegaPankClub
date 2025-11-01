@@ -31,34 +31,35 @@ public class UserController {
   }
 
   @GetMapping("/getAllUsers")
-  @PreAuthorize("hasRole='ADMIN'")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<UserDTO>> getAllUsers() {
     List<UserDTO> usersList = userService.getAllUsers();
     return new ResponseEntity<>(usersList, HttpStatus.OK);
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-    return userService.getUserById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+  @PutMapping("/blockUser/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<UserDTO> blockUser(@PathVariable Long id) {
+    UserDTO updated =userService.blockUser(id);
+    return ResponseEntity.ok(updated);
   }
 
-  @GetMapping("/email/{email}")
-  public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
-    return ResponseEntity.ok(userService.getUserByEmail(email));
+  @PutMapping("/unBlockUser/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<UserDTO> unBlockUser(@PathVariable Long id) {
+    UserDTO updated =userService.unBlockUser(id);
+    return ResponseEntity.ok(updated);
   }
 
-  @GetMapping("/ids")
-  public ResponseEntity<List<UserDTO>> getUsersByIds(@RequestParam List<Long> ids) {
-    return ResponseEntity.ok(userService.getUsersByIds(ids));
-  }
-
-  @PutMapping("/{id}/coins")
+  @PutMapping("/coins/{id}")
+  @PreAuthorize(("hasRole('ADMIN')"))
   public ResponseEntity<UserDTO> updateUserCoins(@PathVariable Long id, @RequestBody UpdateCoinsRequest request) {
     UserDTO updated = userService.updateUserCoins(id, request.getCoins());
     return ResponseEntity.ok(updated);
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
     userService.deleteUser(id);
     return ResponseEntity.noContent().build();
