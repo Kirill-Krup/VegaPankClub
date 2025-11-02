@@ -41,7 +41,7 @@ public class OrderServiceImpl implements OrderService {
     if(!orderRepository.existsById(id)) {
       throw new OrderNotFoundException(id);
     }
-    return orderMapper.toDto(orderRepository.getOrderByOrderId((id)));
+    return orderMapper.toDto(orderRepository.getOrderById((id)));
   }
 
   @Override
@@ -71,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
     if(!orderRepository.existsById(orderId)) {
       throw new OrderNotFoundException(orderId);
     }
-    Order order = orderRepository.getOrderByOrderId(orderId);
+    Order order = orderRepository.getOrderById(orderId);
     order.setStatus(newStatus);
     return orderMapper.toDto(orderRepository.save(order));
   }

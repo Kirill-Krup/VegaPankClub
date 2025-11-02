@@ -27,6 +27,12 @@
             <column name="price" type="DECIMAL(10,2)">
                 <constraints nullable="false"/>
             </column>
+            <column name="photo_path" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
             <column name="category_id" type="INTEGER">
                 <constraints nullable="false"/>
             </column>

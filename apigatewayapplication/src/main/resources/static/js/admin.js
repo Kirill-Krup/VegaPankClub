@@ -2,7 +2,10 @@ const qs = (s, r = document) => r.querySelector(s);
 const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 let allUsers = [];
+let allProducts = [];
 let currentUser = null;
+let currentProduct = null;
+let currentCategoryFilter = 'all';
 
 async function fetchAllUsers() {
   try {
@@ -87,8 +90,8 @@ async function handleBanUser(userId) {
   if (!confirm('Вы уверены, что хотите заблокировать пользователя?')) return;
 
   try {
-    const response = await fetch(`/api/v1/users/blockUser/${userId}`, {  // ← Твой путь
-      method: 'PUT',  // ← Твой метод
+    const response = await fetch(`/api/v1/users/blockUser/${userId}`, {
+      method: 'PUT',
       credentials: 'include'
     });
 
@@ -142,7 +145,7 @@ async function submitBonus() {
 
   try {
     const response = await fetch(`/api/v1/users/coins/${currentUser.id}`, {
-      method: 'PUT',  // ← Твой метод
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ coins: amount })
@@ -162,8 +165,6 @@ async function submitBonus() {
   }
 }
 
-
-// Delete user
 async function handleDeleteUser(userId) {
   if (!confirm('Вы уверены, что хотите удалить пользователя? Это действие необратимо.')) return;
 
@@ -178,14 +179,13 @@ async function handleDeleteUser(userId) {
     }
 
     showSuccess('Пользователь удалён');
-    await fetchAllUsers(); // Refresh list
+    await fetchAllUsers();
   } catch (error) {
     console.error('Error deleting user:', error);
     showError('Не удалось удалить пользователя');
   }
 }
 
-// Add bonus
 function handleAddBonus(userId, username) {
   currentUser = { id: userId, login: username };
   const modal = qs('#bonusModal');
@@ -196,8 +196,273 @@ function handleAddBonus(userId, username) {
   if (modal) modal.classList.add('active');
 }
 
+async function fetchAllProducts() {
+  try {
+    const response = await fetch('/api/v1/products/getAllProducts', {
+      method: 'GET',
+      credentials: 'include'
+    });
 
-// Search users
+    if (!response.ok) {
+      throw new Error('Failed to fetch products');
+    }
+
+    allProducts = await response.json();
+    console.log('Products loaded:', allProducts);
+    renderProducts(allProducts);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    showError('Не удалось загрузить список товаров');
+  }
+}
+
+function renderProducts(products) {
+  const container = qs('#productsContainer');
+  if (!container) return;
+
+  let filtered = products;
+  if (currentCategoryFilter !== 'all') {
+    filtered = products.filter(p => p.categoryId == currentCategoryFilter || p.category?.id == currentCategoryFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem; color: var(--gray); grid-column: 1 / -1;">
+        <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>Товары не найдены</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(product => {
+    const isActive = product.active !== false;
+    const statusClass = isActive ? 'status-active' : 'status-inactive';
+    const statusText = isActive ? 'Активен' : 'Неактивен';
+
+    const imagePath = product.photoPath
+        ? `http://localhost:8082${product.photoPath}`
+        : 'https://via.placeholder.com/150';
+
+    return `
+    <div class="product-card" data-product-id="${product.id}">
+      <img src="${imagePath}" alt="${product.name}" class="product-image">
+      <div class="product-info">
+        <h3>${product.name}</h3>
+        <p class="product-price">${(product.price || 0).toFixed(2)} BYN</p>
+        <p class="product-stock">В наличии: ${product.stock || 0} шт</p>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+      </div>
+      <div class="product-actions">
+        <button class="btn-icon btn-primary" title="Редактировать" onclick="handleEditProduct(${product.id})">
+          <i class="fas fa-edit"></i>
+        </button>
+        ${isActive ? `
+          <button class="btn-icon btn-warning" title="В неактивные" onclick="handleToggleProductStatus(${product.id})">
+            <i class="fas fa-pause"></i>
+          </button>
+        ` : `
+          <button class="btn-icon btn-success" title="В активные" onclick="handleToggleProductStatus(${product.id})">
+            <i class="fas fa-play"></i>
+          </button>
+        `}
+        <button class="btn-icon btn-danger" title="Удалить" onclick="handleDeleteProduct(${product.id})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+function openAddProductModal() {
+  const modal = qs('#productModal');
+  const form = qs('#productForm');
+  const header = modal.querySelector('.modal-header h2');
+  const imageGroup = qs('#productImageGroup');
+
+  header.textContent = 'Добавить товар';
+  imageGroup.style.display = 'block';
+  form.reset();
+
+  modal.classList.add('active');
+}
+
+async function handleAddProduct(event) {
+  event.preventDefault();
+
+  const form = qs('#productForm');
+  const name = form.querySelector('#productName').value;
+  const price = form.querySelector('#productPrice').value;
+  const stock = form.querySelector('#productStock').value;
+  const categoryId = form.querySelector('#productCategory').value;
+  const imageFile = form.querySelector('#productImage').files[0];
+
+  if (!name || !price || !stock || !categoryId) {
+    showError('Заполните все обязательные поля');
+    return;
+  }
+
+  if (!imageFile) {
+    showError('Загрузите изображение товара');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  const productData = {
+    name: name,
+    price: parseFloat(price),
+    stock: parseInt(stock),
+    categoryId: parseInt(categoryId),
+    active: true
+  };
+
+  formData.append('product', new Blob([JSON.stringify(productData)], {
+    type: 'application/json'
+  }));
+
+  try {
+    const response = await fetch('/api/v1/products/createProduct', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create product');
+    }
+
+    showSuccess('Товар успешно создан');
+    closeProductModal();
+    await fetchAllProducts();
+  } catch (error) {
+    console.error('Error creating product:', error);
+    showError('Не удалось создать товар');
+  }
+}
+
+function handleEditProduct(productId) {
+  currentProduct = allProducts.find(p => p.id === productId);
+  if (!currentProduct) return;
+
+  const modal = qs('#editProductModal');
+  const form = qs('#editProductForm');
+
+  form.querySelector('#editProductName').value = currentProduct.name;
+  form.querySelector('#editProductPrice').value = currentProduct.price;
+  form.querySelector('#editProductStock').value = currentProduct.stock;
+  form.querySelector('#editProductCategory').value = currentProduct.categoryId || currentProduct.category?.id || '';
+
+  modal.classList.add('active');
+}
+
+async function handleUpdateProduct(event) {
+  event.preventDefault();
+
+  const form = qs('#editProductForm');
+  const name = form.querySelector('#editProductName').value;
+  const price = form.querySelector('#editProductPrice').value;
+  const categoryId = form.querySelector('#editProductCategory').value;
+
+  if (!name || !price || !categoryId) {
+    showError('Заполните все обязательные поля');
+    return;
+  }
+
+  const productData = {
+    name: name,
+    price: parseFloat(price),
+    categoryId: parseInt(categoryId),
+    isAvailable: true
+  };
+
+  try {
+    const response = await fetch(`/api/v1/products/updateProduct/${currentProduct.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(productData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update product');
+    }
+
+    showSuccess('Товар успешно обновлён');
+    closeEditProductModal();
+    await fetchAllProducts();
+  } catch (error) {
+    console.error('Error updating product:', error);
+    showError('Не удалось обновить товар');
+  }
+}
+
+
+async function handleToggleProductStatus(productId) {
+  try {
+    const response = await fetch(`/api/v1/products/updateAvailableStatus/${productId}`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle status');
+    }
+
+    showSuccess('Статус товара изменён');
+    await fetchAllProducts();
+  } catch (error) {
+    console.error('Error toggling product status:', error);
+    showError('Не удалось изменить статус товара');
+  }
+}
+
+async function handleDeleteProduct(productId) {
+  if (!confirm('Вы уверены, что хотите удалить товар?')) return;
+
+  try {
+    const response = await fetch(`/api/v1/products/deleteProduct/${productId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete product');
+    }
+
+    showSuccess('Товар удалён');
+    await fetchAllProducts();
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    showError('Не удалось удалить товар');
+  }
+}
+
+function closeProductModal() {
+  const modal = qs('#productModal');
+  modal.classList.remove('active');
+}
+
+function closeEditProductModal() {
+  const modal = qs('#editProductModal');
+  modal.classList.remove('active');
+}
+
+function initCategoryFilter() {
+  const filterButtons = qsa('#categoryFilters .filter-btn');
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentCategoryFilter = e.target.getAttribute('data-category');
+      renderProducts(allProducts);
+    });
+  });
+}
+
 function initSearch() {
   const searchInput = qs('#userSearch');
   if (searchInput) {
@@ -214,9 +479,7 @@ function initSearch() {
         const email = (user.email || '').toLowerCase();
         const fullName = (user.fullName || '').toLowerCase();
 
-        return login.includes(query) ||
-            email.includes(query) ||
-            fullName.includes(query);
+        return login.includes(query) || email.includes(query) || fullName.includes(query);
       });
 
       renderUsers(filtered);
@@ -224,198 +487,148 @@ function initSearch() {
   }
 }
 
-// Show notifications
-function showSuccess(message) {
-  // Simple alert for now, можно заменить на toast notification
-  alert(message);
+function showToast(message, type = 'success', title = null) {
+  const container = qs('#toastContainer');
+
+  const icons = {
+    success: 'fas fa-check-circle',
+    error: 'fas fa-times-circle',
+    warning: 'fas fa-exclamation-triangle',
+    info: 'fas fa-info-circle'
+  };
+
+  const titles = {
+    success: title || 'Успешно',
+    error: title || 'Ошибка',
+    warning: title || 'Предупреждение',
+    info: title || 'Информация'
+  };
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <i class="${icons[type]} toast-icon"></i>
+    <div class="toast-content">
+      <div class="toast-title">${titles[type]}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+    <button class="toast-close">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  toast.querySelector('.toast-close').addEventListener('click', () => {
+    removeToast(toast);
+  });
+
+  setTimeout(() => {
+    removeToast(toast);
+  }, 5000);
 }
 
-function showError(message) {
-  alert('Ошибка: ' + message);
+function removeToast(toast) {
+  toast.classList.add('hiding');
+  setTimeout(() => {
+    toast.remove();
+  }, 300);
 }
 
-// Navigation
+function showSuccess(message, title = null) {
+  showToast(message, 'success', title);
+}
+
+function showError(message, title = null) {
+  showToast(message, 'error', title);
+}
+
+function showWarning(message, title = null) {
+  showToast(message, 'warning', title);
+}
+
+function showInfo(message, title = null) {
+  showToast(message, 'info', title);
+}
+
 function initNavigation() {
   const navItems = qsa('.nav-item');
   const sections = qsa('.section');
 
   navItems.forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', async () => {
       const sectionId = item.getAttribute('data-section');
 
-      // Update nav
       navItems.forEach(nav => nav.classList.remove('active'));
       item.classList.add('active');
 
-      // Update sections
       sections.forEach(section => section.classList.remove('active'));
       const targetSection = qs(`#${sectionId}`);
       if (targetSection) targetSection.classList.add('active');
+
+      if (sectionId === 'products') {
+        await fetchAllProducts();
+      }
     });
   });
 }
 
-// Modals
 function initModals() {
   const modals = {
     bonus: qs('#bonusModal'),
     product: qs('#productModal'),
+    editProduct: qs('#editProductModal'),
     tariff: qs('#tariffModal')
   };
 
-  const openModal = (modalId) => {
-    const modal = modals[modalId];
-    if (modal) modal.classList.add('active');
-  };
+  qs('#addProductBtn')?.addEventListener('click', openAddProductModal);
 
-  const closeModal = (modal) => {
-    modal.classList.remove('active');
-  };
-
-  // Add Product Button
-  qs('#addProductBtn')?.addEventListener('click', () => openModal('product'));
-
-  // Add Tariff Button
-  qs('#addTariffBtn')?.addEventListener('click', () => openModal('tariff'));
-
-  // Close buttons
   qsa('.modal-close').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
-      closeModal(modal);
+      modal?.classList.remove('active');
     });
   });
 
-  // Overlay click
   qsa('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
-      closeModal(modal);
+      modal?.classList.remove('active');
     });
   });
 
-  // Cancel buttons
   qsa('.modal-footer .btn--secondary').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
-      closeModal(modal);
+      modal?.classList.remove('active');
     });
   });
 
-  // Bonus modal submit
   const bonusModal = qs('#bonusModal');
   const bonusSubmitBtn = bonusModal?.querySelector('.modal-footer .btn--primary');
   if (bonusSubmitBtn) {
     bonusSubmitBtn.addEventListener('click', submitBonus);
   }
-}
 
-// Product Actions
-function initProductActions() {
-  // Toggle active/inactive
-  qsa('.btn-warning[title="В неактивные"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // TODO: API call
-      alert('Товар переведён в неактивные');
-    });
-  });
+  const productForm = qs('#productForm');
+  if (productForm) {
+    productForm.addEventListener('submit', handleAddProduct);
+  }
 
-  qsa('.btn-success[title="В активные"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // TODO: API call
-      alert('Товар переведён в активные');
-    });
-  });
+  const editProductForm = qs('#editProductForm');
+  if (editProductForm) {
+    editProductForm.addEventListener('submit', handleUpdateProduct);
+  }
 
-  // Edit
-  qsa('.product-card .btn-primary[title="Редактировать"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const modal = qs('#productModal');
-      if (modal) modal.classList.add('active');
-    });
-  });
-
-  // Delete
-  qsa('.product-card .btn-danger[title="Удалить"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите удалить товар?')) {
-        // TODO: API call
-        alert('Товар удалён');
-      }
-    });
+  qs('#addTariffBtn')?.addEventListener('click', () => {
+    modals.tariff?.classList.add('active');
   });
 }
 
-// Tariff Actions
-function initTariffActions() {
-  // Edit
-  qsa('.tariff-card .btn-primary[title="Редактировать"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const modal = qs('#tariffModal');
-      if (modal) modal.classList.add('active');
-    });
-  });
-
-  // Delete
-  qsa('.tariff-card .btn-danger[title="Удалить"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите удалить тариф?')) {
-        // TODO: API call
-        alert('Тариф удалён');
-      }
-    });
-  });
-}
-
-// Order Actions
-function initOrderActions() {
-  // Complete order
-  qsa('.btn-success[title="Выполнен"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm('Отметить заказ как выполненный?')) {
-        // TODO: API call
-        alert('Заказ выполнен');
-      }
-    });
-  });
-}
-
-// Review Actions
-function initReviewActions() {
-  // Delete review
-  qsa('.review-card .btn-danger[title="Удалить отзыв"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите удалить отзыв?')) {
-        // TODO: API call
-        alert('Отзыв удалён');
-      }
-    });
-  });
-}
-
-// Filters
-function initFilters() {
-  qsa('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const container = this.parentElement;
-      const filterBtns = container.querySelectorAll('.filter-btn');
-
-      filterBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-
-      // TODO: Filter logic for orders/reviews
-    });
-  });
-}
-
-/**
- * Logout user and redirect to home page.
- * Clears authentication cookie on the server.
- */
 async function initLogout() {
   qs('#logoutBtn')?.addEventListener('click', async () => {
     try {
-      const response = await fetch('/api/v1/auth/logout', {  // ← Изменил путь
+      const response = await fetch('/api/v1/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
@@ -432,17 +645,12 @@ async function initLogout() {
   });
 }
 
-
 async function init() {
   initNavigation();
   initModals();
-  initProductActions();
-  initTariffActions();
-  initOrderActions();
-  initReviewActions();
-  initFilters();
   initSearch();
   initLogout();
+  initCategoryFilter();
 
   await fetchAllUsers();
 }
