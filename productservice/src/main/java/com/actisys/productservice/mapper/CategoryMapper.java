@@ -3,12 +3,14 @@ package com.actisys.productservice.mapper;
 import com.actisys.productservice.dto.CategoryDTO;
 import com.actisys.productservice.model.Category;
 import org.mapstruct.Mapper;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-  Category toEntity(CategoryDTO dto);
+  @Mapping(source = "id", target = "id")
+  @Mapping(source = "name", target = "name")
+  CategoryDTO toDto(Category category);
 
-  CategoryDTO toDto(Category entity);
+  Category toEntity(CategoryDTO dto);
 }
