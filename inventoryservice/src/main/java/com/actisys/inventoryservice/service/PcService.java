@@ -2,12 +2,13 @@ package com.actisys.inventoryservice.service;
 
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
+import com.actisys.inventoryservice.dto.PcInfoDTO;
 import com.actisys.inventoryservice.dto.PcUpdateDTO;
 import java.util.List;
 
 public interface PcService {
 
-  List<PCDTO> getAllPc();
+  List<PcInfoDTO> getAllPc();
 
   PCDTO addNewPc(PcCreateDTO pcCreateDTO);
 

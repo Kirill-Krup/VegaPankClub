@@ -1,4 +1,4 @@
-package com.actisys.userservice.config;
+package com.actisys.userservice.configuration;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

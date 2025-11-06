@@ -2,6 +2,7 @@ package com.actisys.inventoryservice.mapper;
 
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
+import com.actisys.inventoryservice.dto.PcInfoDTO;
 import com.actisys.inventoryservice.model.PC;
 import org.mapstruct.Mapper;
 
@@ -13,4 +14,6 @@ public interface PcMapper {
   PC toEntity(PCDTO pcDTO);
 
   PC toEntity(PcCreateDTO pcCreateDTO);
+
+  PcInfoDTO toInfoDTO(PC pc);
 }

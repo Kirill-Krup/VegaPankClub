@@ -112,7 +112,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
   private boolean isPublicEndpoint(String path) {
     return path.startsWith("/api/v1/auth/login") ||
-        path.startsWith("/api/v1/auth/register");
+        path.startsWith("/api/v1/auth/register") ||
+        path.startsWith("/api/v1/tariffs/allTariffs");
   }
 
   private boolean isStaticResource(String path) {

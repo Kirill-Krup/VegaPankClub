@@ -1,15 +1,15 @@
-package com.actisys.billingservice.dto;
+package com.actisys.apigatewayapplication.dto.AdminSessionDtos;
 
+import com.actisys.common.dto.user.UserDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
@@ -17,10 +17,10 @@ public class SessionDTO {
   private final Long sessionId;
 
   @NotNull(message = "User ID is required")
-  private final Long userId;
+  private final UserDTO user;
 
   @NotNull(message = "PC ID is required")
-  private final Long pcId;
+  private final PCDTO pcDTO;
 
   private final TariffDTO tariff;
 

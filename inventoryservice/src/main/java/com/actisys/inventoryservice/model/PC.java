@@ -28,8 +28,9 @@ public class PC {
   @Column(nullable = false)
   private String name;
 
-  @Column(name = "room_id",nullable = false)
-  private Long roomId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "room_id", nullable = false)
+  private Room room;
 
   @Column(nullable = false)
   private String cpu;
@@ -48,5 +49,4 @@ public class PC {
 
   @Column(name = "is_occupied", nullable = false)
   private boolean isOccupied = false;
-
 }
