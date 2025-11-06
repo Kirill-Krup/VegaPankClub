@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TariffRepository extends JpaRepository<Tariff,Long> {
 
+  boolean existsByName(String name);
 }

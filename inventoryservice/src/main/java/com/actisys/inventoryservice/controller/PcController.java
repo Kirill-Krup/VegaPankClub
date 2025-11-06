@@ -2,6 +2,7 @@ package com.actisys.inventoryservice.controller;
 
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
+import com.actisys.inventoryservice.dto.PcInfoDTO;
 import com.actisys.inventoryservice.dto.PcUpdateDTO;
 import com.actisys.inventoryservice.service.PcService;
 import java.util.List;
@@ -23,9 +24,9 @@ public class PcController {
 
   private final PcService pcService;
 
-  @GetMapping("/getAllPc")
-  public ResponseEntity<List<PCDTO>> getAllPc() {
-    List<PCDTO> allPc = pcService.getAllPc();
+  @GetMapping("/allPc")
+  public ResponseEntity<List<PcInfoDTO>> getAllPc() {
+    List<PcInfoDTO> allPc = pcService.getAllPc();
     return ResponseEntity.ok(allPc);
   }
 

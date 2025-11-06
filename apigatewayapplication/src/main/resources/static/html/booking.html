@@ -62,12 +62,24 @@
 <main class="booking-main">
   <div class="container">
     <h1 class="booking-title">Бронирование места</h1>
-    <p class="booking-subtitle">Выберите дату, время и свободное место</p>
+    <p class="booking-subtitle">Выберите тариф, дату, время и свободное место</p>
 
-    <!-- Step 1: Date & Time -->
+    <!-- Step 1: Tariff Selection -->
     <section class="booking-step" id="step1">
       <div class="step-header">
         <div class="step-number">1</div>
+        <h2 class="step-title">Выбор тарифа</h2>
+      </div>
+      <div class="step-content">
+        <div class="tariff-grid">
+          <!-- Тарифы будут загружены динамически через JavaScript -->
+        </div>
+      </div>
+    </section>
+
+    <section class="booking-step disabled" id="step2">
+      <div class="step-header">
+        <div class="step-number">2</div>
         <h2 class="step-title">Дата и время</h2>
       </div>
       <div class="step-content">
@@ -84,21 +96,17 @@
               <i class="fas fa-clock"></i>
               Время начала
             </label>
-            <input type="time" id="startTime" class="form-input" required>
+            <select id="startTime" class="form-input" required>
+              <option value="">Выберите время</option>
+            </select>
           </div>
           <div class="form-group">
-            <label for="duration" class="form-label">
+            <label for="endTime" class="form-label">
               <i class="fas fa-hourglass-half"></i>
-              Длительность
+              Время окончания
             </label>
-            <select id="duration" class="form-input" required>
-              <option value="">Выберите</option>
-              <option value="1">1 час</option>
-              <option value="2">2 часа</option>
-              <option value="3">3 часа</option>
-              <option value="4">4 часа</option>
-              <option value="6">6 часов</option>
-              <option value="8">8 часов</option>
+            <select id="endTime" class="form-input" required>
+              <option value="">Сначала выберите время начала</option>
             </select>
           </div>
         </div>
@@ -109,10 +117,10 @@
       </div>
     </section>
 
-    <!-- Step 2: Seat Selection -->
-    <section class="booking-step disabled" id="step2">
+    <!-- Step 3: Seat Selection -->
+    <section class="booking-step disabled" id="step3">
       <div class="step-header">
-        <div class="step-number">2</div>
+        <div class="step-number">3</div>
         <h2 class="step-title">Выбор места</h2>
       </div>
       <div class="step-content">
@@ -314,190 +322,51 @@
             </div>
           </div>
         </div>
-
-        <!-- Selected Seat Info -->
-        <div class="selected-info" id="selectedInfo" style="display: none;">
-          <div class="selected-card">
-            <h4>Выбранное место:</h4>
-            <div class="selected-details">
-              <div class="detail-item">
-                <i class="fas fa-desktop"></i>
-                <span id="selectedSeatName"></span>
-              </div>
-              <div class="detail-item">
-                <i class="fas fa-microchip"></i>
-                <span id="selectedSeatSpec">RTX 4070 • 32GB RAM • 240Hz</span>
-              </div>
-              <div class="detail-item">
-                <i class="fas fa-ruble-sign"></i>
-                <span id="selectedSeatPrice">12 BYN/час</span>
-              </div>
-            </div>
-            <button class="btn btn--primary btn--large" id="confirmBooking">
-              Забронировать
-              <i class="fas fa-check"></i>
-            </button>
-          </div>
-        </div>
       </div>
     </section>
-    <!-- Step 3: Tariff Selection -->
-    <section class="booking-step disabled" id="step3">
-      <div class="step-header">
-        <div class="step-number">3</div>
-        <h2 class="step-title">Выбор тарифа</h2>
-      </div>
-      <div class="step-content">
-        <div class="tariff-grid">
-          <!-- Basic Tariff -->
-          <div class="tariff-card" data-tariff="basic">
-            <div class="tariff-badge">Экономия</div>
-            <h3 class="tariff-name">Базовый</h3>
-            <div class="tariff-price">
-              <span class="price-value">8</span>
-              <span class="price-currency">BYN/час</span>
-            </div>
-            <ul class="tariff-features">
-              <li><i class="fas fa-check"></i> Игровой ПК</li>
-              <li><i class="fas fa-check"></i> Интернет 100 Мбит/с</li>
-              <li><i class="fas fa-check"></i> Steam библиотека</li>
-              <li><i class="fas fa-times"></i> Напитки</li>
-            </ul>
-            <div class="tariff-specs">
-              <div class="spec-item">
-                <i class="fas fa-microchip"></i>
-                <span>GTX 1660 • 16GB RAM</span>
-              </div>
-              <div class="spec-item">
-                <i class="fas fa-tv"></i>
-                <span>144Hz</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- Standard Tariff -->
-          <div class="tariff-card recommended" data-tariff="standard">
-            <div class="tariff-badge">Популярный</div>
-            <h3 class="tariff-name">Стандарт</h3>
-            <div class="tariff-price">
-              <span class="price-value">12</span>
-              <span class="price-currency">BYN/час</span>
-            </div>
-            <ul class="tariff-features">
-              <li><i class="fas fa-check"></i> Мощный игровой ПК</li>
-              <li><i class="fas fa-check"></i> Интернет 500 Мбит/с</li>
-              <li><i class="fas fa-check"></i> Steam + Epic Games</li>
-              <li><i class="fas fa-check"></i> Чай/кофе бесплатно</li>
-            </ul>
-            <div class="tariff-specs">
-              <div class="spec-item">
-                <i class="fas fa-microchip"></i>
-                <span>RTX 3060 • 32GB RAM</span>
-              </div>
-              <div class="spec-item">
-                <i class="fas fa-tv"></i>
-                <span>240Hz</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Premium Tariff -->
-          <div class="tariff-card" data-tariff="premium">
-            <div class="tariff-badge">Лучший выбор</div>
-            <h3 class="tariff-name">Премиум</h3>
-            <div class="tariff-price">
-              <span class="price-value">16</span>
-              <span class="price-currency">BYN/час</span>
-            </div>
-            <ul class="tariff-features">
-              <li><i class="fas fa-check"></i> Топовый игровой ПК</li>
-              <li><i class="fas fa-check"></i> Интернет 1 Гбит/с</li>
-              <li><i class="fas fa-check"></i> Все игровые платформы</li>
-              <li><i class="fas fa-check"></i> Напитки + снеки</li>
-            </ul>
-            <div class="tariff-specs">
-              <div class="spec-item">
-                <i class="fas fa-microchip"></i>
-                <span>RTX 4070 • 32GB RAM</span>
-              </div>
-              <div class="spec-item">
-                <i class="fas fa-tv"></i>
-                <span>360Hz G-SYNC</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- VIP Tariff -->
-          <div class="tariff-card vip" data-tariff="vip">
-            <div class="tariff-badge">VIP</div>
-            <h3 class="tariff-name">VIP</h3>
-            <div class="tariff-price">
-              <span class="price-value">25</span>
-              <span class="price-currency">BYN/час</span>
-            </div>
-            <ul class="tariff-features">
-              <li><i class="fas fa-check"></i> Топовый ПК + отдельная комната</li>
-              <li><i class="fas fa-check"></i> Приоритетный интернет</li>
-              <li><i class="fas fa-check"></i> Все игры + подписки</li>
-              <li><i class="fas fa-check"></i> Полный сервис</li>
-            </ul>
-            <div class="tariff-specs">
-              <div class="spec-item">
-                <i class="fas fa-microchip"></i>
-                <span>RTX 4090 • 64GB RAM</span>
-              </div>
-              <div class="spec-item">
-                <i class="fas fa-tv"></i>
-                <span>4K 240Hz OLED</span>
-              </div>
-            </div>
+    <!-- Booking Summary -->
+    <div class="booking-summary" id="bookingSummary" style="display: none;">
+      <h3>Итоговая информация</h3>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <i class="fas fa-ticket-alt"></i>
+          <div>
+            <span class="summary-label">Тариф</span>
+            <span class="summary-value" id="summaryTariff"></span>
           </div>
         </div>
-
-        <!-- Booking Summary -->
-        <div class="booking-summary" id="bookingSummary" style="display: none;">
-          <h3>Итоговая информация</h3>
-          <div class="summary-grid">
-            <div class="summary-item">
-              <i class="fas fa-calendar-alt"></i>
-              <div>
-                <span class="summary-label">Дата</span>
-                <span class="summary-value" id="summaryDate"></span>
-              </div>
-            </div>
-            <div class="summary-item">
-              <i class="fas fa-clock"></i>
-              <div>
-                <span class="summary-label">Время</span>
-                <span class="summary-value" id="summaryTime"></span>
-              </div>
-            </div>
-            <div class="summary-item">
-              <i class="fas fa-desktop"></i>
-              <div>
-                <span class="summary-label">Место</span>
-                <span class="summary-value" id="summarySeat"></span>
-              </div>
-            </div>
-            <div class="summary-item">
-              <i class="fas fa-ticket-alt"></i>
-              <div>
-                <span class="summary-label">Тариф</span>
-                <span class="summary-value" id="summaryTariff"></span>
-              </div>
-            </div>
+        <div class="summary-item">
+          <i class="fas fa-calendar-alt"></i>
+          <div>
+            <span class="summary-label">Дата</span>
+            <span class="summary-value" id="summaryDate"></span>
           </div>
-          <div class="summary-total">
-            <span>Итого к оплате:</span>
-            <span class="total-price" id="summaryPrice">0 BYN</span>
+        </div>
+        <div class="summary-item">
+          <i class="fas fa-clock"></i>
+          <div>
+            <span class="summary-label">Время</span>
+            <span class="summary-value" id="summaryTime"></span>
           </div>
-          <button class="btn btn--primary btn--large" id="confirmBookingBtn">
-            <i class="fas fa-check-circle"></i>
-            Подтвердить бронирование
-          </button>
+        </div>
+        <div class="summary-item">
+          <i class="fas fa-desktop"></i>
+          <div>
+            <span class="summary-label">Место</span>
+            <span class="summary-value" id="summarySeat"></span>
+          </div>
         </div>
       </div>
-    </section>
+      <div class="summary-total">
+        <span>Итого к оплате:</span>
+        <span class="total-price" id="summaryPrice">0 BYN</span>
+      </div>
+      <button class="btn btn--primary btn--large" id="confirmBookingBtn">
+        <i class="fas fa-check-circle"></i>
+        Подтвердить бронирование
+      </button>
+    </div>
   </div>
 </main>
 

@@ -6,4 +6,5 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
   <include file="db.changelog-create-inventory-service.xml" relativeToChangelogFile="true"/>
+  <include file="db.changelog-insert-script.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

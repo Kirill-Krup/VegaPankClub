@@ -2,6 +2,7 @@ package com.actisys.billingservice.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,6 +17,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Tariff {
 
   @Id
@@ -26,11 +28,14 @@ public class Tariff {
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
-  @Column(name = "price_per_hour", nullable = false, precision = 10, scale = 2)
-  private BigDecimal pricePerHour;
+  @Column(name = "price", nullable = false, precision = 10, scale = 2)
+  private BigDecimal price;
 
   @Column(name = "is_vip", nullable = false)
   private Boolean isVip = false;
+
+  @Column(name = "hours", nullable = false)
+  private int hours;
 
   @OneToMany(mappedBy = "tariff", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Session> sessions = new ArrayList<>();

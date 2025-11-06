@@ -179,7 +179,7 @@ public class UserServiceImpl implements UserService {
                 )
                 .onErrorReturn(dto)
         )
-        .cache(Duration.ofMinutes(10));  // Reactor-level cache, не Redis
+        .cache(Duration.ofMinutes(10));
   }
 
   /**

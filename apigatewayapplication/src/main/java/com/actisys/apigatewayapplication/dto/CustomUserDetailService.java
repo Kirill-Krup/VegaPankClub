@@ -13,11 +13,9 @@ public class CustomUserDetailService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    // Здесь должна быть логика загрузки пользователя из БД или другого сервиса
-    // Временно возвращаем заглушку
     return User.builder()
         .username(username)
-        .password("") // пароль не используется при JWT аутентификации
+        .password("")
         .authorities(Collections.emptyList())
         .build();
   }

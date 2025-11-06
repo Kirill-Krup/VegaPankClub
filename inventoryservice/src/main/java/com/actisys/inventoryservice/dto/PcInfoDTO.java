@@ -3,15 +3,16 @@ package com.actisys.inventoryservice.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
-@ToString
-@EqualsAndHashCode
+@Setter
 @AllArgsConstructor
-@NoArgsConstructor(force = true)
-public class PCDTO {
-
+@Builder
+public class PcInfoDTO {
   private final Long id;
 
   @NotBlank(message = "PC name cannot be blank")
