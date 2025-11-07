@@ -64,7 +64,6 @@
     <h1 class="booking-title">Бронирование места</h1>
     <p class="booking-subtitle">Выберите тариф, дату, время и свободное место</p>
 
-    <!-- Step 1: Tariff Selection -->
     <section class="booking-step" id="step1">
       <div class="step-header">
         <div class="step-number">1</div>
@@ -72,11 +71,11 @@
       </div>
       <div class="step-content">
         <div class="tariff-grid">
-          <!-- Тарифы будут загружены динамически через JavaScript -->
         </div>
       </div>
     </section>
 
+    <!-- Step 2: Date & Time -->
     <section class="booking-step disabled" id="step2">
       <div class="step-header">
         <div class="step-number">2</div>
@@ -124,7 +123,6 @@
         <h2 class="step-title">Выбор места</h2>
       </div>
       <div class="step-content">
-        <!-- Floor Selector -->
         <div class="floor-selector">
           <button class="floor-btn active" data-floor="1">
             <i class="fas fa-layer-group"></i>
@@ -138,7 +136,6 @@
 
         <!-- Floor Plan -->
         <div class="floor-plan-container">
-          <!-- Floor 1 -->
           <div class="floor-plan active" id="floor1">
             <div class="plan-info">
               <h3>Первый этаж - Основной зал</h3>
@@ -159,83 +156,21 @@
             </div>
 
             <div class="plan-layout">
-              <!-- Entrance -->
               <div class="room-element entrance">
                 <i class="fas fa-door-open"></i>
                 <span>Вход</span>
               </div>
 
-              <!-- Reception -->
               <div class="room-element reception">
                 <i class="fas fa-concierge-bell"></i>
                 <span>Ресепшн</span>
               </div>
 
-              <!-- Stairs -->
               <div class="room-element stairs">
                 <i class="fas fa-stairs"></i>
                 <span>Лестница</span>
               </div>
 
-              <!-- PC Seats - Row 1 -->
-              <div class="pc-row row-1">
-                <div class="pc-seat available" data-seat="1-01">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-01</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-02">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-02</span>
-                </div>
-                <div class="pc-seat occupied" data-seat="1-03">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-03</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-04">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-04</span>
-                </div>
-              </div>
-
-              <!-- PC Seats - Row 2 -->
-              <div class="pc-row row-2">
-                <div class="pc-seat available" data-seat="1-05">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-05</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-06">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-06</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-07">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-07</span>
-                </div>
-                <div class="pc-seat occupied" data-seat="1-08">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-08</span>
-                </div>
-              </div>
-
-              <!-- PC Seats - Row 3 -->
-              <div class="pc-row row-3">
-                <div class="pc-seat available" data-seat="1-09">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-09</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-10">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-10</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-11">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-11</span>
-                </div>
-                <div class="pc-seat available" data-seat="1-12">
-                  <i class="fas fa-desktop"></i>
-                  <span>PC-12</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -260,65 +195,11 @@
             </div>
 
             <div class="plan-layout vip-layout">
-              <!-- Stairs -->
               <div class="room-element stairs">
                 <i class="fas fa-stairs"></i>
                 <span>Лестница</span>
               </div>
 
-              <!-- VIP Room 1 -->
-              <div class="vip-room room-1">
-                <div class="vip-header">
-                  <i class="fas fa-crown"></i>
-                  <span>VIP Комната 1</span>
-                </div>
-                <div class="vip-seats">
-                  <div class="pc-seat available vip" data-seat="2-V01">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-01</span>
-                  </div>
-                  <div class="pc-seat available vip" data-seat="2-V02">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-02</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- VIP Room 2 -->
-              <div class="vip-room room-2">
-                <div class="vip-header">
-                  <i class="fas fa-crown"></i>
-                  <span>VIP Комната 2</span>
-                </div>
-                <div class="vip-seats">
-                  <div class="pc-seat occupied vip" data-seat="2-V03">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-03</span>
-                  </div>
-                  <div class="pc-seat available vip" data-seat="2-V04">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-04</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- VIP Room 3 -->
-              <div class="vip-room room-3">
-                <div class="vip-header">
-                  <i class="fas fa-crown"></i>
-                  <span>VIP Комната 3</span>
-                </div>
-                <div class="vip-seats">
-                  <div class="pc-seat available vip" data-seat="2-V05">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-05</span>
-                  </div>
-                  <div class="pc-seat available vip" data-seat="2-V06">
-                    <i class="fas fa-desktop"></i>
-                    <span>VIP-06</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -353,7 +234,7 @@
         <div class="summary-item">
           <i class="fas fa-desktop"></i>
           <div>
-            <span class="summary-label">Место</span>
+            <span class="summary-label">Места</span>
             <span class="summary-value" id="summarySeat"></span>
           </div>
         </div>

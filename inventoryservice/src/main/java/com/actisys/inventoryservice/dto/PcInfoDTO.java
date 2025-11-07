@@ -39,5 +39,5 @@ public class PcInfoDTO {
   private final boolean isOccupied;
 
   @NotNull(message = "Room ID cannot be null")
-  private final RoomDTO roomDTO;
+  private final RoomDTO room;
 }

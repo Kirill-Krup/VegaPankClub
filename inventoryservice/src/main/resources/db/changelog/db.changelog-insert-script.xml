@@ -5,7 +5,6 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
 
-  <!-- Insert rooms: 1 common + 3 VIP -->
   <changeSet author="admin" id="insert-rooms">
     <insert tableName="rooms">
       <column name="room_id" value="1"/>
@@ -70,27 +69,27 @@
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
-
     <insert tableName="pc">
       <column name="name" value="PC-05"/>
       <column name="room_id" value="1"/>
-      <column name="cpu" value="Intel Core i5-12600K"/>
-      <column name="gpu" value="NVIDIA RTX 3060"/>
-      <column name="ram" value="16GB DDR4"/>
-      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
+      <column name="cpu" value="Intel Core i7-12700K"/>
+      <column name="gpu" value="NVIDIA RTX 3070"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="ASUS 27&quot; 144Hz"/>
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
     <insert tableName="pc">
       <column name="name" value="PC-06"/>
       <column name="room_id" value="1"/>
-      <column name="cpu" value="Intel Core i5-12600K"/>
-      <column name="gpu" value="NVIDIA RTX 3060"/>
-      <column name="ram" value="16GB DDR4"/>
-      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
+      <column name="cpu" value="Intel Core i7-12700K"/>
+      <column name="gpu" value="NVIDIA RTX 3070"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="ASUS 27&quot; 144Hz"/>
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
+
     <insert tableName="pc">
       <column name="name" value="PC-07"/>
       <column name="room_id" value="1"/>
@@ -111,29 +110,49 @@
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
-
     <insert tableName="pc">
       <column name="name" value="PC-09"/>
       <column name="room_id" value="1"/>
-      <column name="cpu" value="AMD Ryzen 7 5700X"/>
-      <column name="gpu" value="NVIDIA RTX 3080"/>
-      <column name="ram" value="32GB DDR4"/>
-      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="cpu" value="Intel Core i5-12600K"/>
+      <column name="gpu" value="NVIDIA RTX 3060"/>
+      <column name="ram" value="16GB DDR4"/>
+      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
     <insert tableName="pc">
       <column name="name" value="PC-10"/>
       <column name="room_id" value="1"/>
-      <column name="cpu" value="AMD Ryzen 7 5700X"/>
-      <column name="gpu" value="NVIDIA RTX 3080"/>
-      <column name="ram" value="32GB DDR4"/>
-      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="cpu" value="Intel Core i5-12600K"/>
+      <column name="gpu" value="NVIDIA RTX 3060"/>
+      <column name="ram" value="16GB DDR4"/>
+      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
     <insert tableName="pc">
       <column name="name" value="PC-11"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="Intel Core i5-12600K"/>
+      <column name="gpu" value="NVIDIA RTX 3060"/>
+      <column name="ram" value="16GB DDR4"/>
+      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="PC-12"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="Intel Core i5-12600K"/>
+      <column name="gpu" value="NVIDIA RTX 3060"/>
+      <column name="ram" value="16GB DDR4"/>
+      <column name="monitor" value="BenQ 24&quot; 144Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+
+    <insert tableName="pc">
+      <column name="name" value="PC-13"/>
       <column name="room_id" value="1"/>
       <column name="cpu" value="AMD Ryzen 7 5700X"/>
       <column name="gpu" value="NVIDIA RTX 3080"/>
@@ -143,7 +162,47 @@
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
     <insert tableName="pc">
-      <column name="name" value="PC-12"/>
+      <column name="name" value="PC-14"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="AMD Ryzen 7 5700X"/>
+      <column name="gpu" value="NVIDIA RTX 3080"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="PC-15"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="AMD Ryzen 7 5700X"/>
+      <column name="gpu" value="NVIDIA RTX 3080"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="PC-16"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="AMD Ryzen 7 5700X"/>
+      <column name="gpu" value="NVIDIA RTX 3080"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="PC-17"/>
+      <column name="room_id" value="1"/>
+      <column name="cpu" value="AMD Ryzen 7 5700X"/>
+      <column name="gpu" value="NVIDIA RTX 3080"/>
+      <column name="ram" value="32GB DDR4"/>
+      <column name="monitor" value="Dell 27&quot; 165Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="PC-18"/>
       <column name="room_id" value="1"/>
       <column name="cpu" value="AMD Ryzen 7 5700X"/>
       <column name="gpu" value="NVIDIA RTX 3080"/>
@@ -158,7 +217,7 @@
     <insert tableName="pc">
       <column name="name" value="VIP-01"/>
       <column name="room_id" value="2"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
+      <column name="cpu" value="Intel Core i9-13900K"/>
       <column name="gpu" value="NVIDIA RTX 4090"/>
       <column name="ram" value="64GB DDR5"/>
       <column name="monitor" value="ASUS ROG 32&quot; 240Hz"/>
@@ -168,7 +227,37 @@
     <insert tableName="pc">
       <column name="name" value="VIP-02"/>
       <column name="room_id" value="2"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
+      <column name="cpu" value="Intel Core i9-13900K"/>
+      <column name="gpu" value="NVIDIA RTX 4090"/>
+      <column name="ram" value="64GB DDR5"/>
+      <column name="monitor" value="ASUS ROG 32&quot; 240Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="VIP-03"/>
+      <column name="room_id" value="2"/>
+      <column name="cpu" value="Intel Core i9-13900K"/>
+      <column name="gpu" value="NVIDIA RTX 4090"/>
+      <column name="ram" value="64GB DDR5"/>
+      <column name="monitor" value="ASUS ROG 32&quot; 240Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="VIP-04"/>
+      <column name="room_id" value="2"/>
+      <column name="cpu" value="Intel Core i9-13900K"/>
+      <column name="gpu" value="NVIDIA RTX 4090"/>
+      <column name="ram" value="64GB DDR5"/>
+      <column name="monitor" value="ASUS ROG 32&quot; 240Hz"/>
+      <column name="is_enabled" valueBoolean="true"/>
+      <column name="is_occupied" valueBoolean="false"/>
+    </insert>
+    <insert tableName="pc">
+      <column name="name" value="VIP-05"/>
+      <column name="room_id" value="2"/>
+      <column name="cpu" value="Intel Core i9-13900K"/>
       <column name="gpu" value="NVIDIA RTX 4090"/>
       <column name="ram" value="64GB DDR5"/>
       <column name="monitor" value="ASUS ROG 32&quot; 240Hz"/>
@@ -179,9 +268,9 @@
 
   <changeSet author="admin" id="insert-pcs-room-3">
     <insert tableName="pc">
-      <column name="name" value="VIP-03"/>
+      <column name="name" value="VIP-06"/>
       <column name="room_id" value="3"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
+      <column name="cpu" value="AMD Ryzen 9 7950X"/>
       <column name="gpu" value="NVIDIA RTX 4090"/>
       <column name="ram" value="64GB DDR5"/>
       <column name="monitor" value="ASUS ProArt 32&quot; 240Hz"/>
@@ -189,9 +278,9 @@
       <column name="is_occupied" valueBoolean="false"/>
     </insert>
     <insert tableName="pc">
-      <column name="name" value="VIP-04"/>
+      <column name="name" value="VIP-07"/>
       <column name="room_id" value="3"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
+      <column name="cpu" value="AMD Ryzen 9 7950X"/>
       <column name="gpu" value="NVIDIA RTX 4090"/>
       <column name="ram" value="64GB DDR5"/>
       <column name="monitor" value="ASUS ProArt 32&quot; 240Hz"/>
@@ -202,21 +291,11 @@
 
   <changeSet author="admin" id="insert-pcs-room-4">
     <insert tableName="pc">
-      <column name="name" value="VIP-05"/>
+      <column name="name" value="VIP-08"/>
       <column name="room_id" value="4"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
-      <column name="gpu" value="NVIDIA RTX 4090"/>
-      <column name="ram" value="64GB DDR5"/>
-      <column name="monitor" value="LG UltraWide 38&quot; 240Hz"/>
-      <column name="is_enabled" valueBoolean="true"/>
-      <column name="is_occupied" valueBoolean="false"/>
-    </insert>
-    <insert tableName="pc">
-      <column name="name" value="VIP-06"/>
-      <column name="room_id" value="4"/>
-      <column name="cpu" value="Intel Core i9-12900K"/>
-      <column name="gpu" value="NVIDIA RTX 4090"/>
-      <column name="ram" value="64GB DDR5"/>
+      <column name="cpu" value="Intel Core i9-14900K"/>
+      <column name="gpu" value="NVIDIA RTX 4090 Ti"/>
+      <column name="ram" value="128GB DDR5"/>
       <column name="monitor" value="LG UltraWide 38&quot; 240Hz"/>
       <column name="is_enabled" valueBoolean="true"/>
       <column name="is_occupied" valueBoolean="false"/>
