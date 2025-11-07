@@ -1,5 +1,6 @@
 package com.actisys.inventoryservice.controller;
 
+import com.actisys.common.dto.clientDtos.PcResponseDTO;
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
 import com.actisys.inventoryservice.dto.PcInfoDTO;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,6 +30,18 @@ public class PcController {
   public ResponseEntity<List<PcInfoDTO>> getAllPc() {
     List<PcInfoDTO> allPc = pcService.getAllPc();
     return ResponseEntity.ok(allPc);
+  }
+
+  @GetMapping("/pcInfo/{id}")
+  public ResponseEntity<PcResponseDTO> getPcInfo(@PathVariable Long id) {
+    PcResponseDTO responseDTO = pcService.getPcInfoById(id);
+    return ResponseEntity.ok(responseDTO);
+  }
+
+  @GetMapping("/pcInfoByIds")
+  public ResponseEntity<List<PcResponseDTO>> getPcInfoByIds(@RequestParam List<Long> ids) {
+    List<PcResponseDTO> responseDTOS = pcService.getPcsByIds(ids);
+    return ResponseEntity.ok(responseDTOS);
   }
 
   @PostMapping("/addNewPc")

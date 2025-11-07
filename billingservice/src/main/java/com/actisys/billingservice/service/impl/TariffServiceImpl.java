@@ -1,7 +1,7 @@
 package com.actisys.billingservice.service.impl;
 
-import com.actisys.billingservice.dto.CreateTariffDTO;
-import com.actisys.billingservice.dto.TariffDTO;
+import com.actisys.billingservice.dto.TariffDtos.CreateTariffDTO;
+import com.actisys.billingservice.dto.TariffDtos.TariffDTO;
 import com.actisys.billingservice.exception.TariffAlreadyExistsException;
 import com.actisys.billingservice.exception.TariffNotFoundException;
 import com.actisys.billingservice.mapper.TariffMapper;

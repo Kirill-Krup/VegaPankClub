@@ -1,5 +1,6 @@
 package com.actisys.inventoryservice.service.impl;
 
+import com.actisys.common.dto.clientDtos.PcResponseDTO;
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
 import com.actisys.inventoryservice.dto.PcInfoDTO;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +34,14 @@ public class PcServiceImpl implements PcService {
   }
 
   @Override
+  @Transactional
   public PCDTO addNewPc(PcCreateDTO pcCreateDTO) {
     PC newPc = pcMapper.toEntity(pcCreateDTO);
     return pcMapper.toDTO(pcRepository.save(newPc));
   }
 
   @Override
+  @Transactional
   public PCDTO updatePc(Long id, PcUpdateDTO pcUpdateDTO) {
     Room room = roomRepository.findById(pcUpdateDTO.getRoomId()).orElseThrow(()->
         new RoomNotFoundException(pcUpdateDTO.getRoomId()));
@@ -54,10 +58,23 @@ public class PcServiceImpl implements PcService {
   }
 
   @Override
+  @Transactional
   public void deletePc(Long id) {
     if(!pcRepository.existsById(id)) {
       throw new PcNotFoundException(id);
     }
     pcRepository.deleteById(id);
+  }
+
+  @Override
+  public PcResponseDTO getPcInfoById(Long id) {
+    PC pc = pcRepository.findById(id).orElseThrow(()->new PcNotFoundException(id));
+    return pcMapper.toResponseDto(pc);
+  }
+
+  @Override
+  public List<PcResponseDTO> getPcsByIds(List<Long> ids) {
+    List<PC> pcs = pcRepository.findAllByIdIn(ids);
+    return pcs.stream().map(pcMapper::toResponseDto).collect(Collectors.toList());
   }
 }

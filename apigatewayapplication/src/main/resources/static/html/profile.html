@@ -82,12 +82,17 @@
                         <i class="fas fa-history"></i>
                         <span>История</span>
                     </li>
+                    <li class="nav-item" data-section="reviews">
+                        <i class="fas fa-star"></i>
+                        <span>Отзывы</span>
+                    </li>
                     <li class="nav-item" data-section="settings">
                         <i class="fas fa-cog"></i>
                         <span>Настройки</span>
                     </li>
                 </ul>
             </nav>
+
         </aside>
 
         <main class="profile-content">
@@ -150,44 +155,9 @@
                     <h2 class="section-title">Активные брони</h2>
                     <p class="section-subtitle">Отслеживайте ваши текущие игровые сессии</p>
                 </div>
-
-                <div class="orders-list">
-                    <div class="order-card">
-                        <div class="order-header">
-                            <div class="order-info">
-                                <h3 class="order-number">Бронь #8421</h3>
-                                <span class="order-date">15 января 2025, 18:00–20:00</span>
-                            </div>
-                            <div class="order-status status-processing">
-                                <i class="fas fa-clock"></i>
-                                Ожидается
-                            </div>
-                        </div>
-                        <div class="order-items">
-                            <div class="order-item">
-                                <div class="item-image">
-                                    <i class="fas fa-desktop"></i>
-                                </div>
-                                <div class="item-info">
-                                    <h4 class="item-name">Зона: High FPS</h4>
-                                    <p class="item-description">RTX 4070 • 240Hz • DXR</p>
-                                </div>
-                                <div class="item-price">24 BYN</div>
-                            </div>
-                        </div>
-                        <div class="order-footer">
-                            <div class="order-total">
-                                <span class="total-label">Итого:</span>
-                                <span class="total-amount">24 BYN</span>
-                            </div>
-                            <div class="order-actions">
-                                <button class="btn btn-secondary">Отменить</button>
-                                <button class="btn btn-primary">Подробнее</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="orders-list"></div>
             </section>
+
 
             <!-- History Section -->
             <section class="profile-section" id="history">
@@ -222,6 +192,44 @@
                 </div>
             </section>
 
+            <section class="profile-section" id="reviews">
+                <div class="section-header">
+                    <h2 class="section-title">Мои отзывы</h2>
+                    <p class="section-subtitle">Делитесь впечатлениями о нашем клубе</p>
+                </div>
+
+                <div class="reviews-container">
+                    <div class="add-review-card">
+                        <h3 class="add-review-title">Оставить отзыв</h3>
+                        <div class="rating-selector">
+                            <span class="rating-label">Ваша оценка:</span>
+                            <div class="stars">
+                                <i class="fas fa-star" data-rating="1"></i>
+                                <i class="fas fa-star" data-rating="2"></i>
+                                <i class="fas fa-star" data-rating="3"></i>
+                                <i class="fas fa-star" data-rating="4"></i>
+                                <i class="fas fa-star" data-rating="5"></i>
+                            </div>
+                        </div>
+                        <textarea
+                            id="reviewText"
+                            class="review-textarea"
+                            placeholder="Расскажите о вашем опыте посещения клуба..."
+                            maxlength="500"
+                        ></textarea>
+                        <div class="review-footer">
+                            <span class="char-count">0/500</span>
+                            <button class="btn btn-primary" id="submitReviewBtn">
+                                <i class="fas fa-paper-plane"></i>
+                                Отправить отзыв
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="reviews-list" id="reviewsList">
+                    </div>
+                </div>
+            </section>
 
             <!-- Settings Section -->
             <section class="profile-section" id="settings">
@@ -318,6 +326,69 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelTopup">Отмена</button>
                 <button class="btn btn-primary" id="confirmTopup">Пополнить</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="barOrderModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-title">Заказ из бара</h3>
+                    <p class="modal-subtitle">Сессия #<span id="currentSessionId"></span></p>
+                </div>
+                <button class="modal-close" id="barOrderModalClose" aria-label="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body modal-scrollable">
+                <div class="category-filters">
+                    <button class="category-btn active" data-category="all">
+                        <i class="fas fa-th"></i>
+                        Все
+                    </button>
+                    <button class="category-btn" data-category="Напитки">
+                        <i class="fas fa-glass-water"></i>
+                        Напитки
+                    </button>
+                    <button class="category-btn" data-category="Снэки">
+                        <i class="fas fa-cookie"></i>
+                        Снэки
+                    </button>
+                    <button class="category-btn" data-category="Сладости">
+                        <i class="fas fa-candy-cane"></i>
+                        Сладости
+                    </button>
+                </div>
+
+                <div class="products-grid" id="productsGrid">
+                </div>
+
+                <div class="cart-section" id="cartSection" style="display: none;">
+                    <div class="cart-header">
+                        <h4 class="cart-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            Корзина (<span id="cartCount">0</span>)
+                        </h4>
+                        <button class="btn-clear-cart" id="clearCartBtn">
+                            <i class="fas fa-trash"></i>
+                            Очистить
+                        </button>
+                    </div>
+                    <div class="cart-items" id="cartItems"></div>
+                    <div class="cart-total">
+                        <span class="total-label">Итого:</span>
+                        <span class="total-amount" id="cartTotal">0.00 BYN</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBarOrder">Отмена</button>
+                <button class="btn btn-primary" id="confirmBarOrder" disabled>
+                    <i class="fas fa-check"></i>
+                    Оформить заказ
+                </button>
             </div>
         </div>
     </div>
