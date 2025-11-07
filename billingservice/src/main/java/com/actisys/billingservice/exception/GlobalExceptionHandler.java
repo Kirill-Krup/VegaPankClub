@@ -19,5 +19,11 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse("TARIFF ALREADY EXISTS", e.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
+
+  @ExceptionHandler(SessionNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleSessionNotFoundException(SessionNotFoundException e) {
+    ErrorResponse error = new ErrorResponse("SESSION NOT FOUND", e.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+  }
 }
 

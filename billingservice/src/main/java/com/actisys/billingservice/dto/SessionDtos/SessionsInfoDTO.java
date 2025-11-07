@@ -1,4 +1,4 @@
-package com.actisys.billingservice.dto;
+package com.actisys.billingservice.dto.SessionDtos;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;

@@ -1,5 +1,7 @@
-package com.actisys.billingservice.dto;
+package com.actisys.billingservice.dto.SessionDtos;
 
+import com.actisys.billingservice.dto.TariffDtos.TariffDTO;
+import com.actisys.billingservice.model.SessionStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,5 +37,5 @@ public class SessionDTO {
 
   @NotBlank(message = "Session status is required")
   @Size(max = 50, message = "Status must not exceed 50 characters")
-  private final String status;
+  private final SessionStatus status;
 }

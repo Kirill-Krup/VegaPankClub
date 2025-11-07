@@ -1,6 +1,7 @@
 package com.actisys.billingservice.controller;
 
-import com.actisys.billingservice.dto.SessionsInfoDTO;
+import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
+import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.billingservice.service.SessionService;
 import com.actisys.common.dto.clientDtos.SessionStatsDTO;
 import java.time.LocalDate;
@@ -8,10 +9,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,6 +39,19 @@ public class SessionController {
     LocalDateTime rangeEnd = endDate.plusDays(1).atStartOfDay();
     List<SessionsInfoDTO> allSessions = sessionService.getSessionsInRange(rangeStart, rangeEnd);
     return ResponseEntity.ok(allSessions);
+  }
+
+  @GetMapping("/mySessions")
+  public ResponseEntity<List<SessionResponseDto>> getMySessions(
+      @RequestHeader(value = "X-User-Id", required = false) String userId) {
+    List<SessionResponseDto> responseDto = sessionService.getUserSessions(Long.parseLong(userId));
+    return ResponseEntity.ok(responseDto);
+  }
+
+  @PutMapping("/cancelSession/{id}")
+  public ResponseEntity<Void> cancelSession(@RequestParam Long id) {
+    sessionService.cancelSession(id);
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/stats/{userId}")

@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SessionRepository extends JpaRepository<Session, Long> {
 
+  @Query("SELECT s FROM Session s WHERE s.userId = :userId " +
+      "AND s.endTime IS NOT NULL " +
+      "AND s.status = 'COMPLETED'")
   List<Session> findAllByUserIdAndEndTimeIsNotNull(Long userId);
 
   @Query("SELECT s FROM Session s WHERE " +
@@ -19,4 +22,6 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
       @Param("startOfDay") LocalDateTime startOfDay,
       @Param("endOfDay") LocalDateTime endOfDay
   );
+
+  List<Session> findAllByUserId(Long userId);
 }

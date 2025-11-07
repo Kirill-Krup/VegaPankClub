@@ -1,4 +1,4 @@
-package com.actisys.billingservice.dto;
+package com.actisys.billingservice.dto.TariffDtos;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

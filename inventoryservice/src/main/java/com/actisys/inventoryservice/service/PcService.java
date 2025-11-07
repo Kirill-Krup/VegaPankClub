@@ -1,5 +1,6 @@
 package com.actisys.inventoryservice.service;
 
+import com.actisys.common.dto.clientDtos.PcResponseDTO;
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
 import com.actisys.inventoryservice.dto.PcInfoDTO;
@@ -15,4 +16,8 @@ public interface PcService {
   PCDTO updatePc(Long id, PcUpdateDTO pcUpdateDTO);
 
   void deletePc(Long id);
+
+  PcResponseDTO getPcInfoById(Long id);
+
+  List<PcResponseDTO> getPcsByIds(List<Long> ids);
 }

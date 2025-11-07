@@ -1,7 +1,7 @@
 package com.actisys.billingservice.service;
 
-import com.actisys.billingservice.dto.CreateTariffDTO;
-import com.actisys.billingservice.dto.TariffDTO;
+import com.actisys.billingservice.dto.TariffDtos.CreateTariffDTO;
+import com.actisys.billingservice.dto.TariffDtos.TariffDTO;
 import java.util.List;
 
 public interface TariffService {

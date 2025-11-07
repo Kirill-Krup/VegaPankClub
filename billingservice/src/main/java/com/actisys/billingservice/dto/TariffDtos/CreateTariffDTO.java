@@ -1,4 +1,4 @@
-package com.actisys.billingservice.dto;
+package com.actisys.billingservice.dto.TariffDtos;
 
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
