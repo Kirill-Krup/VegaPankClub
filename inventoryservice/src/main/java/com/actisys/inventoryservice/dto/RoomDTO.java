@@ -19,6 +19,4 @@ public class RoomDTO {
   private final String name;
 
   private final boolean isVip;
-
-  private final List<PCDTO> pcs;
 }

@@ -1,16 +1,16 @@
 package com.actisys.billingservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Getter
-@RequiredArgsConstructor
 public class TariffDTO {
   private final Long tariffId;
 
@@ -27,4 +27,18 @@ public class TariffDTO {
 
   @NotNull(message = "Hours is required")
   private final int hours;
+
+  @JsonCreator
+  public TariffDTO(
+      @JsonProperty("tariffId") Long tariffId,
+      @JsonProperty("name") String name,
+      @JsonProperty("price") BigDecimal price,
+      @JsonProperty("vip") boolean isVip,
+      @JsonProperty("hours") int hours) {
+    this.tariffId = tariffId;
+    this.name = name;
+    this.price = price;
+    this.isVip = isVip;
+    this.hours = hours;
+  }
 }

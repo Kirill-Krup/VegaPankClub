@@ -11,7 +11,10 @@ import com.actisys.billingservice.service.TariffService;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +24,15 @@ public class TariffServiceImpl implements TariffService {
   private final TariffMapper tariffMapper;
 
   @Override
+  @Cacheable(value = "allTariffs", key = "'all'")
   public List<TariffDTO> getAllTariffs() {
     List<Tariff> tariffs = tariffRepository.findAll();
     return tariffs.stream().map(tariffMapper::toDTO).collect(Collectors.toList());
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allTariffs", allEntries = true)
   public TariffDTO createTariff(CreateTariffDTO tariffForCreateDTO) {
     if(tariffRepository.existsByName(tariffForCreateDTO.getName())) {
       throw new TariffAlreadyExistsException(tariffForCreateDTO.getName());
@@ -42,6 +48,8 @@ public class TariffServiceImpl implements TariffService {
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allTariffs", allEntries = true)
   public TariffDTO updateTariff(Long id, CreateTariffDTO updatedTariff) {
     Tariff tariff = tariffRepository.findById(id).orElseThrow(()->new TariffNotFoundException(id));
     if(!tariff.getName().equals(updatedTariff.getName())) {
@@ -57,10 +65,11 @@ public class TariffServiceImpl implements TariffService {
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allTariffs", allEntries = true)
   public void deleteTariff(Long id) {
-    if(!tariffRepository.existsById(id)) {
-      throw new TariffNotFoundException(id);
-    }
-    tariffRepository.deleteById(id);
+    Tariff tariff = tariffRepository.findById(id)
+        .orElseThrow(() -> new TariffNotFoundException(id));
+    tariffRepository.delete(tariff);
   }
 }

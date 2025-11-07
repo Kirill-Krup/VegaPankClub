@@ -5,8 +5,9 @@ import com.actisys.inventoryservice.dto.PcCreateDTO;
 import com.actisys.inventoryservice.dto.PcInfoDTO;
 import com.actisys.inventoryservice.model.PC;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = RoomMapper.class)
 public interface PcMapper {
 
   PCDTO toDTO(PC pc);
@@ -15,5 +16,6 @@ public interface PcMapper {
 
   PC toEntity(PcCreateDTO pcCreateDTO);
 
+  @Mapping(source = "room", target = "room")
   PcInfoDTO toInfoDTO(PC pc);
 }
