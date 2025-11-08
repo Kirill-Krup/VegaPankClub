@@ -3,6 +3,8 @@ const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 let currentUser = null;
 let tariffs = [];
+let userBonusCoins = 0;
+let usedBonusCoins = 0;
 let bookingData = {
   tariff: null,
   date: null,
@@ -13,10 +15,8 @@ let bookingData = {
   pcsInfo: []
 };
 
-// Fetch User Profile
 async function fetchUserProfile() {
   try {
-    console.log('Fetching user profile...');
     const response = await fetch('/api/v1/profile/getProfile', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -49,7 +49,33 @@ async function fetchUserProfile() {
   }
 }
 
-// Fetch Tariffs
+async function fetchUserBonusCoins() {
+  if (!currentUser) {
+    userBonusCoins = 0;
+    return 0;
+  }
+
+  try {
+    const response = await fetch('/api/v1/profile/myCoins', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    userBonusCoins = data.bonusCoins || 0;
+    return userBonusCoins;
+  } catch (error) {
+    console.error('Error fetching bonus coins:', error);
+    userBonusCoins = 0;
+    return 0;
+  }
+}
+
 async function fetchTariffs() {
   try {
     const response = await fetch('/api/v1/tariffs/allTariffs', {
@@ -301,13 +327,30 @@ function calculateDuration(startTime, endTime) {
   let startTotalMinutes = startHour * 60 + startMinute;
   let endTotalMinutes = endHour * 60 + endMinute;
 
-  if (endTotalMinutes <= startTotalMinutes) {
-    endTotalMinutes += 24 * 60;
+  let daysDifference = 0;
+  if (endTotalMinutes < startTotalMinutes) {
+    daysDifference = 1;
   }
+
+  const endTimeSelect = qs('#endTime');
+  if (endTimeSelect && endTimeSelect.value) {
+    const selectedOption = endTimeSelect.selectedOptions[0];
+    const optionText = selectedOption.textContent;
+
+    if (optionText.includes('(+1 день)')) {
+      daysDifference = 1;
+    } else if (optionText.includes('(+2 дня)')) {
+      daysDifference = 2;
+    }
+  }
+
+  endTotalMinutes += daysDifference * 24 * 60;
 
   const durationMinutes = endTotalMinutes - startTotalMinutes;
   return durationMinutes / 60;
 }
+
+
 
 function initFloorSelection() {
   const floorBtns = qsa('.floor-btn');
@@ -381,11 +424,112 @@ function handleSeatClick(event) {
   updateBookingSummary();
 }
 
-function updateBookingSummary() {
+function initBonusSystem() {
+  const checkbox = qs('#useBonusCheckbox');
+  const sliderContainer = qs('#bonusSliderContainer');
+  const slider = qs('#bonusSlider');
+  const bonusUseValue = qs('#bonusUseValue');
+
+  if (!checkbox || !sliderContainer || !slider) return;
+
+  checkbox.addEventListener('change', () => {
+    if (checkbox.checked) {
+      sliderContainer.style.display = 'block';
+      updateBonusSlider();
+    } else {
+      sliderContainer.style.display = 'none';
+      usedBonusCoins = 0;
+      slider.value = 0;
+      updatePriceBreakdown();
+    }
+  });
+
+  slider.addEventListener('input', () => {
+    usedBonusCoins = parseInt(slider.value);
+    if (bonusUseValue) {
+      bonusUseValue.textContent = usedBonusCoins;
+    }
+    updatePriceBreakdown();
+  });
+}
+
+function updateBonusSlider() {
+  const slider = qs('#bonusSlider');
+  const maxBonusLabel = qs('#maxBonusLabel');
+  const bonusUseValue = qs('#bonusUseValue');
+
+  if (!slider) return;
+
+  const originalPrice = calculateOriginalPrice();
+  const maxUsableCoins = Math.min(userBonusCoins, Math.floor(originalPrice));
+
+  slider.max = maxUsableCoins;
+  slider.value = 0;
+  usedBonusCoins = 0;
+
+  if (maxBonusLabel) {
+    maxBonusLabel.textContent = maxUsableCoins;
+  }
+
+  if (bonusUseValue) {
+    bonusUseValue.textContent = '0';
+  }
+}
+
+function calculateOriginalPrice() {
+  if (!bookingData.duration || bookingData.seats.length === 0 || !bookingData.tariff) {
+    return 0;
+  }
+  const duration = bookingData.duration;
+  const pricePerHour = bookingData.tariff.price / bookingData.tariff.hours;
+  const pcCount = bookingData.seats.length;
+  return duration * pricePerHour * pcCount;
+}
+
+function calculateFinalPrice() {
+  const originalPrice = calculateOriginalPrice();
+  return Math.max(0, originalPrice - usedBonusCoins);
+}
+
+function calculateEarnedCoins() {
+  const finalPrice = calculateFinalPrice();
+  return Math.floor(finalPrice * 0.2);
+}
+
+function updatePriceBreakdown() {
+  const originalPriceEl = qs('#originalPrice');
+  const discountRow = qs('#discountRow');
+  const discountValue = qs('#discountValue');
+  const summaryPriceEl = qs('#summaryPrice');
+
+  const originalPrice = calculateOriginalPrice();
+  const finalPrice = calculateFinalPrice();
+
+  if (originalPriceEl) {
+    originalPriceEl.textContent = `${originalPrice.toFixed(2)} BYN`;
+  }
+
+  if (usedBonusCoins > 0) {
+    if (discountRow) discountRow.style.display = 'flex';
+    if (discountValue) discountValue.textContent = `-${usedBonusCoins.toFixed(2)} BYN`;
+  } else {
+    if (discountRow) discountRow.style.display = 'none';
+  }
+
+  if (summaryPriceEl) {
+    summaryPriceEl.textContent = `${finalPrice.toFixed(2)} BYN`;
+  }
+
+  const earnCoinsEl = qs('#earnCoins');
+  if (earnCoinsEl) {
+    earnCoinsEl.textContent = calculateEarnedCoins();
+  }
+}
+
+async function updateBookingSummary() {
   const summary = qs('#bookingSummary');
   if (!summary) return;
 
-  // Показываем summary только если есть хотя бы тариф
   if (!bookingData.tariff) {
     summary.style.display = 'none';
     return;
@@ -393,19 +537,16 @@ function updateBookingSummary() {
 
   summary.style.display = 'block';
 
-  // Обновляем тариф
   const tariffEl = qs('#summaryTariff');
   if (tariffEl) {
     tariffEl.textContent = bookingData.tariff?.name || '-';
   }
 
-  // Обновляем дату
   const dateEl = qs('#summaryDate');
   if (dateEl) {
     dateEl.textContent = bookingData.date ? formatDate(bookingData.date) : '-';
   }
 
-  // Обновляем время
   const timeEl = qs('#summaryTime');
   if (timeEl && bookingData.startTime && bookingData.endTime && bookingData.duration) {
     timeEl.textContent = `${bookingData.startTime} - ${bookingData.endTime} (${bookingData.duration.toFixed(1)} ч)`;
@@ -413,7 +554,6 @@ function updateBookingSummary() {
     timeEl.textContent = '-';
   }
 
-  // Обновляем список ПК
   const seatsSummary = qs('#summarySeat');
   if (seatsSummary) {
     if (bookingData.pcsInfo.length > 0) {
@@ -430,17 +570,34 @@ function updateBookingSummary() {
     }
   }
 
-  // Обновляем цену
-  const priceEl = qs('#summaryPrice');
   const confirmBtn = qs('#confirmBookingBtn');
+  const bonusSection = qs('#bonusSection');
 
   if (bookingData.duration && bookingData.seats.length > 0) {
-    const price = calculatePrice();
-    if (priceEl) priceEl.textContent = `${price.toFixed(2)} BYN`;
+    await fetchUserBonusCoins();
+
+    if (bonusSection && currentUser) {
+      bonusSection.style.display = 'block';
+
+      const availableCoinsEl = qs('#availableCoins');
+      if (availableCoinsEl) {
+        availableCoinsEl.textContent = userBonusCoins;
+      }
+
+      updateBonusSlider();
+    }
+
+    updatePriceBreakdown();
+
     if (confirmBtn) confirmBtn.disabled = false;
   } else {
-    if (priceEl) priceEl.textContent = '0.00 BYN';
+    if (bonusSection) bonusSection.style.display = 'none';
     if (confirmBtn) confirmBtn.disabled = true;
+
+    const originalPriceEl = qs('#originalPrice');
+    const summaryPriceEl = qs('#summaryPrice');
+    if (originalPriceEl) originalPriceEl.textContent = '0.00 BYN';
+    if (summaryPriceEl) summaryPriceEl.textContent = '0.00 BYN';
   }
 }
 
@@ -451,16 +608,6 @@ function formatDate(dateString) {
     month: '2-digit',
     year: 'numeric'
   });
-}
-
-function calculatePrice() {
-  if (!bookingData.duration || bookingData.seats.length === 0 || !bookingData.tariff) {
-    return 0;
-  }
-  const duration = bookingData.duration;
-  const pricePerHour = bookingData.tariff.price / bookingData.tariff.hours;
-  const pcCount = bookingData.seats.length;
-  return duration * pricePerHour * pcCount;
 }
 
 function initConfirmBooking() {
@@ -479,6 +626,13 @@ function initConfirmBooking() {
       return;
     }
 
+    const finalPrice = calculateFinalPrice();
+
+    if (currentUser.balance < finalPrice) {
+      alert(`Недостаточно средств. Необходимо: ${finalPrice.toFixed(2)} BYN, Доступно: ${currentUser.balance.toFixed(2)} BYN`);
+      return;
+    }
+
     try {
       const startDateTime = `${bookingData.date}T${bookingData.startTime}:00`;
       const endDateTime = `${bookingData.date}T${bookingData.endTime}:00`;
@@ -489,7 +643,8 @@ function initConfirmBooking() {
           startTime: startDateTime,
           endTime: endDateTime,
           seatNumber: seat,
-          totalPrice: calculatePrice() / bookingData.seats.length
+          totalPrice: finalPrice / bookingData.seats.length,
+          usedBonusCoins: Math.floor(usedBonusCoins / bookingData.seats.length)
         };
 
         return fetch('/api/v1/bookings/create', {
@@ -504,7 +659,11 @@ function initConfirmBooking() {
       const allSuccess = responses.every(r => r.ok);
 
       if (allSuccess) {
-        alert(`Успешно создано бронирований: ${bookingData.seats.length}`);
+        const earnedCoins = calculateEarnedCoins();
+        alert(`Успешно! 
+Бронирований: ${bookingData.seats.length}
+Оплачено: ${finalPrice.toFixed(2)} BYN
+${usedBonusCoins > 0 ? `Использовано бонусов: ${usedBonusCoins}\n` : ''}Начислено бонусов: ${earnedCoins}`);
         window.location.href = '/static/html/profile.html';
       } else {
         throw new Error('Некоторые бронирования не удались');
@@ -538,8 +697,45 @@ async function fetchAvailableSeats() {
   }
 
   try {
+    // ✅ ИСПРАВЛЕНИЕ: вычисляем правильные даты с учётом перехода через день
+    const startDateTime = `${bookingData.date}T${bookingData.startTime}:00`;
+
+    // Вычисляем endDateTime с учётом дней
+    const startDate = new Date(`${bookingData.date}T${bookingData.startTime}:00`);
+    const [endHour, endMinute] = bookingData.endTime.split(':').map(Number);
+    const [startHour, startMinute] = bookingData.startTime.split(':').map(Number);
+
+    let daysToAdd = 0;
+    const endTotalMinutes = endHour * 60 + endMinute;
+    const startTotalMinutes = startHour * 60 + startMinute;
+
+    if (endTotalMinutes < startTotalMinutes) {
+      daysToAdd = 1;
+    }
+
+    // Проверяем индикатор дня
+    const endTimeSelect = qs('#endTime');
+    if (endTimeSelect && endTimeSelect.value) {
+      const selectedOption = endTimeSelect.selectedOptions[0];
+      const optionText = selectedOption.textContent;
+
+      if (optionText.includes('(+1 день)')) {
+        daysToAdd = 1;
+      } else if (optionText.includes('(+2 дня)')) {
+        daysToAdd = 2;
+      }
+    }
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + daysToAdd);
+
+    const endDateTime = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}T${bookingData.endTime}:00`;
+
+    const startQueryDate = bookingData.date;
+    const endQueryDate = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
     const response = await fetch(
-        `/api/v1/sessions/sessionsForInfo?startDate=${bookingData.date}&endDate=${bookingData.date}`,
+        `/api/v1/sessions/sessionsForInfo?startDate=${startQueryDate}&endDate=${endQueryDate}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -552,11 +748,12 @@ async function fetchAvailableSeats() {
     const sessions = await response.json();
     const occupiedPcIds = new Set();
 
+    const bookingStart = new Date(startDateTime);
+    const bookingEnd = new Date(endDateTime);
+
     sessions.forEach(session => {
       const sessionStart = new Date(session.startTime);
       const sessionEnd = new Date(session.endTime);
-      const bookingStart = new Date(`${bookingData.date}T${bookingData.startTime}:00`);
-      const bookingEnd = new Date(`${bookingData.date}T${bookingData.endTime}:00`);
 
       const isOverlapping = sessionStart < bookingEnd && sessionEnd > bookingStart;
       if (isOverlapping) {
@@ -570,6 +767,7 @@ async function fetchAvailableSeats() {
     return new Set();
   }
 }
+
 
 async function renderPCs() {
   const floor1Layout = qs('#floor1 .plan-layout');
@@ -934,6 +1132,7 @@ async function initApp() {
   initFloorSelection();
   initSeatSelection();
   initConfirmBooking();
+  initBonusSystem();
   setYear();
 
   const profileContainer = qs('.auth__profile');

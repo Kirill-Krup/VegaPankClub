@@ -251,4 +251,10 @@ public class UserServiceImpl implements UserService {
     log.debug("User unblocked successfully: {}, isBanned={}", id, saved.isBanned());
     return result;
   }
+
+  @Override
+  public Integer myCoins(Long id) {
+    User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    return user.getBonusCoins();
+  }
 }

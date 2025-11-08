@@ -49,7 +49,7 @@ public class SessionController {
   }
 
   @PutMapping("/cancelSession/{id}")
-  public ResponseEntity<Void> cancelSession(@RequestParam Long id) {
+  public ResponseEntity<Void> cancelSession(@PathVariable("id") Long id) {
     sessionService.cancelSession(id);
     return ResponseEntity.noContent().build();
   }
