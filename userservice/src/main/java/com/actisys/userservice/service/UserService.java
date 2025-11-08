@@ -27,4 +27,6 @@ public interface UserService {
   UserDTO blockUser(Long id);
 
   UserDTO unBlockUser(Long id);
+
+  Integer myCoins(Long id);
 }

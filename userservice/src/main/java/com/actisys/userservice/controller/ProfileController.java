@@ -6,6 +6,7 @@ import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import com.actisys.userservice.service.UserService;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,6 +51,13 @@ public class ProfileController {
     return userService.getAllProfile(Long.parseLong(userId))
         .map(ResponseEntity::ok)
         .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+  }
+
+  @GetMapping("/myCoins")
+  public ResponseEntity<Map<String, Integer>> myCoins(
+      @RequestHeader(value= "X-User-Id", required = false) String userId){
+    Integer coins = userService.myCoins(Long.parseLong(userId));
+    return ResponseEntity.ok(Map.of("bonusCoins", coins));
   }
 
   @PutMapping("/update")

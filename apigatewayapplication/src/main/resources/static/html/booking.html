@@ -206,43 +206,73 @@
       </div>
     </section>
 
-    <!-- Booking Summary -->
     <div class="booking-summary" id="bookingSummary" style="display: none;">
       <h3>Итоговая информация</h3>
       <div class="summary-grid">
-        <div class="summary-item">
-          <i class="fas fa-ticket-alt"></i>
-          <div>
-            <span class="summary-label">Тариф</span>
-            <span class="summary-value" id="summaryTariff"></span>
+      </div>
+
+      <div class="bonus-section" id="bonusSection" style="display: none;">
+        <div class="bonus-header">
+          <i class="fas fa-coins"></i>
+          <span class="bonus-title">Бонусные баллы</span>
+        </div>
+        <div class="bonus-info">
+          <div class="bonus-available">
+            <span class="bonus-label">Доступно:</span>
+            <span class="bonus-value" id="availableCoins">0</span>
+            <i class="fas fa-coins"></i>
+          </div>
+          <div class="bonus-earn">
+            <span class="bonus-label">Будет начислено:</span>
+            <span class="bonus-value bonus-earn-value" id="earnCoins">0</span>
+            <i class="fas fa-plus-circle"></i>
           </div>
         </div>
-        <div class="summary-item">
-          <i class="fas fa-calendar-alt"></i>
-          <div>
-            <span class="summary-label">Дата</span>
-            <span class="summary-value" id="summaryDate"></span>
-          </div>
-        </div>
-        <div class="summary-item">
-          <i class="fas fa-clock"></i>
-          <div>
-            <span class="summary-label">Время</span>
-            <span class="summary-value" id="summaryTime"></span>
-          </div>
-        </div>
-        <div class="summary-item">
-          <i class="fas fa-desktop"></i>
-          <div>
-            <span class="summary-label">Места</span>
-            <span class="summary-value" id="summarySeat"></span>
+
+        <div class="bonus-controls">
+          <label class="bonus-checkbox">
+            <input type="checkbox" id="useBonusCheckbox">
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-label">Использовать бонусы для скидки</span>
+          </label>
+
+          <div class="bonus-slider-container" id="bonusSliderContainer" style="display: none;">
+            <div class="bonus-slider-header">
+              <span>Использовать баллов:</span>
+              <span class="bonus-use-value" id="bonusUseValue">0</span>
+            </div>
+            <input type="range"
+                   id="bonusSlider"
+                   class="bonus-slider"
+                   min="0"
+                   max="0"
+                   value="0"
+                   step="1">
+            <div class="bonus-slider-labels">
+              <span>0</span>
+              <span id="maxBonusLabel">0</span>
+            </div>
           </div>
         </div>
       </div>
+
       <div class="summary-total">
-        <span>Итого к оплате:</span>
-        <span class="total-price" id="summaryPrice">0 BYN</span>
+        <div class="price-breakdown">
+          <div class="price-row">
+            <span>Сумма заказа:</span>
+            <span id="originalPrice">0 BYN</span>
+          </div>
+          <div class="price-row discount-row" id="discountRow" style="display: none;">
+            <span>Скидка (бонусы):</span>
+            <span class="discount-value" id="discountValue">-0 BYN</span>
+          </div>
+          <div class="price-row total-row">
+            <span>Итого к оплате:</span>
+            <span class="total-price" id="summaryPrice">0 BYN</span>
+          </div>
+        </div>
       </div>
+
       <button class="btn btn--primary btn--large" id="confirmBookingBtn">
         <i class="fas fa-check-circle"></i>
         Подтвердить бронирование

@@ -434,13 +434,9 @@ function renderHistoryItems(sessions) {
 }
 
 async function cancelSession(sessionId) {
-  if (!confirm('Вы уверены, что хотите отменить бронирование?')) {
-    return;
-  }
-
   try {
     const response = await fetch(`/api/v1/sessions/cancelSession/${sessionId}`, {
-      method: 'POST',
+      method: 'PUT',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
@@ -687,10 +683,8 @@ function removeFromCart(productId) {
 }
 
 function clearCart() {
-  if (confirm('Очистить корзину?')) {
-    cart = [];
-    updateCart();
-  }
+  cart = [];
+  updateCart();
 }
 
 async function submitBarOrder() {
