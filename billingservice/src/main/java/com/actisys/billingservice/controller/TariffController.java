@@ -28,6 +28,12 @@ public class TariffController {
     return new ResponseEntity<>(tariffList, HttpStatus.OK);
   }
 
+  @GetMapping("/getPopularTariff")
+  public ResponseEntity<List<TariffDTO>> getPopularTariff() {
+    List<TariffDTO> tariffList = tariffService.getPopularTariffs();
+    return new ResponseEntity<>(tariffList, HttpStatus.OK);
+  }
+
   @PostMapping("/createTariff")
   public ResponseEntity<TariffDTO> createTariff(@RequestBody CreateTariffDTO tariffForCreateDTO) {
     TariffDTO tariffDTO = tariffService.createTariff(tariffForCreateDTO);
