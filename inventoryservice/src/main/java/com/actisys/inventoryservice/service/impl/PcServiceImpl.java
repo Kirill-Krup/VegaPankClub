@@ -77,4 +77,18 @@ public class PcServiceImpl implements PcService {
     List<PC> pcs = pcRepository.findAllByIdIn(ids);
     return pcs.stream().map(pcMapper::toResponseDto).collect(Collectors.toList());
   }
+
+  @Override
+  public PCDTO disablePs(Long id) {
+    PC pc = pcRepository.findById(id).orElseThrow(()->new PcNotFoundException(id));
+    pc.setEnabled(false);
+    return pcMapper.toDTO(pcRepository.save(pc));
+  }
+
+  @Override
+  public PCDTO activatePs(Long id) {
+    PC pc = pcRepository.findById(id).orElseThrow(()->new PcNotFoundException(id));
+    pc.setEnabled(true);
+    return pcMapper.toDTO(pcRepository.save(pc));
+  }
 }

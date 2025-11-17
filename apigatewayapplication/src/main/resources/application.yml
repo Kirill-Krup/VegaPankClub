@@ -35,10 +35,14 @@ spring:
               uri: http://localhost:8083
               predicates:
                 - Path=/api/v1/pcs/**
-            - id: billingsevice-rotes
+            - id: billingsevice-route
               uri: http://localhost:8084
               predicates:
                 - Path=/api/v1/tariffs/**,/api/v1/sessions/**
+            - id: adminservice-route
+              uri: http://localhost:8086
+              predicates:
+                - Path=/api/v1/admin/**
 
 jwt:
   secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxIiwiZXhwIjoxNzMwMjI1MzE3fQ8fK7j9Lm2N4p6Q1r3T5v7X8z0BcD9FgH2Jk4M6oP8q"

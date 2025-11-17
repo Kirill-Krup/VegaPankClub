@@ -20,4 +20,8 @@ public interface PcService {
   PcResponseDTO getPcInfoById(Long id);
 
   List<PcResponseDTO> getPcsByIds(List<Long> ids);
+
+  PCDTO disablePs(Long id);
+
+  PCDTO activatePs(Long id);
 }

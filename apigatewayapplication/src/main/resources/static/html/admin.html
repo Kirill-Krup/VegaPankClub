@@ -120,14 +120,36 @@
     <section class="section" id="computers">
       <div class="section-header">
         <h1>Управление компьютерами</h1>
-        <button class="btn btn--primary">
-          <i class="fas fa-plus"></i>
-          Добавить компьютер
-        </button>
+        <div class="section-actions">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Поиск по названию, CPU или комнате..." id="computerSearch">
+          </div>
+        </div>
       </div>
-      <div class="placeholder-box">
-        <i class="fas fa-desktop"></i>
-        <p>Раздел в разработке</p>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Компьютер / Комната</th>
+            <th>CPU</th>
+            <th>GPU</th>
+            <th>RAM</th>
+            <th>Монитор</th>
+            <th>Статус</th>
+            <th>Действия</th>
+          </tr>
+          </thead>
+          <tbody id="computersTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+              <p style="margin-top: 1rem; color: var(--gray);">Загрузка компьютеров...</p>
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -354,6 +376,62 @@
     <div class="modal-footer">
       <button type="button" class="btn btn--secondary" onclick="closeProductModal()">Отмена</button>
       <button type="submit" form="productForm" class="btn btn--primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Computer Modal -->
+<div class="modal" id="editComputerModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Редактировать компьютер</h2>
+      <button class="modal-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="editComputerForm" class="modal-body">
+      <div class="form-group">
+        <label for="editComputerName">Название *</label>
+        <input type="text" id="editComputerName" name="pcName" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label for="editComputerRoomName">Комната</label>
+        <input type="text" id="editComputerRoomName" class="form-input" readonly>
+        <input type="hidden" id="editComputerRoomId">
+      </div>
+      <div class="form-group">
+        <label for="editComputerCpu">CPU *</label>
+        <input type="text" id="editComputerCpu" name="pcCpu" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label for="editComputerGpu">GPU *</label>
+        <input type="text" id="editComputerGpu" name="pcGpu" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label for="editComputerRam">RAM *</label>
+        <input type="text" id="editComputerRam" name="pcRam" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label for="editComputerMonitor">Монитор *</label>
+        <input type="text" id="editComputerMonitor" name="pcMonitor" class="form-input" required>
+      </div>
+      <div class="form-row two-columns">
+        <label class="checkbox-label">
+          <input type="checkbox" id="editComputerStatus" name="pcStatus">
+          <span class="checkmark"></span>
+          Активен
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="editComputerOccupied" name="pcOccupied">
+          <span class="checkmark"></span>
+          Занят
+        </label>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--secondary" onclick="closeEditComputerModal()">Отмена</button>
+      <button type="submit" form="editComputerForm" class="btn btn--primary">Сохранить изменения</button>
     </div>
   </div>
 </div>
