@@ -44,6 +44,18 @@ public class PcController {
     return ResponseEntity.ok(responseDTOS);
   }
 
+  @PutMapping("/disablePs/{id}")
+  public ResponseEntity<PCDTO> disablePs(@PathVariable Long id) {
+    PCDTO dto = pcService.disablePs(id);
+    return ResponseEntity.ok(dto);
+  }
+
+  @PutMapping("/activatePs/{id}")
+  public ResponseEntity<PCDTO> activatePs(@PathVariable Long id) {
+    PCDTO dto = pcService.activatePs(id);
+    return ResponseEntity.ok(dto);
+  }
+
   @PostMapping("/addNewPc")
   public ResponseEntity<PCDTO> addNewPc(@RequestBody PcCreateDTO pcCreateDTO) {
     PCDTO pcDto = pcService.addNewPc(pcCreateDTO);

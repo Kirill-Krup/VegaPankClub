@@ -4,9 +4,11 @@ const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
 let allUsers = [];
 let allProducts = [];
 let allTariffs = [];
+let allComputers = [];
 let currentUser = null;
 let currentProduct = null;
 let currentTariff = null;
+let currentComputer = null;
 let currentCategoryFilter = 'all';
 
 // ========== ТАРИФЫ ==========
@@ -274,6 +276,242 @@ function closeTariffModal() {
   const modal = qs('#tariffModal');
   if (modal) modal.classList.remove('active');
   currentTariff = null;
+}
+
+// ========== КОМПЬЮТЕРЫ ==========
+async function fetchAllComputers() {
+  const tbody = qs('#computersTableBody');
+  if (tbody) {
+    tbody.dataset.loading = 'true';
+  }
+
+  try {
+    const response = await fetch('/api/v1/pcs/allPc', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch computers');
+    }
+
+    allComputers = await response.json();
+    renderComputers(allComputers);
+    console.log('Computers loaded:', allComputers);
+  } catch (error) {
+    console.error('Error fetching computers:', error);
+    showError('Не удалось загрузить список компьютеров');
+  } finally {
+    if (tbody) {
+      delete tbody.dataset.loading;
+    }
+  }
+}
+
+function renderComputers(computers) {
+  const tbody = qs('#computersTableBody');
+  if (!tbody) return;
+
+  if (!computers || computers.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Компьютеры не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = computers.map(pc => {
+    const roomName = pc.room?.name || 'Не указано';
+    const isVip = pc.room?.isVip || pc.room?.vip || false;
+    const isActive = pc.isEnabled ?? true;
+    const statusClass = isActive ? 'status-active' : 'status-inactive';
+    const statusText = isActive ? 'Активен' : 'Неактивен';
+    const toggleTitle = isActive ? 'Деактивировать' : 'Активировать';
+    const toggleIcon = isActive ? 'fa-power-off' : 'fa-bolt';
+    const toggleBtnClass = isActive ? 'btn-warning' : 'btn-success';
+
+    return `
+      <tr data-pc-id="${pc.id}">
+        <td>#${pc.id}</td>
+        <td>
+          <div class="pc-name">${pc.name || 'Без названия'}</div>
+          <span class="room-badge ${isVip ? 'vip' : ''}">
+            <i class="fas fa-door-open"></i>
+            ${roomName}
+          </span>
+        </td>
+        <td>
+          <span class="spec-chip"><i class="fas fa-microchip"></i>${pc.cpu || '-'}</span>
+        </td>
+        <td>
+          <span class="spec-chip"><i class="fas fa-chart-area"></i>${pc.gpu || '-'}</span>
+        </td>
+        <td>
+          <span class="spec-chip"><i class="fas fa-memory"></i>${pc.ram || '-'}</span>
+        </td>
+        <td>
+          <span class="spec-chip"><i class="fas fa-tv"></i>${pc.monitor || '-'}</span>
+        </td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-icon btn-primary" title="Редактировать" onclick="handleEditComputer(${pc.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon ${toggleBtnClass}" title="${toggleTitle}" onclick="handleToggleComputerStatus(${pc.id})">
+              <i class="fas ${toggleIcon}"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function handleEditComputer(pcId) {
+  currentComputer = allComputers.find(pc => pc.id === pcId);
+  if (!currentComputer) {
+    showError('Компьютер не найден');
+    return;
+  }
+
+  const modal = qs('#editComputerModal');
+  const form = qs('#editComputerForm');
+  if (!modal || !form) return;
+
+  form.querySelector('#editComputerName').value = currentComputer.name || '';
+  form.querySelector('#editComputerCpu').value = currentComputer.cpu || '';
+  form.querySelector('#editComputerGpu').value = currentComputer.gpu || '';
+  form.querySelector('#editComputerRam').value = currentComputer.ram || '';
+  form.querySelector('#editComputerMonitor').value = currentComputer.monitor || '';
+  form.querySelector('#editComputerRoomName').value = currentComputer.room?.name || 'Не указано';
+  form.querySelector('#editComputerRoomId').value = currentComputer.room?.id || '';
+  const currentEnabled = currentComputer.isEnabled ?? true;
+  const currentOccupied = currentComputer.isOccupied ?? currentComputer.occupied ?? false;
+  form.querySelector('#editComputerStatus').checked = currentEnabled;
+  form.querySelector('#editComputerOccupied').checked = currentOccupied;
+
+  modal.classList.add('active');
+}
+
+async function handleUpdateComputer(event) {
+  event.preventDefault();
+
+  if (!currentComputer) {
+    showError('Компьютер не выбран для редактирования');
+    return;
+  }
+
+  const form = event.target;
+  const name = form.querySelector('#editComputerName')?.value.trim();
+  const cpu = form.querySelector('#editComputerCpu')?.value.trim();
+  const gpu = form.querySelector('#editComputerGpu')?.value.trim();
+  const ram = form.querySelector('#editComputerRam')?.value.trim();
+  const monitor = form.querySelector('#editComputerMonitor')?.value.trim();
+  const status = form.querySelector('#editComputerStatus')?.checked ?? true;
+  const occupied = form.querySelector('#editComputerOccupied')?.checked ?? false;
+  const roomIdValue = form.querySelector('#editComputerRoomId')?.value || currentComputer.room?.id;
+  const roomId = roomIdValue ? parseInt(roomIdValue, 10) : null;
+
+  if (!name || !cpu || !gpu || !ram || !monitor || !roomId) {
+    showError('Заполните все обязательные поля для компьютера');
+    return;
+  }
+
+  const payload = {
+    name,
+    roomId,
+    cpu,
+    gpu,
+    ram,
+    monitor,
+    isEnabled: status,
+    isOccupied: occupied
+  };
+
+  try {
+    const response = await fetch(`/api/v1/pcs/updatePc/${currentComputer.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to update computer');
+    }
+
+    showSuccess('Компьютер обновлён');
+    closeEditComputerModal();
+    await fetchAllComputers();
+  } catch (error) {
+    console.error('Error updating computer:', error);
+    showError('Не удалось обновить компьютер: ' + error.message);
+  }
+}
+
+async function handleToggleComputerStatus(pcId) {
+  const pc = allComputers.find(item => item.id === pcId);
+  if (!pc) {
+    showError('Компьютер не найден');
+    return;
+  }
+
+  const isActive = pc.isEnabled ?? true;
+  const endpoint = isActive ? `/api/v1/pcs/disablePs/${pcId}` : `/api/v1/pcs/activatePs/${pcId}`;
+  const actionText = isActive ? 'деактивирован' : 'активирован';
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle PC status');
+    }
+
+    showSuccess(`Компьютер ${actionText}`);
+    await fetchAllComputers();
+  } catch (error) {
+    console.error('Error toggling computer status:', error);
+    showError('Не удалось изменить статус компьютера');
+  }
+}
+
+function closeEditComputerModal() {
+  const modal = qs('#editComputerModal');
+  modal?.classList.remove('active');
+  currentComputer = null;
+}
+
+function initComputerSearch() {
+  const searchInput = qs('#computerSearch');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+
+    if (!query) {
+      renderComputers(allComputers);
+      return;
+    }
+
+    const filtered = allComputers.filter(pc => {
+      const name = (pc.name || '').toLowerCase();
+      const cpu = (pc.cpu || '').toLowerCase();
+      const gpu = (pc.gpu || '').toLowerCase();
+      const room = (pc.room?.name || '').toLowerCase();
+
+      return name.includes(query) || cpu.includes(query) || gpu.includes(query) || room.includes(query);
+    });
+
+    renderComputers(filtered);
+  });
 }
 
 // ========== ПОЛЬЗОВАТЕЛИ ==========
@@ -875,6 +1113,8 @@ function initNavigation() {
         await fetchAllProducts();
       } else if (sectionId === 'tariffs') {
         await fetchAllTariffs();
+      } else if (sectionId === 'computers') {
+        await fetchAllComputers();
       }
     });
   });
@@ -888,6 +1128,9 @@ function initModals() {
     btn.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
       modal?.classList.remove('active');
+      if (modal?.id === 'editComputerModal') {
+        currentComputer = null;
+      }
     });
   });
 
@@ -895,6 +1138,9 @@ function initModals() {
     overlay.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
       modal?.classList.remove('active');
+      if (modal?.id === 'editComputerModal') {
+        currentComputer = null;
+      }
     });
   });
 
@@ -902,6 +1148,9 @@ function initModals() {
     btn.addEventListener('click', (e) => {
       const modal = e.target.closest('.modal');
       modal?.classList.remove('active');
+      if (modal?.id === 'editComputerModal') {
+        currentComputer = null;
+      }
     });
   });
 
@@ -931,6 +1180,11 @@ function initModals() {
         handleAddTariff(e);
       }
     });
+  }
+
+  const editComputerForm = qs('#editComputerForm');
+  if (editComputerForm) {
+    editComputerForm.addEventListener('submit', handleUpdateComputer);
   }
 }
 
@@ -962,8 +1216,10 @@ async function init() {
   initLogout();
   initCategoryFilter();
   initTariffPreview();
+  initComputerSearch();
 
   await fetchAllUsers();
+  await fetchAllComputers();
 }
 
 document.addEventListener('DOMContentLoaded', init);
