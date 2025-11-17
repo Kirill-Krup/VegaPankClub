@@ -9,32 +9,32 @@ import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
+import com.actisys.userservice.service.UserPhotoStorageService;
 import com.actisys.userservice.service.UserService;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final BillingServiceClient billingServiceClient;
-
-  public UserServiceImpl(UserRepository userRepository, UserMapper userMapper,
-      BillingServiceClient billingServiceClient) {
-    this.userRepository = userRepository;
-    this.userMapper = userMapper;
-    this.billingServiceClient = billingServiceClient;
-  }
+  private final UserPhotoStorageService userPhotoStorageService;
 
   /**
    * Update user profile.
@@ -256,5 +256,16 @@ public class UserServiceImpl implements UserService {
   public Integer myCoins(Long id) {
     User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
     return user.getBonusCoins();
+  }
+
+  @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
+  public UserDTO uploadAndUpdateUserPhoto(Long userId, MultipartFile file) {
+    log.debug("Uploading new photo for user {}", userId);
+
+    String key = userPhotoStorageService.uploadUserPhoto(userId, file);
+
+    return updateUserPhoto(userId, key);
   }
 }
