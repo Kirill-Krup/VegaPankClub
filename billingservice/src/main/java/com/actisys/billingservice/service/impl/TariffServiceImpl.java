@@ -8,11 +8,14 @@ import com.actisys.billingservice.mapper.TariffMapper;
 import com.actisys.billingservice.model.Tariff;
 import com.actisys.billingservice.repository.TariffRepository;
 import com.actisys.billingservice.service.TariffService;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,5 +74,19 @@ public class TariffServiceImpl implements TariffService {
     Tariff tariff = tariffRepository.findById(id)
         .orElseThrow(() -> new TariffNotFoundException(id));
     tariffRepository.delete(tariff);
+  }
+
+  @Override
+  @Cacheable(value = "allTariffs", key = "'top3'")
+  public List<TariffDTO> getPopularTariffs() {
+    List<Tariff> tariffs = tariffRepository.findPopularTariffs(Limit.of(3));
+    if(tariffs.size() < 3){
+      Set<Tariff> uniqueTariffs = new LinkedHashSet<>(tariffs);
+      uniqueTariffs.addAll(tariffRepository.findFirst3By());
+      tariffs = uniqueTariffs.stream()
+          .limit(3)
+          .toList();
+    }
+    return tariffs.stream().map(tariffMapper::toDTO).collect(Collectors.toList());
   }
 }

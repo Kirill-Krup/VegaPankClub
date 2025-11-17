@@ -1,5 +1,6 @@
 package com.actisys.inventoryservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,7 +11,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @Builder
 public class PcInfoDTO {
   private final Long id;
@@ -35,7 +35,10 @@ public class PcInfoDTO {
   @Size(max = 100)
   private final String monitor;
 
+  @JsonProperty("isEnabled")
   private final boolean isEnabled;
+  
+  @JsonProperty("isOccupied")
   private final boolean isOccupied;
 
   @NotNull(message = "Room ID cannot be null")
