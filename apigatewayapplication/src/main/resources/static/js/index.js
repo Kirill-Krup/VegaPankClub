@@ -26,11 +26,14 @@ async function fetchUserProfile() {
 
     const userData = await response.json();
     console.log('User profile loaded:', userData);
-    if(userData.banned === true){
-      window.location.href = "/static/html/YouAreBlocked.html"
+    // Проверка на заблокированность ПЕРЕД проверкой на админа
+    if(userData.banned === true || userData.isBanned === true){
+      window.location.href = "/static/html/YouAreBlocked.html";
+      return null;
     }
     if(userData.role === 2){
-      window.location.href = "/static/html/admin.html"
+      window.location.href = "/static/html/admin.html";
+      return null;
     }
     const userProfile = {
       username: userData.login,
@@ -162,11 +165,86 @@ function attachParallax() {
   });
 }
 
+async function fetchPopularTariffs() {
+  try {
+    const response = await fetch('/api/v1/tariffs/getPopularTariff', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const tariffs = await response.json();
+    console.log('Popular tariffs loaded:', tariffs);
+    renderTariffs(tariffs);
+    return tariffs;
+  } catch (error) {
+    console.error('Error fetching popular tariffs:', error);
+    // Оставляем статичные тарифы при ошибке
+    return [];
+  }
+}
+
+function renderTariffs(tariffs) {
+  const pricingContainer = qs('#pricing .grid.grid--3.pricing');
+  if (!pricingContainer || !tariffs || tariffs.length === 0) {
+    return;
+  }
+
+  // Очищаем контейнер
+  pricingContainer.innerHTML = '';
+
+  // Ограничиваем до 3 тарифов
+  const tariffsToShow = tariffs.slice(0, 3);
+
+  tariffsToShow.forEach((tariff, index) => {
+    const pricePerHour = tariff.hours > 0 
+      ? (parseFloat(tariff.price) / tariff.hours).toFixed(2) 
+      : parseFloat(tariff.price).toFixed(2);
+    
+    const isPopular = index === 1; // Второй тариф помечаем как популярный
+    
+    const tariffCard = document.createElement('article');
+    tariffCard.className = `price reveal ${isPopular ? 'price--popular' : ''}`;
+    tariffCard.innerHTML = `
+      ${isPopular ? '<div class="price__badge">Популярно</div>' : ''}
+      <h3 class="price__title">${tariff.name || 'Тариф'}</h3>
+      <div class="price__value">${pricePerHour} BYN/час</div>
+      <ul class="price__list">
+        <li>${tariff.hours} ${getHoursText(tariff.hours)}</li>
+        <li>${tariff.isVip || tariff.vip ? 'VIP зона' : 'Стандартная зона'}</li>
+        <li>${parseFloat(tariff.price).toFixed(2)} BYN за пакет</li>
+      </ul>
+      <button class="btn btn--primary" data-book data-plan="${tariff.name?.toLowerCase() || 'tariff'}">Выбрать</button>
+    `;
+    
+    pricingContainer.appendChild(tariffCard);
+  });
+
+  // Добавляем класс revealed для анимации
+  setTimeout(() => {
+    qsa('#pricing .reveal').forEach(el => el.classList.add('revealed'));
+  }, 100);
+
+  // Привязываем обработчики к новым кнопкам
+  attachPricing();
+}
+
+function getHoursText(hours) {
+  if (hours === 1) return 'час';
+  if (hours >= 2 && hours <= 4) return 'часа';
+  return 'часов';
+}
+
 function attachPricing() {
   qsa('[data-book]').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = btn.getAttribute('data-plan');
-      alert(`Вы выбрали план: ${plan?.toUpperCase()}`);
+      // Перенаправляем на страницу бронирования
+      window.location.href = '/static/html/booking.html';
     });
   });
 }
@@ -191,6 +269,7 @@ async function initApp() {
   console.log('Initializing app...');
 
   await fetchUserProfile();
+  await fetchPopularTariffs();
 
   attachAuthHandlers();
   attachSmoothScroll();

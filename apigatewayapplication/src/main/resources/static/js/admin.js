@@ -296,6 +296,8 @@ async function fetchAllComputers() {
     }
 
     allComputers = await response.json();
+    // Сортируем по ID для стабильного порядка
+    allComputers.sort((a, b) => (a.id || 0) - (b.id || 0));
     renderComputers(allComputers);
     console.log('Computers loaded:', allComputers);
   } catch (error) {
@@ -326,7 +328,7 @@ function renderComputers(computers) {
   tbody.innerHTML = computers.map(pc => {
     const roomName = pc.room?.name || 'Не указано';
     const isVip = pc.room?.isVip || pc.room?.vip || false;
-    const isActive = pc.isEnabled ?? true;
+    const isActive = pc.isEnabled ?? pc.enabled ?? true;
     const statusClass = isActive ? 'status-active' : 'status-inactive';
     const statusText = isActive ? 'Активен' : 'Неактивен';
     const toggleTitle = isActive ? 'Деактивировать' : 'Активировать';
@@ -389,10 +391,8 @@ function handleEditComputer(pcId) {
   form.querySelector('#editComputerMonitor').value = currentComputer.monitor || '';
   form.querySelector('#editComputerRoomName').value = currentComputer.room?.name || 'Не указано';
   form.querySelector('#editComputerRoomId').value = currentComputer.room?.id || '';
-  const currentEnabled = currentComputer.isEnabled ?? true;
-  const currentOccupied = currentComputer.isOccupied ?? currentComputer.occupied ?? false;
+  const currentEnabled = currentComputer.isEnabled ?? currentComputer.enabled ?? true;
   form.querySelector('#editComputerStatus').checked = currentEnabled;
-  form.querySelector('#editComputerOccupied').checked = currentOccupied;
 
   modal.classList.add('active');
 }
@@ -412,7 +412,6 @@ async function handleUpdateComputer(event) {
   const ram = form.querySelector('#editComputerRam')?.value.trim();
   const monitor = form.querySelector('#editComputerMonitor')?.value.trim();
   const status = form.querySelector('#editComputerStatus')?.checked ?? true;
-  const occupied = form.querySelector('#editComputerOccupied')?.checked ?? false;
   const roomIdValue = form.querySelector('#editComputerRoomId')?.value || currentComputer.room?.id;
   const roomId = roomIdValue ? parseInt(roomIdValue, 10) : null;
 
@@ -428,8 +427,7 @@ async function handleUpdateComputer(event) {
     gpu,
     ram,
     monitor,
-    isEnabled: status,
-    isOccupied: occupied
+    isEnabled: status
   };
 
   try {
@@ -461,7 +459,7 @@ async function handleToggleComputerStatus(pcId) {
     return;
   }
 
-  const isActive = pc.isEnabled ?? true;
+  const isActive = pc.isEnabled ?? pc.enabled ?? true;
   const endpoint = isActive ? `/api/v1/pcs/disablePs/${pcId}` : `/api/v1/pcs/activatePs/${pcId}`;
   const actionText = isActive ? 'деактивирован' : 'активирован';
 

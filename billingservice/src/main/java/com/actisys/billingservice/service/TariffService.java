@@ -14,4 +14,5 @@ public interface TariffService {
 
   void deleteTariff(Long id);
 
+  List<TariffDTO> getPopularTariffs();
 }

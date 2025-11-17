@@ -17,6 +17,7 @@ public interface PcMapper {
 
   PC toEntity(PcCreateDTO pcCreateDTO);
 
+  @Mapping(target = "isEnabled", expression = "java(pc.isEnabled())")
   @Mapping(source = "room", target = "room")
   PcInfoDTO toInfoDTO(PC pc);
 
