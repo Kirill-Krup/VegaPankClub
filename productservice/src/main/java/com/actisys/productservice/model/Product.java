@@ -31,7 +31,7 @@ public class Product {
   @Column(name = "price", nullable = false, precision = 10, scale = 2)
   private BigDecimal price;
 
-  @Column(name = "photo_path", nullable = false)
+  @Column(name = "photo_path")
   private String photoPath;
 
   @Column(name = "stock", nullable = false)

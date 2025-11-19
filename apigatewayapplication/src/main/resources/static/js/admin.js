@@ -748,7 +748,7 @@ function renderProducts(products) {
     const statusText = isActive ? 'Активен' : 'Неактивен';
 
     const imagePath = product.photoPath
-        ? `http://localhost:8082${product.photoPath}`
+        ? product.photoPath
         : 'https://via.placeholder.com/150';
 
     return `

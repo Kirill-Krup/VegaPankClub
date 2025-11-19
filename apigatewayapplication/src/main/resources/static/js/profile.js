@@ -1,3 +1,5 @@
+const AVATAR_KEY = 'vegapank_user_avatar_url';
+
 // ========== PROFILE DATA ==========
 
 async function fetchAndFillProfile() {
@@ -38,15 +40,38 @@ function setInfo(profile) {
 
   const safe = (v) => (v === null || v === undefined ? "" : v);
 
-  // Аватары
+  // === Аватары + localStorage ===
+  let backendAvatar = safe(profile.photoPath);
+  if (!backendAvatar) backendAvatar = "";
+
+  let storedAvatar = null;
+  try {
+    storedAvatar = localStorage.getItem(AVATAR_KEY);
+  } catch (e) {
+    console.warn('Cannot read avatar from localStorage in setInfo:', e);
+  }
+
+  const finalAvatar =
+      (backendAvatar && backendAvatar.trim().length > 0)
+          ? backendAvatar
+          : (storedAvatar || "https://i.pravatar.cc/160");
+
+  // сохраняем актуальный URL
+  try {
+    localStorage.setItem(AVATAR_KEY, finalAvatar);
+  } catch (e) {
+    console.warn('Cannot write avatar to localStorage in setInfo:', e);
+  }
+
   const avatar = document.getElementById("profileAvatar");
-  if (avatar) avatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/160";
+  if (avatar) avatar.src = finalAvatar;
 
   const userAvatar = document.getElementById("userAvatar");
-  if (userAvatar) userAvatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/80";
+  if (userAvatar) userAvatar.src = finalAvatar;
 
   const previewAvatar = document.getElementById("previewAvatar");
-  if (previewAvatar) previewAvatar.src = safe(profile.photoPath) || "https://i.pravatar.cc/160";
+  if (previewAvatar) previewAvatar.src = finalAvatar;
+
 
   // Имя и логин
   const profileName = document.getElementById("profileName");
@@ -195,10 +220,11 @@ function updateUIWithUserData(user) {
 
 async function uploadAvatar(file) {
   const formData = new FormData();
-  formData.append("avatar", file);
+  // имя параметра должно совпадать с @RequestParam в контроллере
+  formData.append("file", file);
 
   try {
-    const response = await fetch("/api/v1/profile/upload-avatar", {
+    const response = await fetch("/api/v1/profile/photo", {
       method: "POST",
       credentials: "include",
       body: formData
@@ -208,13 +234,25 @@ async function uploadAvatar(file) {
       throw new Error("Не удалось загрузить фото");
     }
 
-    const result = await response.json();
-    return result.photoPath;
+    // ожидаем UserDTO с новым photoPath
+    const user = await response.json();
+    const newPhotoPath = user.photoPath;
+
+    if (newPhotoPath && newPhotoPath.trim().length > 0) {
+      try {
+        localStorage.setItem(AVATAR_KEY, newPhotoPath);
+      } catch (e) {
+        console.warn('Cannot save avatar to localStorage after upload:', e);
+      }
+    }
+
+    return newPhotoPath;
   } catch (err) {
     console.error("Ошибка загрузки фото:", err);
     throw err;
   }
 }
+
 
 // ========== SESSIONS ==========
 
@@ -1087,13 +1125,18 @@ function initInteractions() {
         try {
           const photoPath = await uploadAvatar(file);
 
-          const avatar = document.getElementById("profileAvatar");
-          if (avatar) avatar.src = photoPath;
+          if (photoPath) {
+            const avatar = document.getElementById("profileAvatar");
+            if (avatar) avatar.src = photoPath;
 
-          const userAvatar = document.getElementById("userAvatar");
-          if (userAvatar) userAvatar.src = photoPath;
+            const userAvatar = document.getElementById("userAvatar");
+            if (userAvatar) userAvatar.src = photoPath;
+
+            if (previewAvatar) previewAvatar.src = photoPath;
+          }
 
           alert("Фото успешно загружено!");
+
         } catch (err) {
           console.error(err);
           alert("Ошибка при загрузке фото");
@@ -1166,6 +1209,13 @@ function initInteractions() {
           method: "POST",
           credentials: "include"
         });
+
+        try {
+          localStorage.removeItem(AVATAR_KEY);
+        } catch (e) {
+          console.warn('Cannot clear avatar from localStorage on logout:', e);
+        }
+
         window.location.href = "/static/html/index.html";
       } catch (err) {
         console.error("Logout error:", err);
@@ -1173,6 +1223,7 @@ function initInteractions() {
       }
     });
   }
+
 }
 
 function initBarOrderModal() {
@@ -1204,6 +1255,10 @@ function initBarOrderModal() {
     });
   }
 }
+
+
+
+
 
 // ========== INIT ==========
 

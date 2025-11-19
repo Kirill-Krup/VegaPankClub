@@ -1,7 +1,17 @@
-const qs = (s, r = document) => r.querySelector(s);
-const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
+// index.js – главная страница
+
+// Утилиты для поиска элементов
+const qs = (selector, root = document) => root.querySelector(selector);
+const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+// Ключ для аватарки в localStorage
+const AVATAR_KEY = 'vegapank_user_avatar_url';
 
 let currentUser = null;
+
+/* =========================
+ * Работа с профилем / авторизацией
+ * ========================= */
 
 async function fetchUserProfile() {
   try {
@@ -26,23 +36,52 @@ async function fetchUserProfile() {
 
     const userData = await response.json();
     console.log('User profile loaded:', userData);
-    // Проверка на заблокированность ПЕРЕД проверкой на админа
-    if(userData.banned === true || userData.isBanned === true){
+
+    // Проверки блокировки и админки
+    if (userData.banned === true || userData.isBanned === true) {
       window.location.href = "/static/html/YouAreBlocked.html";
       return null;
     }
-    if(userData.role === 2){
+    if (userData.role === 2) {
       window.location.href = "/static/html/admin.html";
       return null;
     }
+
+    // URL из бэкенда
+    const backendAvatar = userData.photoPath && userData.photoPath.trim().length > 0
+        ? userData.photoPath
+        : null;
+
+    // То, что уже лежит в localStorage
+    let storedAvatar = null;
+    try {
+      storedAvatar = localStorage.getItem(AVATAR_KEY);
+    } catch (e) {
+      console.warn('Cannot read avatar from localStorage:', e);
+    }
+
+    // Финальный URL для аватарки
+    const finalAvatar =
+        backendAvatar ||
+        storedAvatar ||
+        `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`;
+
+    // Обновляем localStorage актуальным значением
+    try {
+      localStorage.setItem(AVATAR_KEY, finalAvatar);
+    } catch (e) {
+      console.warn('Cannot write avatar to localStorage:', e);
+    }
+
     const userProfile = {
+      id: userData.id,
       username: userData.login,
       balance: userData.wallet || 0,
-      avatar: userData.photoPath || `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`,
-      id: userData.id,
+      avatar: finalAvatar,
       email: userData.email
     };
 
+    currentUser = userProfile;
     renderAuth(userProfile);
     return userProfile;
 
@@ -66,18 +105,35 @@ function renderAuth(user) {
 
     const nameEl = qs('[data-username]');
     const balEl = qs('[data-balance]');
-    const avatar = qs('[data-avatar]');
+    const avatarEl = qs('[data-avatar]');
 
-    if (nameEl) nameEl.textContent = user.username || 'Пользователь';
-    if (balEl) balEl.textContent = (user.balance ?? 0).toFixed(2);
-    if (avatar) avatar.src = user.avatar || `https://i.pravatar.cc/100?img=15`;
+    if (nameEl) {
+      nameEl.textContent = user.username || 'Пользователь';
+    }
+    if (balEl) {
+      balEl.textContent = (user.balance ?? 0).toFixed(2);
+    }
+
+    // Берём актуальный URL из localStorage, если он есть
+    let avatarUrl = user.avatar;
+    try {
+      const stored = localStorage.getItem(AVATAR_KEY);
+      if (stored && stored.trim().length > 0) {
+        avatarUrl = stored;
+      }
+    } catch (e) {
+      console.warn('Cannot read avatar from localStorage in renderAuth:', e);
+    }
+
+    if (avatarEl) {
+      avatarEl.src = avatarUrl || `https://i.pravatar.cc/100?img=15`;
+    }
   } else {
     console.log('Rendering guest section');
     guest.style.display = 'flex';
     userSection.style.display = 'none';
   }
 }
-
 
 function attachAuthHandlers() {
   const loginBtn = qs('[data-login]');
@@ -102,6 +158,14 @@ function attachAuthHandlers() {
       if (!response.ok) {
         throw new Error('Logout failed');
       }
+
+      // При логауте чистим аватар из localStorage
+      try {
+        localStorage.removeItem(AVATAR_KEY);
+      } catch (e) {
+        console.warn('Cannot clear avatar from localStorage:', e);
+      }
+
       window.location.href = '/static/html/index.html';
     } catch (err) {
       console.error('Logout error:', err);
@@ -109,16 +173,23 @@ function attachAuthHandlers() {
   });
 }
 
+/* =========================
+ * Навигация и скролл
+ * ========================= */
+
 function attachSmoothScroll() {
-  qsa('[data-scroll]').forEach(a => {
+  qsa('[data-scroll]').forEach((a) => {
     a.addEventListener('click', (e) => {
       const href = a.getAttribute('href');
       if (!href || !href.startsWith('#')) return;
+
       e.preventDefault();
       const target = qs(href);
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      qs('[data-nav-list]')?.classList.remove('show');
+
+      const list = qs('[data-nav-list]');
       const btn = qs('[data-nav-toggle]');
+      list?.classList.remove('show');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   });
@@ -128,42 +199,57 @@ function attachNavToggle() {
   const btn = qs('[data-nav-toggle]');
   const list = qs('[data-nav-list]');
   if (!btn || !list) return;
+
   btn.addEventListener('click', () => {
     const shown = list.classList.toggle('show');
     btn.setAttribute('aria-expanded', String(shown));
   });
 }
 
+/* =========================
+ * Анимации и визуальные эффекты
+ * ========================= */
+
 function setupReveals() {
   const items = qsa('.reveal');
   if (!('IntersectionObserver' in window) || items.length === 0) {
-    items.forEach(i => i.classList.add('revealed'));
+    items.forEach((i) => i.classList.add('revealed'));
     return;
   }
-  const obs = new IntersectionObserver((entries, o) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('revealed');
-        o.unobserve(entry.target);
-      }
-    });
-  }, { threshold: .12 });
-  items.forEach(i => obs.observe(i));
+
+  const obs = new IntersectionObserver(
+      (entries, o) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            o.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+  );
+
+  items.forEach((i) => obs.observe(i));
 }
 
 function attachParallax() {
   const glow = qs('.hero__glow');
   if (!glow) return;
+
   let raf = null;
   window.addEventListener('mousemove', (e) => {
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
-      const x = (e.clientX / window.innerWidth - .5) * 18;
-      const y = (e.clientY / window.innerHeight - .5) * 18;
+      const x = (e.clientX / window.innerWidth - 0.5) * 18;
+      const y = (e.clientY / window.innerHeight - 0.5) * 18;
       glow.style.transform = `translate(${x}px, ${y}px)`;
     });
   });
 }
+
+/* =========================
+ * Тарифы
+ * ========================= */
 
 async function fetchPopularTariffs() {
   try {
@@ -183,7 +269,7 @@ async function fetchPopularTariffs() {
     return tariffs;
   } catch (error) {
     console.error('Error fetching popular tariffs:', error);
-    // Оставляем статичные тарифы при ошибке
+    // При ошибке оставляем статические тарифы из верстки
     return [];
   }
 }
@@ -194,19 +280,18 @@ function renderTariffs(tariffs) {
     return;
   }
 
-  // Очищаем контейнер
   pricingContainer.innerHTML = '';
 
-  // Ограничиваем до 3 тарифов
   const tariffsToShow = tariffs.slice(0, 3);
 
   tariffsToShow.forEach((tariff, index) => {
-    const pricePerHour = tariff.hours > 0 
-      ? (parseFloat(tariff.price) / tariff.hours).toFixed(2) 
-      : parseFloat(tariff.price).toFixed(2);
-    
-    const isPopular = index === 1; // Второй тариф помечаем как популярный
-    
+    const pricePerHour =
+        tariff.hours > 0
+            ? (parseFloat(tariff.price) / tariff.hours).toFixed(2)
+            : parseFloat(tariff.price).toFixed(2);
+
+    const isPopular = index === 1;
+
     const tariffCard = document.createElement('article');
     tariffCard.className = `price reveal ${isPopular ? 'price--popular' : ''}`;
     tariffCard.innerHTML = `
@@ -218,18 +303,18 @@ function renderTariffs(tariffs) {
         <li>${tariff.isVip || tariff.vip ? 'VIP зона' : 'Стандартная зона'}</li>
         <li>${parseFloat(tariff.price).toFixed(2)} BYN за пакет</li>
       </ul>
-      <button class="btn btn--primary" data-book data-plan="${tariff.name?.toLowerCase() || 'tariff'}">Выбрать</button>
+      <button class="btn btn--primary" data-book data-plan="${
+        tariff.name?.toLowerCase() || 'tariff'
+    }">Выбрать</button>
     `;
-    
+
     pricingContainer.appendChild(tariffCard);
   });
 
-  // Добавляем класс revealed для анимации
   setTimeout(() => {
-    qsa('#pricing .reveal').forEach(el => el.classList.add('revealed'));
+    qsa('#pricing .reveal').forEach((el) => el.classList.add('revealed'));
   }, 100);
 
-  // Привязываем обработчики к новым кнопкам
   attachPricing();
 }
 
@@ -240,14 +325,18 @@ function getHoursText(hours) {
 }
 
 function attachPricing() {
-  qsa('[data-book]').forEach(btn => {
+  qsa('[data-book]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const plan = btn.getAttribute('data-plan');
-      // Перенаправляем на страницу бронирования
+      console.log('Selected plan:', plan);
       window.location.href = '/static/html/booking.html';
     });
   });
 }
+
+/* =========================
+ * Контакты и футер
+ * ========================= */
 
 function attachContactForm() {
   const form = qs('[data-contact-form]');
@@ -264,6 +353,10 @@ function setYear() {
   const y = qs('#year');
   if (y) y.textContent = String(new Date().getFullYear());
 }
+
+/* =========================
+ * Инициализация
+ * ========================= */
 
 async function initApp() {
   console.log('Initializing app...');
