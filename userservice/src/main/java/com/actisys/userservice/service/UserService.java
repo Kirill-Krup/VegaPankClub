@@ -29,4 +29,6 @@ public interface UserService {
   UserDTO unBlockUser(Long id);
 
   Integer myCoins(Long id);
+
+  UserDTO uploadAndUpdateUserPhoto(Long userId, org.springframework.web.multipart.MultipartFile file);
 }

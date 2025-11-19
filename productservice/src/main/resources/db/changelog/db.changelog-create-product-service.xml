@@ -28,7 +28,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="photo_path" type="VARCHAR(255)">
-                <constraints nullable="false"/>
+                <constraints nullable="true"/>
             </column>
             <column name="stock" type="INTEGER">
                 <constraints nullable="false"/>

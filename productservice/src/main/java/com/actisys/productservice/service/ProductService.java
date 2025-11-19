@@ -4,6 +4,8 @@ import com.actisys.productservice.dto.ProductDtos.ProductCreateDTO;
 import com.actisys.productservice.dto.ProductDtos.ProductDTO;
 import com.actisys.productservice.dto.ProductDtos.ProductUpdateDTO;
 import java.util.List;
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface ProductService {
