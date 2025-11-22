@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Setter
@@ -29,7 +30,7 @@ public class User {
   @Column(name = "full_name")
   private String fullName;
 
-  private double wallet;
+  private BigDecimal wallet;
 
   @Column(name = "photo_path")
   private String photoPath;

@@ -18,4 +18,6 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
   List<Tariff> findPopularTariffs(Limit limit);
 
   List<Tariff> findFirst3By();
+
+
 }

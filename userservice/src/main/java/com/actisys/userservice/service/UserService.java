@@ -1,9 +1,12 @@
 package com.actisys.userservice.service;
 
+import com.actisys.common.user.CreateWalletEvent;
 import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
+
+import java.math.BigDecimal;
 import java.util.List;
 import reactor.core.publisher.Mono;
 
@@ -30,4 +33,6 @@ public interface UserService {
   Integer myCoins(Long id);
 
   UserDTO uploadAndUpdateUserPhoto(Long userId, org.springframework.web.multipart.MultipartFile file);
+
+  void withdrawMoney(CreateWalletEvent createWalletEvent);
 }

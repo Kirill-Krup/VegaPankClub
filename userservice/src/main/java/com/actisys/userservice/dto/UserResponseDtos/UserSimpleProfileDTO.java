@@ -6,12 +6,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserSimpleProfileDTO {
   private final String login;
-  private final double wallet;
+  private final BigDecimal wallet;
   private final String photoPath;
   private final boolean isBanned;
   private final int role;
@@ -19,7 +21,7 @@ public class UserSimpleProfileDTO {
   @JsonCreator
   public UserSimpleProfileDTO(
       @JsonProperty("login") String login,
-      @JsonProperty("wallet") double wallet,
+      @JsonProperty("wallet") BigDecimal wallet,
       @JsonProperty("photoPath") String photoPath,
       @JsonProperty("banned") boolean isBanned,
       @JsonProperty("role") int role) {
