@@ -1,4 +1,4 @@
-package com.actisys.common.dto.config;
+package com.actisys.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;

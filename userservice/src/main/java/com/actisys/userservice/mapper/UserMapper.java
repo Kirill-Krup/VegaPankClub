@@ -1,6 +1,6 @@
 package com.actisys.userservice.mapper;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.RegisterRequest;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.model.User;

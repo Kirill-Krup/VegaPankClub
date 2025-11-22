@@ -1,6 +1,6 @@
 package com.actisys.userservice.configuration;
 
-import com.actisys.common.dto.config.RedisBaseConfig;
+import com.actisys.common.config.RedisBaseConfig;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

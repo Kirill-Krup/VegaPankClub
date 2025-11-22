@@ -1,4 +1,4 @@
-package com.actisys.common.dto.clientDtos;
+package com.actisys.common.clientDtos;
 
 public class SessionStatsDTO {
   private int totalSessions;

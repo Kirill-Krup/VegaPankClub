@@ -1,6 +1,6 @@
 package com.actisys.userservice.dto;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import lombok.Getter;
 import lombok.Setter;
 

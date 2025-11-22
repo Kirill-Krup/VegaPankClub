@@ -1,6 +1,6 @@
 package com.actisys.userservice.client;
 
-import com.actisys.common.dto.clientDtos.SessionStatsDTO;
+import com.actisys.common.clientDtos.SessionStatsDTO;
 import reactor.core.publisher.Mono;
 
 public interface BillingServiceClient {

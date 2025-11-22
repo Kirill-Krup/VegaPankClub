@@ -1,6 +1,6 @@
 package com.actisys.userservice.UnitTests;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.client.BillingServiceClient;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;

@@ -1,6 +1,6 @@
 package com.actisys.billingservice.client;
 
-import com.actisys.common.dto.clientDtos.PcResponseDTO;
+import com.actisys.common.clientDtos.PcResponseDTO;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

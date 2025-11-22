@@ -1,6 +1,6 @@
 package com.actisys.apigatewayapplication.dto.AdminSessionDtos;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,6 +1,6 @@
 package com.actisys.userservice.service.impl;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.client.BillingServiceClient;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
@@ -21,7 +21,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 

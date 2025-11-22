@@ -28,6 +28,9 @@ public class Order {
   @Column(name = "user_id", nullable = false)
   private Long userId;
 
+  @Column(name = "payment_id")
+  private Long paymentId;
+
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 

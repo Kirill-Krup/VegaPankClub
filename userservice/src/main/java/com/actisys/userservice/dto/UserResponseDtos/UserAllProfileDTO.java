@@ -1,6 +1,6 @@
 package com.actisys.userservice.dto.UserResponseDtos;
 
-import com.actisys.common.dto.clientDtos.SessionStatsDTO;
+import com.actisys.common.clientDtos.SessionStatsDTO;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
