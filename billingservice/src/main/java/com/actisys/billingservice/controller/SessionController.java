@@ -1,22 +1,20 @@
 package com.actisys.billingservice.controller;
 
+import com.actisys.billingservice.dto.SessionDtos.CreateSessionDTO;
+import com.actisys.billingservice.dto.SessionDtos.SessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.billingservice.service.SessionService;
 import com.actisys.common.clientDtos.SessionStatsDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/sessions")
@@ -58,5 +56,15 @@ public class SessionController {
   public ResponseEntity<SessionStatsDTO> getSessionStats(@PathVariable("userId") Long userId) {
     SessionStatsDTO statsDTO = sessionService.getUserStats(userId);
     return ResponseEntity.ok(statsDTO);
+  }
+
+  @PostMapping("/createSession")
+  public ResponseEntity<SessionDTO> createSession(
+          @RequestHeader(value = "X-User-Id", required = false) String userId,
+          @RequestBody CreateSessionDTO createSessionDTO) {
+    SessionDTO sessionDTO = sessionService.createSession(createSessionDTO, userId);
+    return ResponseEntity.ok(sessionDTO);
+
+
   }
 }

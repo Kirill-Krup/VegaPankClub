@@ -1,38 +1,49 @@
 package com.actisys.billingservice.service.impl;
 
+
 import com.actisys.billingservice.client.InventoryServiceClient;
+import com.actisys.billingservice.dto.SessionDtos.CreateSessionDTO;
+import com.actisys.billingservice.dto.SessionDtos.SessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.billingservice.exception.SessionNotFoundException;
+import com.actisys.billingservice.exception.TariffNotFoundException;
 import com.actisys.billingservice.mapper.SessionMapper;
 import com.actisys.billingservice.mapper.TariffMapper;
 import com.actisys.billingservice.model.Session;
 import com.actisys.billingservice.model.SessionStatus;
+import com.actisys.billingservice.model.Tariff;
 import com.actisys.billingservice.repository.SessionRepository;
+import com.actisys.billingservice.repository.TariffRepository;
 import com.actisys.billingservice.service.SessionService;
 import com.actisys.common.clientDtos.PcResponseDTO;
 import com.actisys.common.clientDtos.SessionStatsDTO;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.actisys.common.events.order.CreateOrderEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SessionServiceImpl implements SessionService {
 
+
   private final SessionRepository sessionRepository;
   private final SessionMapper sessionMapper;
   private final InventoryServiceClient inventoryServiceClient;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
   private final TariffMapper tariffMapper;
+  private final TariffRepository tariffRepository;
 
   @Override
   public SessionStatsDTO getUserStats(Long userId) {
@@ -87,5 +98,49 @@ public class SessionServiceImpl implements SessionService {
     sessionRepository.save(session);
 
     // THIS METHOD NEED TO SEND EVENT TO KAFKA FOR REFUNDED MONEYS FOR USER
+  }
+
+  @Override
+  public SessionDTO createSession(CreateSessionDTO createSessionDTO, String userId) {
+
+    Tariff tariff = tariffRepository.findById(createSessionDTO.getTariffId()).orElseThrow(() ->
+            new TariffNotFoundException(createSessionDTO.getTariffId()));
+
+      long hours = Duration.between(createSessionDTO.getStartTime(), createSessionDTO.getEndTime()).toHours();
+      BigDecimal pricePerHour = tariff.getPrice().divide(BigDecimal.valueOf(tariff.getHours()), 2, RoundingMode.HALF_UP);
+      BigDecimal totalCost = pricePerHour.multiply(BigDecimal.valueOf(hours));
+
+    Session session = Session.builder()
+            .pcId(createSessionDTO.getPcId())
+            .userId(Long.valueOf(userId))
+            .tariff(tariff).
+            totalCost(totalCost)
+            .startTime(createSessionDTO.getStartTime())
+            .endTime(createSessionDTO.getEndTime())
+            .status(SessionStatus.PENDING)
+            .build();
+
+    Session savedSession = sessionRepository.save(session);
+
+    CreateOrderEvent createOrderEvent = new CreateOrderEvent();
+    createOrderEvent.setOrderId(savedSession.getSessionId());
+    createOrderEvent.setUserId(savedSession.getUserId());
+    createOrderEvent.setAmount(savedSession.getTotalCost());
+
+    kafkaTemplate.send("CREATE_BOOKING", createOrderEvent);
+
+    return sessionMapper.toDTO(savedSession);
+  }
+
+  @Override
+  public void updateStatus(Long orderId, String status) {
+    Session session = sessionRepository.findById(orderId).orElseThrow(()->new RuntimeException("Order not found"));
+
+    if (status.equals("FAILED")) {
+      session.setStatus(SessionStatus.CANCELLED);
+    }
+    else if(status.equals("SUCCEEDED")) {
+      session.setStatus(SessionStatus.PAID);
+    }
   }
 }

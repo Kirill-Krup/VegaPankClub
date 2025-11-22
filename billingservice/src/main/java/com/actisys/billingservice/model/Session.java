@@ -1,10 +1,7 @@
 package com.actisys.billingservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Session {
 
   @Id
@@ -24,6 +22,9 @@ public class Session {
 
   @Column(name = "user_id", nullable = false)
   private Long userId;
+
+  @Column(name = "payment_id")
+  private Long paymentId;
 
   @Column(name = "pc_id", nullable = false)
   private Long pcId;

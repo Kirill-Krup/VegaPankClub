@@ -1,5 +1,7 @@
 package com.actisys.billingservice.service;
 
+import com.actisys.billingservice.dto.SessionDtos.CreateSessionDTO;
+import com.actisys.billingservice.dto.SessionDtos.SessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.common.clientDtos.SessionStatsDTO;
@@ -15,4 +17,8 @@ public interface SessionService {
   List<SessionResponseDto> getUserSessions(Long userId);
 
   void cancelSession(Long id);
+
+    SessionDTO createSession(CreateSessionDTO createSessionDTO, String userId);
+
+    void updateStatus(Long orderId, String status);
 }

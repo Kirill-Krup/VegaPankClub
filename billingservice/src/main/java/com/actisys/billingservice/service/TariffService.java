@@ -2,6 +2,9 @@ package com.actisys.billingservice.service;
 
 import com.actisys.billingservice.dto.TariffDtos.CreateTariffDTO;
 import com.actisys.billingservice.dto.TariffDtos.TariffDTO;
+import com.actisys.billingservice.model.Tariff;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 
 public interface TariffService {
@@ -15,4 +18,5 @@ public interface TariffService {
   void deleteTariff(Long id);
 
   List<TariffDTO> getPopularTariffs();
+
 }

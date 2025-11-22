@@ -1,28 +1,33 @@
 package com.actisys.userservice.service.impl;
 
+import com.actisys.common.user.CreateWalletEvent;
 import com.actisys.common.user.UserDTO;
+import com.actisys.common.user.WithdrawEvent;
 import com.actisys.userservice.client.BillingServiceClient;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
+import com.actisys.userservice.exception.InsufficientFundsException;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.UserPhotoStorageService;
 import com.actisys.userservice.service.UserService;
-import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -34,6 +39,7 @@ public class UserServiceImpl implements UserService {
   private final UserMapper userMapper;
   private final BillingServiceClient billingServiceClient;
   private final UserPhotoStorageService userPhotoStorageService;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   /**
    * Update user profile.
@@ -267,4 +273,27 @@ public class UserServiceImpl implements UserService {
 
     return updateUserPhoto(userId, key);
   }
+
+  @Override
+  public void withdrawMoney(CreateWalletEvent event) {
+    User user = userRepository.findById(event.getUserId())
+            .orElseThrow(() -> new UserNotFoundException(event.getUserId()));
+
+    WithdrawEvent withdrawEvent = new WithdrawEvent();
+    withdrawEvent.setPaymentId(event.getPaymentId());
+
+    if (user.getWallet().compareTo(event.getCost()) < 0) {
+      withdrawEvent.setStatus("ERROR");
+      kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+      throw new InsufficientFundsException(event.getUserId());
+    }
+
+    user.setWallet(user.getWallet().subtract(event.getCost()));
+    user.setBonusCoins(event.getCost().multiply(BigDecimal.valueOf(10)).intValue());
+    userRepository.save(user);
+
+    withdrawEvent.setStatus("SUCCESS");
+    kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+  }
+
 }
