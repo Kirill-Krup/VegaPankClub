@@ -24,6 +24,8 @@ public class OrderDTO {
 
   private Long userId;
 
+  private Long paymentId;
+
   @NotNull(message = "Creation date is required")
   @PastOrPresent(message = "Creation date must be in the past or present")
   private LocalDateTime createdAt;

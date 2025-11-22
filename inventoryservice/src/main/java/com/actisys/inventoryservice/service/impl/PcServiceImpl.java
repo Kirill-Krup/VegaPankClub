@@ -1,6 +1,6 @@
 package com.actisys.inventoryservice.service.impl;
 
-import com.actisys.common.dto.clientDtos.PcResponseDTO;
+import com.actisys.common.clientDtos.PcResponseDTO;
 import com.actisys.inventoryservice.dto.PCDTO;
 import com.actisys.inventoryservice.dto.PcCreateDTO;
 import com.actisys.inventoryservice.dto.PcInfoDTO;

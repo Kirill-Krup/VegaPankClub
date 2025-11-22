@@ -1,6 +1,6 @@
 package com.actisys.billingservice.configuration;
 
-import com.actisys.common.dto.config.RedisBaseConfig;
+import com.actisys.common.config.RedisBaseConfig;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;

@@ -1,6 +1,6 @@
 package com.actisys.userservice.client.impl;
 
-import com.actisys.common.dto.clientDtos.SessionStatsDTO;
+import com.actisys.common.clientDtos.SessionStatsDTO;
 import com.actisys.userservice.client.BillingServiceClient;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;

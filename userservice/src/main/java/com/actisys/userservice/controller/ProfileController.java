@@ -1,6 +1,6 @@
 package com.actisys.userservice.controller;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;

@@ -1,4 +1,4 @@
-package com.actisys.common.dto.user;
+package com.actisys.common.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

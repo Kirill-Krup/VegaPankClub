@@ -1,11 +1,10 @@
 package com.actisys.userservice.service;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import java.util.List;
-import java.util.Optional;
 import reactor.core.publisher.Mono;
 
 public interface UserService {

@@ -1,6 +1,6 @@
 package com.actisys.userservice.service.impl;
 
-import com.actisys.common.dto.user.UserDTO;
+import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.AuthRequest;
 import com.actisys.userservice.dto.AuthResponse;
 import com.actisys.userservice.dto.RegisterRequest;

@@ -3,7 +3,7 @@ package com.actisys.billingservice.controller;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.billingservice.service.SessionService;
-import com.actisys.common.dto.clientDtos.SessionStatsDTO;
+import com.actisys.common.clientDtos.SessionStatsDTO;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
