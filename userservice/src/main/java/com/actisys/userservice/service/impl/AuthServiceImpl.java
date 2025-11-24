@@ -9,6 +9,7 @@ import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.AuthService;
 import com.actisys.userservice.util.JwtTokenProvider;
+import java.math.BigDecimal;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
     entity.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
     entity.setRegistrationDate(new Timestamp(System.currentTimeMillis()));
     entity.setBonusCoins(0);
-    entity.setWallet(0.0);
+    entity.setWallet(BigDecimal.valueOf(0.0));
 
     if (entity.getRole() == 0) {
       entity.setRole(1);

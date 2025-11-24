@@ -1,7 +1,7 @@
 package com.actisys.common.events.payment;
 
+import com.actisys.common.events.OperationType;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,9 +10,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class CreatePaymentEvent {
-  private String paymentId;
-  private Long orderId;
-  private String status;
+    private Long paymentId;
+    private Long orderId;
+    private OperationType status;
 }

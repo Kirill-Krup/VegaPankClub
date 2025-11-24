@@ -1,6 +1,7 @@
 package com.actisys.userservice.service;
 
-import com.actisys.common.user.CreateWalletEvent;
+import com.actisys.common.events.user.CreateWalletEvent;
+import com.actisys.common.events.user.RefundMoneyEvent;
 import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
@@ -35,4 +36,8 @@ public interface UserService {
   UserDTO uploadAndUpdateUserPhoto(Long userId, org.springframework.web.multipart.MultipartFile file);
 
   void withdrawMoney(CreateWalletEvent createWalletEvent);
+
+  void replenishmentMoney(CreateWalletEvent createWalletEvent);
+
+  void refundMoneys(RefundMoneyEvent refundMoneyEvent);
 }

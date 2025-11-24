@@ -1,5 +1,6 @@
 package com.actisys.paymentservice.dto;
 
+import com.actisys.common.events.PaymentType;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -13,5 +14,5 @@ public class CreatePaymentDTO {
     private Long userId;
     private BigDecimal amount;
     private Long orderId;
-    private String paymentType;
+    private PaymentType paymentType;
 }

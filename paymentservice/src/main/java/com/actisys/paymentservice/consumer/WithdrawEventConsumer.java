@@ -1,8 +1,6 @@
 package com.actisys.paymentservice.consumer;
 
-import com.actisys.common.events.order.CreateOrderEvent;
-import com.actisys.common.user.WithdrawEvent;
-import com.actisys.paymentservice.dto.CreatePaymentDTO;
+import com.actisys.common.events.user.WithdrawEvent;
 import com.actisys.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

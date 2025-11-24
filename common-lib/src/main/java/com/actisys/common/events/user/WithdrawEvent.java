@@ -1,15 +1,18 @@
-package com.actisys.common.user;
+package com.actisys.common.events.user;
 
+import com.actisys.common.events.OperationType;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class WithdrawEvent {
-    Long paymentId;
-    String status;
+    private Long paymentId;
+    private OperationType status;
 }

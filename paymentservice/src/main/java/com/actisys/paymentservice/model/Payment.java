@@ -1,5 +1,6 @@
 package com.actisys.paymentservice.model;
 
+import com.actisys.common.events.PaymentType;
 import lombok.*;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -29,10 +30,10 @@ public class Payment {
     private Long orderId;
 
     @Column(name = "payment_type", nullable = false, length = 50)
-    private String paymentType;
+    private PaymentType paymentType;
 
     @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    private PaymentStatus status;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -1,5 +1,6 @@
 package com.actisys.paymentservice.consumer;
 
+import com.actisys.common.events.PaymentType;
 import com.actisys.common.events.order.CreateOrderEvent;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
 import com.actisys.paymentservice.service.PaymentService;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Component;
 public class BookingEventConsumer {
     private final PaymentService paymentService;
 
-
     @KafkaListener(topics = "CREATE_BOOKING", groupId = "payment-service-group")
     public void handleCreateBooking(CreateOrderEvent createOrderEvent) {
         log.info("New booking event received: {}", createOrderEvent);
@@ -23,8 +23,7 @@ public class BookingEventConsumer {
         createPaymentDTO.setAmount(createOrderEvent.getAmount());
         createPaymentDTO.setUserId(createOrderEvent.getUserId());
         createPaymentDTO.setOrderId(createOrderEvent.getOrderId());
+        createPaymentDTO.setPaymentType(PaymentType.BOOKING);
         paymentService.createPayment(createPaymentDTO);
-
-
     }
 }
