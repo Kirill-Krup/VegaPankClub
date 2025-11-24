@@ -72,7 +72,7 @@ class UserServiceImplTest {
     testUserDTO.setEmail("test@example.com");
     testUserDTO.setPhone("1234567890");
     testUserDTO.setFullName("Test User");
-    testUserDTO.setWallet(100.0);
+    testUserDTO.setWallet(BigDecimal.valueOf(100.0));
     testUserDTO.setBonusCoins(50);
     testUserDTO.setBanned(false);
     testUserDTO.setRole("USER");
@@ -285,7 +285,7 @@ class UserServiceImplTest {
         .fullName("Test User")
         .email("test@example.com")
         .phone("1234567890")
-        .wallet(100.0)
+        .wallet(BigDecimal.valueOf(100.0))
         .photoPath("/photos/test.jpg")
         .bonusCoins(50)
         .registrationDate(testTimestamp)
