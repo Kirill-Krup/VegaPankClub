@@ -320,30 +320,69 @@ function formatTimeDisplay(hour, minute) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
+function formatDateWithOffset(dateString, offsetDays = 0) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  utcDate.setUTCDate(utcDate.getUTCDate() + offsetDays);
+  const yyyy = utcDate.getUTCFullYear();
+  const mm = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(utcDate.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function getStartDateTimeISO() {
+  if (!bookingData.date || !bookingData.startTime) {
+    return null;
+  }
+  return `${bookingData.date}T${bookingData.startTime}:00`;
+}
+
+function getEndTimeDayOffset(startTime = bookingData.startTime, endTime = bookingData.endTime) {
+  if (!startTime || !endTime) {
+    return 0;
+  }
+
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  const startTotalMinutes = startHour * 60 + startMinute;
+  const endTotalMinutes = endHour * 60 + endMinute;
+
+  let offset = endTotalMinutes < startTotalMinutes ? 1 : 0;
+
+  const endTimeSelect = qs('#endTime');
+  if (endTimeSelect && endTimeSelect.value === endTime) {
+    const optionText = endTimeSelect.selectedOptions[0]?.textContent || '';
+    if (optionText.includes('(+2 дня)')) {
+      offset = 2;
+    } else if (optionText.includes('(+1 день)')) {
+      offset = 1;
+    }
+  }
+
+  return offset;
+}
+
+function getEndDateTimeISO() {
+  if (!bookingData.date || !bookingData.endTime) {
+    return null;
+  }
+
+  const formattedDate = formatDateWithOffset(bookingData.date, getEndTimeDayOffset());
+  return `${formattedDate}T${bookingData.endTime}:00`;
+}
+
 function calculateDuration(startTime, endTime) {
+  if (!startTime || !endTime) {
+    return 0;
+  }
+
   const [startHour, startMinute] = startTime.split(':').map(Number);
   const [endHour, endMinute] = endTime.split(':').map(Number);
 
   let startTotalMinutes = startHour * 60 + startMinute;
   let endTotalMinutes = endHour * 60 + endMinute;
 
-  let daysDifference = 0;
-  if (endTotalMinutes < startTotalMinutes) {
-    daysDifference = 1;
-  }
-
-  const endTimeSelect = qs('#endTime');
-  if (endTimeSelect && endTimeSelect.value) {
-    const selectedOption = endTimeSelect.selectedOptions[0];
-    const optionText = selectedOption.textContent;
-
-    if (optionText.includes('(+1 день)')) {
-      daysDifference = 1;
-    } else if (optionText.includes('(+2 дня)')) {
-      daysDifference = 2;
-    }
-  }
-
+  const daysDifference = getEndTimeDayOffset(startTime, endTime);
   endTotalMinutes += daysDifference * 24 * 60;
 
   const durationMinutes = endTotalMinutes - startTotalMinutes;
@@ -633,41 +672,53 @@ function initConfirmBooking() {
       return;
     }
 
-    try {
-      const startDateTime = `${bookingData.date}T${bookingData.startTime}:00`;
-      const endDateTime = `${bookingData.date}T${bookingData.endTime}:00`;
+    const startDateTime = getStartDateTimeISO();
+    const endDateTime = getEndDateTimeISO();
 
-      const bookingPromises = bookingData.seats.map(seat => {
-        const bookingPayload = {
+    if (!startDateTime || !endDateTime) {
+      alert('Не удалось определить время бронирования. Пожалуйста, попробуйте снова.');
+      return;
+    }
+
+    try {
+      const sessionPromises = bookingData.seats.map(async seat => {
+        const [, pcIdRaw] = seat.split('-');
+        const pcId = Number(pcIdRaw);
+
+        if (Number.isNaN(pcId)) {
+          throw new Error(`Некорректный идентификатор ПК: ${seat}`);
+        }
+
+        const sessionPayload = {
+          pcId,
           tariffId: bookingData.tariff.tariffId,
           startTime: startDateTime,
-          endTime: endDateTime,
-          seatNumber: seat,
-          totalPrice: finalPrice / bookingData.seats.length,
-          usedBonusCoins: Math.floor(usedBonusCoins / bookingData.seats.length)
+          endTime: endDateTime
         };
 
-        return fetch('/api/v1/bookings/create', {
+        const response = await fetch('/api/v1/sessions/createSession', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(bookingPayload)
+          body: JSON.stringify(sessionPayload)
         });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Не удалось создать сессию для ПК ${pcId}`);
+        }
+
+        return response.json().catch(() => null);
       });
 
-      const responses = await Promise.all(bookingPromises);
-      const allSuccess = responses.every(r => r.ok);
+      await Promise.all(sessionPromises);
 
-      if (allSuccess) {
-        const earnedCoins = calculateEarnedCoins();
-        alert(`Успешно! 
+      const earnedCoins = calculateEarnedCoins();
+      alert(`Успешно! 
 Бронирований: ${bookingData.seats.length}
 Оплачено: ${finalPrice.toFixed(2)} BYN
 ${usedBonusCoins > 0 ? `Использовано бонусов: ${usedBonusCoins}\n` : ''}Начислено бонусов: ${earnedCoins}`);
-        window.location.href = '/static/html/profile.html';
-      } else {
-        throw new Error('Некоторые бронирования не удались');
-      }
+      window.location.href = '/static/html/profile.html';
     } catch (error) {
       console.error('Booking error:', error);
       alert('Ошибка при создании бронирования: ' + error.message);
@@ -697,42 +748,15 @@ async function fetchAvailableSeats() {
   }
 
   try {
-    // ✅ ИСПРАВЛЕНИЕ: вычисляем правильные даты с учётом перехода через день
-    const startDateTime = `${bookingData.date}T${bookingData.startTime}:00`;
+    const startDateTime = getStartDateTimeISO();
+    const endDateTime = getEndDateTimeISO();
 
-    // Вычисляем endDateTime с учётом дней
-    const startDate = new Date(`${bookingData.date}T${bookingData.startTime}:00`);
-    const [endHour, endMinute] = bookingData.endTime.split(':').map(Number);
-    const [startHour, startMinute] = bookingData.startTime.split(':').map(Number);
-
-    let daysToAdd = 0;
-    const endTotalMinutes = endHour * 60 + endMinute;
-    const startTotalMinutes = startHour * 60 + startMinute;
-
-    if (endTotalMinutes < startTotalMinutes) {
-      daysToAdd = 1;
+    if (!startDateTime || !endDateTime) {
+      return new Set();
     }
-
-    // Проверяем индикатор дня
-    const endTimeSelect = qs('#endTime');
-    if (endTimeSelect && endTimeSelect.value) {
-      const selectedOption = endTimeSelect.selectedOptions[0];
-      const optionText = selectedOption.textContent;
-
-      if (optionText.includes('(+1 день)')) {
-        daysToAdd = 1;
-      } else if (optionText.includes('(+2 дня)')) {
-        daysToAdd = 2;
-      }
-    }
-
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + daysToAdd);
-
-    const endDateTime = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}T${bookingData.endTime}:00`;
 
     const startQueryDate = bookingData.date;
-    const endQueryDate = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+    const endQueryDate = endDateTime.split('T')[0];
 
     const response = await fetch(
         `/api/v1/sessions/sessionsForInfo?startDate=${startQueryDate}&endDate=${endQueryDate}`,

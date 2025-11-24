@@ -1,11 +1,16 @@
 package com.actisys.paymentservice.service.impl;
 
-import com.actisys.common.events.payment.PaymentCreteEvent;
-import com.actisys.common.user.CreateWalletEvent;
+import com.actisys.common.events.OperationType;
+import com.actisys.common.events.PaymentType;
+import com.actisys.common.events.payment.CreatePaymentEvent;
+import com.actisys.common.events.user.CreateWalletEvent;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
+import com.actisys.paymentservice.dto.CreateReplenishment;
 import com.actisys.paymentservice.dto.PaymentDTO;
+import com.actisys.paymentservice.exception.PaymentNotFoundException;
 import com.actisys.paymentservice.mapper.PaymentMapper;
 import com.actisys.paymentservice.model.Payment;
+import com.actisys.paymentservice.model.PaymentStatus;
 import com.actisys.paymentservice.repository.PaymentRepository;
 import com.actisys.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +31,10 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentDTO paymentDTO = new PaymentDTO();
         paymentDTO.setAmount(createPaymentDTO.getAmount());
         paymentDTO.setUserId(createPaymentDTO.getUserId());
+        paymentDTO.setOrderId(createPaymentDTO.getOrderId());
         paymentDTO.setPaymentType(createPaymentDTO.getPaymentType());
         paymentDTO.setCreatedAt(LocalDateTime.now());
-        paymentDTO.setStatus("PENDING");
+        paymentDTO.setStatus(PaymentStatus.CREATED);
 
         Payment save = paymentMapper.toEntity(paymentDTO);
         paymentRepository.save(save);
@@ -37,6 +43,7 @@ public class PaymentServiceImpl implements PaymentService {
         createWalletEvent.setCost(createPaymentDTO.getAmount());
         createWalletEvent.setUserId(createPaymentDTO.getUserId());
         createWalletEvent.setPaymentId(createWalletEvent.getPaymentId());
+        createWalletEvent.setPaymentType(createPaymentDTO.getPaymentType());
 
         kafkaTemplate.send("CREATE_WALLET_EVENT", createWalletEvent);
 
@@ -45,22 +52,52 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public void updateStatus(Long paymentId, String status) {
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new RuntimeException("Payment not exist"));
-
-        if (status.equals("ERROR")) {
-            payment.setStatus("FAILED");
-        } else {
-            payment.setStatus("SUCCESS");
+    public void updateStatus(Long paymentId, OperationType status) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() ->
+            new PaymentNotFoundException(paymentId));
+        if(OperationType.REFUNDED.equals(status)){
+            payment.setStatus(PaymentStatus.REFUNDED);
+            paymentRepository.save(payment);
+            return;
         }
+        if(payment.getOrderId()==0){
+            payment.setStatus(statusHandler(status));
+            paymentRepository.save(payment);
+            return;
+        }
+        payment.setStatus(statusHandler(status));
         paymentRepository.save(payment);
-
-        PaymentCreteEvent paymentCreteEvent = new PaymentCreteEvent();
-
+        CreatePaymentEvent paymentCreteEvent = new CreatePaymentEvent();
         paymentCreteEvent.setPaymentId(paymentId);
-        paymentCreteEvent.setStatus("SUCCESS");
+        paymentCreteEvent.setStatus(OperationType.SUCCESS);
         paymentCreteEvent.setOrderId(payment.getOrderId());
+        if(payment.getPaymentType().equals(PaymentType.BOOKING)){
+            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BOOKING", paymentId);
+        } else if(payment.getPaymentType().equals(PaymentType.BAR_BUY)){
+            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY", paymentId);
+        }
 
-        kafkaTemplate.send("UPDATE_PAYMENT_STATUS", paymentId);
+    }
+
+    @Override
+    public PaymentDTO createReplenishment(CreateReplenishment createReplenishment, Long userId) {
+        Payment payment = new Payment();
+        payment.setAmount(createReplenishment.getReplenishmentAmount());
+        payment.setUserId(userId);
+        payment.setCreatedAt(LocalDateTime.now());
+        payment.setStatus(PaymentStatus.CREATED);
+        payment.setOrderId(0L);
+        payment.setPaymentType(PaymentType.REPLENISHMENT);
+        paymentRepository.save(payment);
+        CreateWalletEvent createWalletEvent = new CreateWalletEvent();
+        createWalletEvent.setCost(createReplenishment.getReplenishmentAmount());
+        createWalletEvent.setUserId(createWalletEvent.getUserId());
+        createWalletEvent.setPaymentId(createWalletEvent.getPaymentId());
+        kafkaTemplate.send("CREATE_WALLET_REPLENISHMENT_EVENT", createWalletEvent);
+        return paymentMapper.toDto(payment);
+    }
+
+    public PaymentStatus statusHandler(OperationType operationType){
+        return operationType ==  OperationType.ERROR ? PaymentStatus.FAILED : PaymentStatus.PAID;
     }
 }

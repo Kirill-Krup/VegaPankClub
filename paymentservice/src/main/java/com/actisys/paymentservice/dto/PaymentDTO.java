@@ -1,5 +1,7 @@
 package com.actisys.paymentservice.dto;
 
+import com.actisys.common.events.PaymentType;
+import com.actisys.paymentservice.model.PaymentStatus;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -15,7 +17,7 @@ public class PaymentDTO {
     private Long userId;
     private Long orderId;
     private BigDecimal amount;
-    private String paymentType;
-    private String status;
+    private PaymentType paymentType;
+    private PaymentStatus status;
     private LocalDateTime createdAt;
 }

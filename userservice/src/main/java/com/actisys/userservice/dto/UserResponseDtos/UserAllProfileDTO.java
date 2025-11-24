@@ -4,6 +4,7 @@ import com.actisys.common.clientDtos.SessionStatsDTO;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +19,7 @@ public class UserAllProfileDTO {
   private final String fullName;
   private final String email;
   private final String phone;
-  private final double wallet;
+  private final BigDecimal wallet;
   private final String photoPath;
   private final int bonusCoins;
   private final Timestamp registrationDate;
@@ -31,7 +32,7 @@ public class UserAllProfileDTO {
       @JsonProperty("fullName") String fullName,
       @JsonProperty("email") String email,
       @JsonProperty("phone") String phone,
-      @JsonProperty("wallet") double wallet,
+      @JsonProperty("wallet") BigDecimal wallet,
       @JsonProperty("photoPath") String photoPath,
       @JsonProperty("bonusCoins") int bonusCoins,
       @JsonProperty("registrationDate") Timestamp registrationDate,

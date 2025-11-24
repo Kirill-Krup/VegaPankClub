@@ -9,4 +9,5 @@ import org.mapstruct.factory.Mappers;
 public interface PaymentMapper {
   Payment toEntity(PaymentDTO paymentDTO);
 
+  PaymentDTO toDto(Payment payment);
 }

@@ -50,8 +50,6 @@ public class ProductServiceImpl implements ProductService {
     Category category = categoryRepository.findById(productCreateDTO.getCategoryId())
             .orElseThrow(() -> new CategoryNotFoundException(productCreateDTO.getCategoryId()));
 
-    String photoURL = null;
-
     Product product = new Product();
     product.setName(productCreateDTO.getName());
     product.setPrice(productCreateDTO.getPrice());

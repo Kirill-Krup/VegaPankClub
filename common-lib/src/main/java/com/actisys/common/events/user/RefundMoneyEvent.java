@@ -1,6 +1,5 @@
-package com.actisys.common.events.order;
+package com.actisys.common.events.user;
 
-import com.actisys.common.events.PaymentType;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,12 +9,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class CreateOrderEvent {
-  private Long orderId;
+@NoArgsConstructor
+@AllArgsConstructor
+public class RefundMoneyEvent {
   private Long userId;
+  private Long paymentId;
   private BigDecimal amount;
-  private PaymentType paymentType;
+  private String pepper;
 }

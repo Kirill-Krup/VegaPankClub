@@ -10,6 +10,7 @@ import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
 import com.actisys.userservice.repository.UserRepository;
 import com.actisys.userservice.service.impl.UserServiceImpl;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ class UserServiceImplTest {
     testUser.setEmail("test@example.com");
     testUser.setPhone("1234567890");
     testUser.setFullName("Test User");
-    testUser.setWallet(100.0);
+    testUser.setWallet(BigDecimal.valueOf(100.0));
     testUser.setBonusCoins(50);
     testUser.setPhotoPath("/photos/test.jpg");
     testUser.setBanned(false);
@@ -71,7 +72,7 @@ class UserServiceImplTest {
     testUserDTO.setEmail("test@example.com");
     testUserDTO.setPhone("1234567890");
     testUserDTO.setFullName("Test User");
-    testUserDTO.setWallet(100.0);
+    testUserDTO.setWallet(BigDecimal.valueOf(100.0));
     testUserDTO.setBonusCoins(50);
     testUserDTO.setBanned(false);
     testUserDTO.setRole("USER");
@@ -241,7 +242,7 @@ class UserServiceImplTest {
   void testGetProfileSuccess() {
     UserSimpleProfileDTO simpleProfile = UserSimpleProfileDTO.builder()
         .login("testuser")
-        .wallet(100.0)
+        .wallet(BigDecimal.valueOf(100.0))
         .photoPath("/photos/test.jpg")
         .isBanned(false)
         .role(1)
@@ -253,7 +254,7 @@ class UserServiceImplTest {
 
     assertNotNull(result);
     assertEquals("testuser", result.getLogin());
-    assertEquals(100.0, result.getWallet());
+    assertEquals(BigDecimal.valueOf(100.0), result.getWallet());
     assertFalse(result.isBanned());
     verify(userRepository, times(1)).findById(1L);
   }
@@ -284,7 +285,7 @@ class UserServiceImplTest {
         .fullName("Test User")
         .email("test@example.com")
         .phone("1234567890")
-        .wallet(100.0)
+        .wallet(BigDecimal.valueOf(100.0))
         .photoPath("/photos/test.jpg")
         .bonusCoins(50)
         .registrationDate(testTimestamp)

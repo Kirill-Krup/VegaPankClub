@@ -1,5 +1,6 @@
 package com.actisys.common.user;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,7 @@ public class UserDTO implements Serializable {
   private String email;
   private String phone;
   private String fullName;
-  private Double wallet;
+  private BigDecimal wallet;
   private String photoPath;
   private Integer bonusCoins;
   private Timestamp registrationDate;

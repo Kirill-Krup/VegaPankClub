@@ -7,5 +7,6 @@ public enum SessionStatus {
   COMPLETED,
   NOT_SHOW,
   CANCELLED,
-  REFUNDED
+  REFUNDED,
+  ERROR
 }

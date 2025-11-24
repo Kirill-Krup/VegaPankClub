@@ -1,5 +1,6 @@
 package com.actisys.productservice.controller;
 
+import com.actisys.productservice.dto.OrderDtos.CreateOrderDTO;
 import com.actisys.productservice.dto.OrderDtos.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.service.OrderService;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,8 +28,10 @@ public class OrderController {
   }
 
   @PostMapping
-  public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO order) {
-    OrderDTO orderDTO = orderService.createOrder(order);
+  public ResponseEntity<OrderDTO> createOrder(
+      @RequestBody CreateOrderDTO order,
+       @RequestHeader(value = "X-User-Id", required = false) String userId) {
+    OrderDTO orderDTO = orderService.createOrder(order,Long.parseLong(userId));
     return ResponseEntity.ok(orderDTO);
   }
 

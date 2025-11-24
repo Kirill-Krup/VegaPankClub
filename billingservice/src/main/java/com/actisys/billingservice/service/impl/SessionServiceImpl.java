@@ -18,9 +18,12 @@ import com.actisys.billingservice.repository.TariffRepository;
 import com.actisys.billingservice.service.SessionService;
 import com.actisys.common.clientDtos.PcResponseDTO;
 import com.actisys.common.clientDtos.SessionStatsDTO;
+import com.actisys.common.events.OperationType;
 import com.actisys.common.events.order.CreateOrderEvent;
+import com.actisys.common.events.user.RefundMoneyEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +40,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SessionServiceImpl implements SessionService {
 
+  @Value("${pepper}")
+  private String pepper;
 
   private final SessionRepository sessionRepository;
   private final SessionMapper sessionMapper;
@@ -96,8 +101,11 @@ public class SessionServiceImpl implements SessionService {
         new SessionNotFoundException(id));
     session.setStatus(SessionStatus.CANCELLED);
     sessionRepository.save(session);
-
-    // THIS METHOD NEED TO SEND EVENT TO KAFKA FOR REFUNDED MONEYS FOR USER
+    RefundMoneyEvent refundMoneyEvent = new RefundMoneyEvent();
+    refundMoneyEvent.setUserId(session.getUserId());
+    refundMoneyEvent.setPaymentId(session.getPaymentId());
+    refundMoneyEvent.setAmount(session.getTotalCost());
+    kafkaTemplate.send("REFUND_MONEYS_EVENT", refundMoneyEvent);
   }
 
   @Override
@@ -106,15 +114,20 @@ public class SessionServiceImpl implements SessionService {
     Tariff tariff = tariffRepository.findById(createSessionDTO.getTariffId()).orElseThrow(() ->
             new TariffNotFoundException(createSessionDTO.getTariffId()));
 
-      long hours = Duration.between(createSessionDTO.getStartTime(), createSessionDTO.getEndTime()).toHours();
-      BigDecimal pricePerHour = tariff.getPrice().divide(BigDecimal.valueOf(tariff.getHours()), 2, RoundingMode.HALF_UP);
-      BigDecimal totalCost = pricePerHour.multiply(BigDecimal.valueOf(hours));
+    long minutes = Duration
+        .between(createSessionDTO.getStartTime(), createSessionDTO.getEndTime()).toMinutes();
+    BigDecimal hours = BigDecimal.valueOf(minutes)
+        .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+    BigDecimal pricePerHour = tariff.getPrice()
+        .divide(BigDecimal.valueOf(tariff.getHours()), 2, RoundingMode.HALF_UP);
+
+    BigDecimal totalCost = pricePerHour.multiply(hours).setScale(2, RoundingMode.HALF_UP);
 
     Session session = Session.builder()
             .pcId(createSessionDTO.getPcId())
             .userId(Long.valueOf(userId))
-            .tariff(tariff).
-            totalCost(totalCost)
+            .tariff(tariff)
+            .totalCost(totalCost)
             .startTime(createSessionDTO.getStartTime())
             .endTime(createSessionDTO.getEndTime())
             .status(SessionStatus.PENDING)
@@ -133,14 +146,14 @@ public class SessionServiceImpl implements SessionService {
   }
 
   @Override
-  public void updateStatus(Long orderId, String status) {
-    Session session = sessionRepository.findById(orderId).orElseThrow(()->new RuntimeException("Order not found"));
-
-    if (status.equals("FAILED")) {
-      session.setStatus(SessionStatus.CANCELLED);
-    }
-    else if(status.equals("SUCCEEDED")) {
+  public void updateStatus(Long orderId, OperationType status) {
+    Session session = sessionRepository.findById(orderId).orElseThrow(()->
+        new RuntimeException("Order not found"));
+    if (status == OperationType.ERROR) {
+      session.setStatus(SessionStatus.ERROR);
+    } else {
       session.setStatus(SessionStatus.PAID);
     }
+
   }
 }

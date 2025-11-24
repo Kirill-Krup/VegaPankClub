@@ -1,38 +1,58 @@
 package com.actisys.productservice.service.impl;
 
+import com.actisys.common.events.OperationType;
+import com.actisys.common.events.PaymentType;
+import com.actisys.common.events.order.CreateOrderEvent;
+import com.actisys.common.events.payment.CreatePaymentEvent;
+import com.actisys.productservice.dto.OrderDtos.CreateOrderDTO;
 import com.actisys.productservice.dto.OrderDtos.OrderDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.exception.OrderNotFoundException;
+import com.actisys.productservice.mapper.OrderItemMapper;
 import com.actisys.productservice.mapper.OrderMapper;
 import com.actisys.productservice.model.Order;
 import com.actisys.productservice.repository.OrderRepository;
 import com.actisys.productservice.service.OrderService;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @CacheConfig(cacheNames = "orders")
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
   private final OrderMapper orderMapper;
   private final OrderRepository orderRepository;
-
-  public OrderServiceImpl(OrderMapper orderMapper, OrderRepository orderRepository) {
-    this.orderMapper = orderMapper;
-    this.orderRepository = orderRepository;
-  }
+  private final OrderItemMapper orderItemMapper;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   @Override
   @CacheEvict(value = "orders", allEntries = true)
-  public OrderDTO createOrder(OrderDTO order) {
-    Order orderToSave = orderMapper.toEntity(order);
-    orderRepository.save(orderToSave);
-    return orderMapper.toDto(orderToSave);
+  public OrderDTO createOrder(CreateOrderDTO order, Long userId) {
+    Order orderForSave = new Order();
+    orderForSave.setCreatedAt(LocalDateTime.now());
+    orderForSave.setOrderItems(orderItemMapper.toEntityList(order.getOrderItems()));
+    orderForSave.setStatus(Status.CREATED);
+    orderForSave.setTotalCost(order.getTotalCost());
+    orderForSave.setUserId(userId);
+    Order savedOrder = orderRepository.save(orderForSave);
+
+    CreateOrderEvent event = new CreateOrderEvent();
+    event.setOrderId(savedOrder.getId());
+    event.setUserId(userId);
+    event.setAmount(order.getTotalCost());
+    event.setPaymentType(PaymentType.BAR_BUY);
+
+    kafkaTemplate.send("CREATE_ORDER_EVENT", event);
+
+    return orderMapper.toDto(savedOrder);
   }
 
   @Override
@@ -68,11 +88,22 @@ public class OrderServiceImpl implements OrderService {
   @Override
   @CacheEvict(value = "orders", allEntries = true)
   public OrderDTO updateOrderStatus(Long orderId, Status newStatus) {
-    if(!orderRepository.existsById(orderId)) {
-      throw new OrderNotFoundException(orderId);
-    }
-    Order order = orderRepository.getOrderById(orderId);
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(()->new OrderNotFoundException(orderId));
     order.setStatus(newStatus);
     return orderMapper.toDto(orderRepository.save(order));
+  }
+
+  @Override
+  public void updateStatusByEvent(CreatePaymentEvent event) {
+    Order order = orderRepository.findById(event.getOrderId())
+        .orElseThrow(()->new OrderNotFoundException(event.getOrderId()));
+    order.setPaymentId(event.getPaymentId());
+    order.setStatus(statusHandler(event.getStatus()));
+    orderRepository.save(order);
+  }
+
+  private Status statusHandler(OperationType operationType) {
+    return operationType.equals(OperationType.SUCCESS) ? Status.PAID : Status.ERROR_IN_PAID;
   }
 }

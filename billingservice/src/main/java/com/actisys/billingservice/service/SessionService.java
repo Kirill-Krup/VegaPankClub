@@ -5,6 +5,7 @@ import com.actisys.billingservice.dto.SessionDtos.SessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
 import com.actisys.common.clientDtos.SessionStatsDTO;
+import com.actisys.common.events.OperationType;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,5 +21,5 @@ public interface SessionService {
 
     SessionDTO createSession(CreateSessionDTO createSessionDTO, String userId);
 
-    void updateStatus(Long orderId, String status);
+    void updateStatus(Long orderId, OperationType status);
 }
