@@ -1,4 +1,4 @@
-name: CI/CD for UserService
+name: CI/CD for ProductService
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build UserService
+    name: Build ProductService
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Build project
         run: |
-          cd userservice
+          cd productservice
           mvn -B clean package -DskipTests=true
 
   test:
@@ -66,7 +66,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cd userservice
+          cd productservice
           mvn -B test
 
   docker:
@@ -98,7 +98,7 @@ jobs:
 
       - name: Build JAR file
         run: |
-          cd userservice
+          cd productservice
           mvn -B clean package -DskipTests=true
 
       - name: Log in to Docker Hub
@@ -109,11 +109,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd userservice
-          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }} .
+          cd productservice
+          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/productservice:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }}
-          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:latest
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:latest
+          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/productservice:${{ github.sha }}
+          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/productservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/productservice:latest
+          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/productservice:latest

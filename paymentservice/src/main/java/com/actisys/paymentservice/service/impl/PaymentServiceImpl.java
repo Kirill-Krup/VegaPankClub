@@ -88,16 +88,16 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(PaymentStatus.CREATED);
         payment.setOrderId(0L);
         payment.setPaymentType(PaymentType.REPLENISHMENT);
-        paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
         CreateWalletEvent createWalletEvent = new CreateWalletEvent();
-        createWalletEvent.setCost(createReplenishment.getReplenishmentAmount());
-        createWalletEvent.setUserId(createWalletEvent.getUserId());
-        createWalletEvent.setPaymentId(createWalletEvent.getPaymentId());
+        createWalletEvent.setCost(savedPayment.getAmount());
+        createWalletEvent.setUserId(savedPayment.getUserId());
+        createWalletEvent.setPaymentId(savedPayment.getPaymentId());
         kafkaTemplate.send("CREATE_WALLET_REPLENISHMENT_EVENT", createWalletEvent);
         return paymentMapper.toDto(payment);
     }
 
-    public PaymentStatus statusHandler(OperationType operationType){
+    private PaymentStatus statusHandler(OperationType operationType){
         return operationType ==  OperationType.ERROR ? PaymentStatus.FAILED : PaymentStatus.PAID;
     }
 }

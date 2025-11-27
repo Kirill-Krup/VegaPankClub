@@ -8,6 +8,7 @@ import java.util.List;
 
 @Getter
 @ToString
+@Builder
 @EqualsAndHashCode
 @RequiredArgsConstructor
 public class RoomDTO {

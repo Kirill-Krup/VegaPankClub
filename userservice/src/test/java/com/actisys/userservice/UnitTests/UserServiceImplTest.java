@@ -276,7 +276,6 @@ class UserServiceImplTest {
 
     assertThrows(UserNotFoundException.class, result::block);
   }
-
   @Test
   @DisplayName("Should return profile even if billing service fails")
   void testGetAllProfileBillingServiceError() {
