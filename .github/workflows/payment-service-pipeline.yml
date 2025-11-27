@@ -1,4 +1,4 @@
-name: CI/CD for UserService
+name: CI/CD for PaymentService
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build UserService
+    name: Build PaymentService
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Build project
         run: |
-          cd userservice
+          cd paymentservice
           mvn -B clean package -DskipTests=true
 
   test:
@@ -66,7 +66,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cd userservice
+          cd paymentservice
           mvn -B test
 
   docker:
@@ -98,7 +98,7 @@ jobs:
 
       - name: Build JAR file
         run: |
-          cd userservice
+          cd paymentservice
           mvn -B clean package -DskipTests=true
 
       - name: Log in to Docker Hub
@@ -109,11 +109,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd userservice
-          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }} .
+          cd paymentservice
+          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/paymentservice:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }}
-          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:latest
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/userservice:latest
+          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/paymentservice:${{ github.sha }}
+          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/paymentservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/paymentservice:latest
+          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/paymentservice:latest

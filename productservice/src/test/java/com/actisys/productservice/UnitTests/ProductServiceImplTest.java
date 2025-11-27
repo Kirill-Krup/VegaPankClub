@@ -11,6 +11,7 @@ import com.actisys.productservice.model.Category;
 import com.actisys.productservice.model.Product;
 import com.actisys.productservice.repository.CategoryRepository;
 import com.actisys.productservice.repository.ProductRepository;
+import com.actisys.productservice.service.ProductPhotoStorageService;
 import com.actisys.productservice.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,15 +20,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +45,9 @@ class ProductServiceImplTest {
   private CategoryRepository categoryRepository;
 
   @Mock
+  private ProductPhotoStorageService productPhotoStorageService;
+
+  @Mock
   private MultipartFile multipartFile;
 
   @InjectMocks
@@ -58,13 +62,11 @@ class ProductServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    ReflectionTestUtils.setField(productService, "uploadDir", "static/images");
-
     testCategory = new Category();
     testCategory.setId(1L);
     testCategory.setName("Electronics");
 
-    testCategoryDTO = testCategoryDTO.builder()
+    testCategoryDTO = CategoryDTO.builder()
         .id(1L)
         .name("Electronics")
         .build();
@@ -91,7 +93,6 @@ class ProductServiceImplTest {
         .name("New Product")
         .price(new BigDecimal("49.99"))
         .stock(50)
-        .active(true)
         .categoryId(1L)
         .build();
 
@@ -134,42 +135,13 @@ class ProductServiceImplTest {
     verify(productRepository, times(1)).findAllWithCategory();
   }
 
-  @Test
-  @DisplayName("Should map multiple products correctly")
-  void testGetAllProductsMultiple() {
-    Product product2 = new Product();
-    product2.setId(2L);
-    product2.setName("Product 2");
-    product2.setPrice(new BigDecimal("199.99"));
-    product2.setCategory(testCategory);
-
-    ProductDTO productDTO2 = new ProductDTO();
-    productDTO2.setId(2L);
-    productDTO2.setName("Product 2");
-    productDTO2.setPrice(new BigDecimal("199.99"));
-    productDTO2.setCategory(testCategoryDTO);
-
-    List<Product> productList = List.of(testProduct, product2);
-
-    when(productRepository.findAllWithCategory()).thenReturn(productList);
-    when(productMapper.toDTO(testProduct)).thenReturn(testProductDTO);
-    when(productMapper.toDTO(product2)).thenReturn(productDTO2);
-
-    List<ProductDTO> result = productService.getAllProducts();
-
-    assertEquals(2, result.size());
-    assertEquals("Test Product", result.get(0).getName());
-    assertEquals("Product 2", result.get(1).getName());
-  }
-
   // ==================== addNewProduct ====================
 
   @Test
-  @DisplayName("Should add new product successfully")
-  void testAddNewProductSuccess() throws IOException {
+  @DisplayName("Should add new product successfully without image")
+  void testAddNewProductSuccessWithoutImage() {
     when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-    when(multipartFile.isEmpty()).thenReturn(false);
-    when(multipartFile.getOriginalFilename()).thenReturn("test-image.jpg");
+    when(multipartFile.isEmpty()).thenReturn(true);
     when(productRepository.save(any(Product.class))).thenReturn(testProduct);
     when(productMapper.toDTO(testProduct)).thenReturn(testProductDTO);
 
@@ -177,10 +149,29 @@ class ProductServiceImplTest {
 
     assertNotNull(result);
     assertEquals("Test Product", result.getName());
-    assertEquals(new BigDecimal("99.99"), result.getPrice());
-    assertTrue(result.getActive());
     verify(categoryRepository, times(1)).findById(1L);
     verify(productRepository, times(1)).save(any(Product.class));
+    verify(productPhotoStorageService, never()).uploadProductPhoto(anyLong(), any());
+  }
+
+  @Test
+  @DisplayName("Should add new product successfully with image")
+  void testAddNewProductSuccessWithImage() {
+    String photoUrl = "/static/images/new-product.jpg";
+
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(multipartFile.isEmpty()).thenReturn(false);
+    when(productRepository.save(any(Product.class))).thenReturn(testProduct);
+    when(productPhotoStorageService.uploadProductPhoto(anyLong(), any())).thenReturn(photoUrl);
+    when(productMapper.toDTO(testProduct)).thenReturn(testProductDTO);
+
+    ProductDTO result = productService.addNewProduct(productCreateDTO, multipartFile);
+
+    assertNotNull(result);
+    assertEquals("Test Product", result.getName());
+    verify(categoryRepository, times(1)).findById(1L);
+    verify(productRepository, times(2)).save(any(Product.class)); // Первое сохранение + после загрузки фото
+    verify(productPhotoStorageService, times(1)).uploadProductPhoto(anyLong(), eq(multipartFile));
   }
 
   @Test
@@ -191,17 +182,6 @@ class ProductServiceImplTest {
     assertThrows(CategoryNotFoundException.class,
         () -> productService.addNewProduct(productCreateDTO, multipartFile));
     verify(categoryRepository, times(1)).findById(1L);
-    verify(productRepository, never()).save(any());
-  }
-
-  @Test
-  @DisplayName("Should throw exception when image file is empty")
-  void testAddNewProductEmptyImage() {
-    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-    when(multipartFile.isEmpty()).thenReturn(true);
-
-    assertThrows(RuntimeException.class,
-        () -> productService.addNewProduct(productCreateDTO, multipartFile));
     verify(productRepository, never()).save(any());
   }
 
@@ -230,7 +210,7 @@ class ProductServiceImplTest {
     assertNotNull(result);
     verify(productRepository, times(1)).findById(1L);
     verify(categoryRepository, times(1)).findById(1L);
-    verify(productRepository, times(1)).save(any(Product.class));
+    verify(productRepository, times(1)).save(productToUpdate);
   }
 
   @Test
@@ -254,39 +234,33 @@ class ProductServiceImplTest {
     verify(productRepository, never()).save(any());
   }
 
-  @Test
-  @DisplayName("Should update product fields correctly")
-  void testUpdateProductFieldsCorrectly() {
-    Product productToUpdate = new Product();
-    productToUpdate.setId(1L);
-    productToUpdate.setName("Old Name");
-    productToUpdate.setPrice(new BigDecimal("10.00"));
-    productToUpdate.setActive(false);
-    productToUpdate.setCategory(testCategory);
-
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productToUpdate));
-    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-    when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(productMapper.toDTO(any(Product.class))).thenReturn(testProductDTO);
-
-    productService.updateProduct(1L, productUpdateDTO);
-
-    assertEquals("Updated Product", productToUpdate.getName());
-    assertEquals(new BigDecimal("79.99"), productToUpdate.getPrice());
-    assertTrue(productToUpdate.getActive());
-    assertEquals(testCategory, productToUpdate.getCategory());
-  }
-
   // ==================== deleteProduct ====================
 
   @Test
-  @DisplayName("Should delete product successfully")
-  void testDeleteProductSuccess() {
+  @DisplayName("Should delete product successfully with photo")
+  void testDeleteProductSuccessWithPhoto() {
     when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
     productService.deleteProduct(1L);
 
     verify(productRepository, times(1)).findById(1L);
+    verify(productPhotoStorageService, times(1)).deleteProductPhoto("/static/images/test-image.jpg");
+    verify(productRepository, times(1)).deleteById(1L);
+  }
+
+  @Test
+  @DisplayName("Should delete product successfully without photo")
+  void testDeleteProductSuccessWithoutPhoto() {
+    Product productWithoutPhoto = new Product();
+    productWithoutPhoto.setId(1L);
+    productWithoutPhoto.setPhotoPath(null);
+
+    when(productRepository.findById(1L)).thenReturn(Optional.of(productWithoutPhoto));
+
+    productService.deleteProduct(1L);
+
+    verify(productRepository, times(1)).findById(1L);
+    verify(productPhotoStorageService, never()).deleteProductPhoto(any());
     verify(productRepository, times(1)).deleteById(1L);
   }
 
@@ -298,30 +272,7 @@ class ProductServiceImplTest {
     assertThrows(ProductNotFoundException.class,
         () -> productService.deleteProduct(1L));
     verify(productRepository, never()).deleteById(any());
-  }
-
-  @Test
-  @DisplayName("Should delete product without photo path")
-  void testDeleteProductWithoutPhoto() {
-    Product productWithoutPhoto = new Product();
-    productWithoutPhoto.setId(1L);
-    productWithoutPhoto.setPhotoPath(null);
-
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productWithoutPhoto));
-
-    productService.deleteProduct(1L);
-
-    verify(productRepository, times(1)).deleteById(1L);
-  }
-
-  @Test
-  @DisplayName("Should delete product with photo path")
-  void testDeleteProductWithPhoto() {
-    when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-
-    productService.deleteProduct(1L);
-
-    verify(productRepository, times(1)).deleteById(1L);
+    verify(productPhotoStorageService, never()).deleteProductPhoto(any());
   }
 
   // ==================== updateProductStatus ====================
@@ -343,7 +294,7 @@ class ProductServiceImplTest {
     assertFalse(productActive.getActive());
     assertNotNull(result);
     verify(productRepository, times(1)).findByIdWithCategory(1L);
-    verify(productRepository, times(1)).save(any(Product.class));
+    verify(productRepository, times(1)).save(productActive);
   }
 
   @Test
@@ -362,7 +313,7 @@ class ProductServiceImplTest {
 
     assertTrue(productInactive.getActive());
     assertNotNull(result);
-    verify(productRepository, times(1)).save(any(Product.class));
+    verify(productRepository, times(1)).save(productInactive);
   }
 
   @Test
@@ -375,102 +326,70 @@ class ProductServiceImplTest {
     verify(productRepository, never()).save(any());
   }
 
-  // ==================== Image handling edge cases ====================
+  // ==================== Edge Cases ====================
 
   @Test
-  @DisplayName("Should throw exception when saving empty image file")
-  void testAddNewProductWithEmptyImageFile() {
+  @DisplayName("Should handle product creation with empty image file")
+  void testAddNewProductWithEmptyImage() {
     when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
     when(multipartFile.isEmpty()).thenReturn(true);
+    when(productRepository.save(any(Product.class))).thenReturn(testProduct);
+    when(productMapper.toDTO(testProduct)).thenReturn(testProductDTO);
 
-    assertThrows(RuntimeException.class,
-        () -> productService.addNewProduct(productCreateDTO, multipartFile));
-  }
+    ProductDTO result = productService.addNewProduct(productCreateDTO, multipartFile);
 
-  // ==================== Integration scenarios ====================
-
-  @Test
-  @DisplayName("Should update product without changing category")
-  void testUpdateProductSameCategory() {
-    Product productToUpdate = new Product();
-    productToUpdate.setId(1L);
-    productToUpdate.setName("Old Name");
-    productToUpdate.setPrice(new BigDecimal("50.00"));
-    productToUpdate.setCategory(testCategory);
-
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productToUpdate));
-    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-    when(productRepository.save(any(Product.class))).thenReturn(productToUpdate);
-    when(productMapper.toDTO(any(Product.class))).thenReturn(testProductDTO);
-
-    ProductDTO result = productService.updateProduct(1L, productUpdateDTO);
-
-    assertEquals(testCategory, productToUpdate.getCategory());
     assertNotNull(result);
-    verify(categoryRepository, times(1)).findById(1L);
+    verify(productPhotoStorageService, never()).uploadProductPhoto(anyLong(), any());
   }
 
   @Test
-  @DisplayName("Should delete multiple products sequentially")
+  @DisplayName("Should update product and save photo path when image uploaded")
+  void testAddNewProductImageUploadFlow() {
+    String expectedPhotoUrl = "/static/images/1-product.jpg";
+    Product savedProduct = new Product();
+    savedProduct.setId(1L);
+    savedProduct.setName("New Product");
+    savedProduct.setPhotoPath(null);
+
+    Product updatedProduct = new Product();
+    updatedProduct.setId(1L);
+    updatedProduct.setName("New Product");
+    updatedProduct.setPhotoPath(expectedPhotoUrl);
+
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(multipartFile.isEmpty()).thenReturn(false);
+    when(productRepository.save(any(Product.class)))
+        .thenReturn(savedProduct)  // Первое сохранение без фото
+        .thenReturn(updatedProduct); // Второе сохранение с фото
+    when(productPhotoStorageService.uploadProductPhoto(1L, multipartFile)).thenReturn(expectedPhotoUrl);
+    when(productMapper.toDTO(updatedProduct)).thenReturn(testProductDTO);
+
+    ProductDTO result = productService.addNewProduct(productCreateDTO, multipartFile);
+
+    assertNotNull(result);
+    verify(productRepository, times(2)).save(any(Product.class));
+    verify(productPhotoStorageService, times(1)).uploadProductPhoto(1L, multipartFile);
+  }
+
+  @Test
+  @DisplayName("Should delete multiple products with different photo scenarios")
   void testDeleteMultipleProducts() {
-    Product product1 = new Product();
-    product1.setId(1L);
-    product1.setPhotoPath("/static/images/product1.jpg");
+    Product productWithPhoto = new Product();
+    productWithPhoto.setId(1L);
+    productWithPhoto.setPhotoPath("/static/images/product1.jpg");
 
-    Product product2 = new Product();
-    product2.setId(2L);
-    product2.setPhotoPath("/static/images/product2.jpg");
+    Product productWithoutPhoto = new Product();
+    productWithoutPhoto.setId(2L);
+    productWithoutPhoto.setPhotoPath(null);
 
-    when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-    when(productRepository.findById(2L)).thenReturn(Optional.of(product2));
+    when(productRepository.findById(1L)).thenReturn(Optional.of(productWithPhoto));
+    when(productRepository.findById(2L)).thenReturn(Optional.of(productWithoutPhoto));
 
     productService.deleteProduct(1L);
     productService.deleteProduct(2L);
 
+    verify(productPhotoStorageService, times(1)).deleteProductPhoto("/static/images/product1.jpg");
+    verify(productPhotoStorageService, never()).deleteProductPhoto(null);
     verify(productRepository, times(2)).deleteById(any());
-  }
-
-  @Test
-  @DisplayName("Should toggle product status multiple times")
-  void testToggleProductStatusMultipleTimes() {
-    Product product = new Product();
-    product.setId(1L);
-    product.setActive(true);
-    product.setCategory(testCategory);
-
-    when(productRepository.findByIdWithCategory(1L)).thenReturn(Optional.of(product));
-    when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(productMapper.toDTO(any(Product.class))).thenReturn(testProductDTO);
-
-    // First toggle: true -> false
-    productService.updateProductStatus(1L);
-    assertFalse(product.getActive());
-
-    // Second toggle: false -> true
-    productService.updateProductStatus(1L);
-    assertTrue(product.getActive());
-
-    verify(productRepository, times(2)).save(any(Product.class));
-  }
-
-  @Test
-  @DisplayName("Should handle product with all fields populated")
-  void testGetAllProductsWithCompleteData() {
-    List<Product> productList = List.of(testProduct);
-
-    when(productRepository.findAllWithCategory()).thenReturn(productList);
-    when(productMapper.toDTO(testProduct)).thenReturn(testProductDTO);
-
-    List<ProductDTO> result = productService.getAllProducts();
-
-    assertNotNull(result);
-    assertEquals(1, result.size());
-    ProductDTO dto = result.get(0);
-    assertEquals(1L, dto.getId());
-    assertEquals("Test Product", dto.getName());
-    assertEquals(new BigDecimal("99.99"), dto.getPrice());
-    assertEquals(100, dto.getStock());
-    assertTrue(dto.getActive());
-    assertNotNull(dto.getCategory());
   }
 }

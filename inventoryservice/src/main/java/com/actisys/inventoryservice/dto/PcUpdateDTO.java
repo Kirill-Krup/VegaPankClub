@@ -1,9 +1,11 @@
 package com.actisys.inventoryservice.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
+@Builder
 @RequiredArgsConstructor
 public class PcUpdateDTO {
   private final String name;
