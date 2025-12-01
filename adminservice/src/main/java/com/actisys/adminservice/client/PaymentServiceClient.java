@@ -1,9 +1,9 @@
 package com.actisys.adminservice.client;
 
-import com.actisys.adminservice.dto.PaymentDTO;
+import com.actisys.adminservice.dto.PaymentInfoDTO;
 import reactor.core.publisher.Mono;
 
 public interface PaymentServiceClient {
 
-  Mono<PaymentDTO> getPaymentById(Long paymentId);
+  Mono<PaymentInfoDTO> getPaymentById(Long paymentId);
 }

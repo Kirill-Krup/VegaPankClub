@@ -2,7 +2,7 @@ package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.PaymentServiceClient;
 import com.actisys.adminservice.config.PaymentServiceProperties;
-import com.actisys.adminservice.dto.PaymentDTO;
+import com.actisys.adminservice.dto.PaymentInfoDTO;
 import java.time.Duration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -24,11 +24,11 @@ public class PaymentServiceClientImpl implements PaymentServiceClient {
   }
 
   @Override
-  public Mono<PaymentDTO> getPaymentById(Long paymentId) {
+  public Mono<PaymentInfoDTO> getPaymentById(Long paymentId) {
     return webClient.get()
         .uri(properties.getEndpoints().getGetPayment(), paymentId)
         .retrieve()
-        .bodyToMono(PaymentDTO.class)
+        .bodyToMono(PaymentInfoDTO.class)
         .timeout(Duration.ofSeconds(5));
   }
 }

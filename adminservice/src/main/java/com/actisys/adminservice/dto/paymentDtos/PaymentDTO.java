@@ -1,5 +1,6 @@
-package com.actisys.adminservice.dto;
+package com.actisys.adminservice.dto.paymentDtos;
 
+import com.actisys.adminservice.dto.PaymentStatus;
 import com.actisys.common.events.PaymentType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +16,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentDTO {
+    private Long userId;
+    private Long orderId;
     private BigDecimal amount;
     private PaymentType paymentType;
     private PaymentStatus status;

@@ -5,11 +5,18 @@ let allUsers = [];
 let allProducts = [];
 let allTariffs = [];
 let allComputers = [];
+let allSessions = [];
+let allOrders = [];
+let allPayments = [];
+let allReviews = [];
 let currentUser = null;
 let currentProduct = null;
 let currentTariff = null;
 let currentComputer = null;
 let currentCategoryFilter = 'all';
+let currentOrderFilter = 'all';
+let currentPaymentFilter = 'all';
+let currentReviewFilter = 'all';
 
 // ========== ТАРИФЫ ==========
 async function fetchAllTariffs() {
@@ -1113,6 +1120,14 @@ function initNavigation() {
         await fetchAllTariffs();
       } else if (sectionId === 'computers') {
         await fetchAllComputers();
+      } else       if (sectionId === 'sessions') {
+        await fetchAllSessions();
+      } else if (sectionId === 'orders') {
+        await fetchAllOrders();
+      } else if (sectionId === 'payments') {
+        await fetchAllPayments();
+      } else if (sectionId === 'reviews') {
+        await fetchAllReviews();
       }
     });
   });
@@ -1141,6 +1156,15 @@ function initModals() {
       }
     });
   });
+
+  // Закрытие модальных окон деталей
+  qs('#sessionDetailsModal .modal-close')?.addEventListener('click', closeSessionDetailsModal);
+  qs('#orderDetailsModal .modal-close')?.addEventListener('click', closeOrderDetailsModal);
+  qs('#paymentDetailsModal .modal-close')?.addEventListener('click', closePaymentDetailsModal);
+  
+  qs('#sessionDetailsModal .modal-overlay')?.addEventListener('click', closeSessionDetailsModal);
+  qs('#orderDetailsModal .modal-overlay')?.addEventListener('click', closeOrderDetailsModal);
+  qs('#paymentDetailsModal .modal-overlay')?.addEventListener('click', closePaymentDetailsModal);
 
   qsa('.modal-footer .btn--secondary').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1206,6 +1230,1020 @@ async function initLogout() {
   });
 }
 
+// ========== СЕССИИ ==========
+async function fetchAllSessions() {
+  const tbody = qs('#sessionsTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 2rem;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+          <p style="margin-top: 1rem; color: var(--gray);">Загрузка сессий...</p>
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const response = await fetch('/api/v1/admin/sessions/getAllSessions', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch sessions');
+    }
+
+    const data = await response.json();
+    allSessions = Array.isArray(data) ? data : [];
+    console.log('Sessions loaded:', allSessions);
+    renderSessions(allSessions);
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    // Показываем заглушку при ошибке
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 2rem; color: var(--gray);">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--warning);"></i>
+            <p style="margin-top: 1rem;">Не удалось загрузить список сессий</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">Проверьте подключение к серверу</p>
+          </td>
+        </tr>
+      `;
+    }
+    allSessions = [];
+    showError('Не удалось загрузить список сессий');
+  }
+}
+
+function renderSessions(sessions) {
+  const tbody = qs('#sessionsTableBody');
+  if (!tbody) return;
+
+  if (!sessions || sessions.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Сессии не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = sessions.map(session => {
+    const sessionId = session.sessionId || session.id || '-';
+    const userId = session.userId || '-';
+    const pcName = session.pcdto?.name || session.pc?.name || 'Не указано';
+    const tariffName = session.tariff?.name || 'Не указан';
+    const startTime = session.startTime ? formatDateTime(session.startTime) : '-';
+    const endTime = session.endTime ? formatDateTime(session.endTime) : 'Не завершена';
+    const totalCost = session.totalCost ? parseFloat(session.totalCost).toFixed(2) + ' BYN' : '-';
+    const status = session.status || 'UNKNOWN';
+    const statusText = getSessionStatusText(status);
+    const statusClass = getSessionStatusClass(status);
+
+    return `
+      <tr data-session-id="${sessionId}">
+        <td>#${sessionId}</td>
+        <td>ID: ${userId}</td>
+        <td>${pcName}</td>
+        <td>${tariffName}</td>
+        <td>${startTime}</td>
+        <td>${endTime}</td>
+        <td>${totalCost}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn-icon btn-primary" title="Просмотреть" onclick="viewSessionDetails(${sessionId})">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getSessionStatusText(status) {
+  const statusMap = {
+    'PENDING': 'Ожидает',
+    'PAID': 'Оплачена',
+    'IN_PROGRESS': 'В процессе',
+    'COMPLETED': 'Завершена',
+    'NOT_SHOW': 'Не явился',
+    'CANCELLED': 'Отменена',
+    'REFUNDED': 'Возвращена',
+    'ERROR': 'Ошибка'
+  };
+  return statusMap[status] || status;
+}
+
+function getSessionStatusClass(status) {
+  const classMap = {
+    'PENDING': 'status-pending',
+    'PAID': 'status-active',
+    'IN_PROGRESS': 'status-active',
+    'COMPLETED': 'status-completed',
+    'NOT_SHOW': 'status-inactive',
+    'CANCELLED': 'status-inactive',
+    'REFUNDED': 'status-inactive',
+    'ERROR': 'status-banned'
+  };
+  return classMap[status] || 'status-inactive';
+}
+
+async function viewSessionDetails(sessionId) {
+  const session = allSessions.find(s => (s.sessionId || s.id) === sessionId);
+  if (!session) {
+    showError('Сессия не найдена');
+    return;
+  }
+
+  // Если данных нет, показываем заглушку
+  if (allSessions.length === 0) {
+    showError('Данные сессий не загружены');
+    return;
+  }
+
+  const modal = qs('#sessionDetailsModal');
+  const body = qs('#sessionDetailsBody');
+  if (!modal || !body) return;
+
+  modal.classList.add('active');
+
+  // Формируем детальную информацию
+  const pc = session.pcdto || session.pc || {};
+  const room = pc.roomDTO || pc.room || {};
+  const tariff = session.tariff || {};
+
+  body.innerHTML = `
+    <div class="detail-section">
+      <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID сессии:</div>
+        <div class="detail-value">#${session.sessionId || session.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">ID пользователя:</div>
+        <div class="detail-value">${session.userId || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус:</div>
+        <div class="detail-value">
+          <span class="status-badge ${getSessionStatusClass(session.status)}">
+            ${getSessionStatusText(session.status)}
+          </span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Стоимость:</div>
+        <div class="detail-value">${session.totalCost ? parseFloat(session.totalCost).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-clock"></i> Временные рамки</h4>
+      <div class="detail-row">
+        <div class="detail-label">Начало:</div>
+        <div class="detail-value">${session.startTime ? formatDateTime(session.startTime) : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Конец:</div>
+        <div class="detail-value">${session.endTime ? formatDateTime(session.endTime) : 'Не завершена'}</div>
+      </div>
+      ${session.startTime && session.endTime ? `
+      <div class="detail-row">
+        <div class="detail-label">Длительность:</div>
+        <div class="detail-value">${calculateDuration(session.startTime, session.endTime)}</div>
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-desktop"></i> Компьютер</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID компьютера:</div>
+        <div class="detail-value">${pc.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Название:</div>
+        <div class="detail-value">${pc.name || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">CPU:</div>
+        <div class="detail-value">${pc.cpu || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">GPU:</div>
+        <div class="detail-value">${pc.gpu || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">RAM:</div>
+        <div class="detail-value">${pc.ram || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Монитор:</div>
+        <div class="detail-value">${pc.monitor || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус:</div>
+        <div class="detail-value">
+          <span class="status-badge ${pc.isEnabled ? 'status-active' : 'status-inactive'}">
+            ${pc.isEnabled ? 'Активен' : 'Неактивен'}
+          </span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Комната:</div>
+        <div class="detail-value">
+          ${room.name || '-'}
+          ${room.isVip ? '<span class="status-badge status-active" style="margin-left: 0.5rem;">VIP</span>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-ticket-alt"></i> Тариф</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID тарифа:</div>
+        <div class="detail-value">${tariff.tariffId || tariff.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Название:</div>
+        <div class="detail-value">${tariff.name || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Цена:</div>
+        <div class="detail-value">${tariff.price ? parseFloat(tariff.price).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Часы:</div>
+        <div class="detail-value">${tariff.hours || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">VIP:</div>
+        <div class="detail-value">
+          <span class="status-badge ${tariff.isVip || tariff.vip ? 'status-active' : 'status-inactive'}">
+            ${tariff.isVip || tariff.vip ? 'Да' : 'Нет'}
+          </span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function closeSessionDetailsModal() {
+  const modal = qs('#sessionDetailsModal');
+  if (modal) modal.classList.remove('active');
+}
+
+// ========== ЗАКАЗЫ ==========
+async function fetchAllOrders() {
+  const tbody = qs('#ordersTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+          <p style="margin-top: 1rem; color: var(--gray);">Загрузка заказов...</p>
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const response = await fetch('/api/v1/admin/orders/getAllOrders', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch orders');
+    }
+
+    const data = await response.json();
+    allOrders = Array.isArray(data) ? data : [];
+    console.log('Orders loaded:', allOrders);
+    renderOrders(allOrders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    // Показываем заглушку при ошибке
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--warning);"></i>
+            <p style="margin-top: 1rem;">Не удалось загрузить список заказов</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">Проверьте подключение к серверу</p>
+          </td>
+        </tr>
+      `;
+    }
+    allOrders = [];
+    showError('Не удалось загрузить список заказов');
+  }
+}
+
+function renderOrders(orders) {
+  const tbody = qs('#ordersTableBody');
+  if (!tbody) return;
+
+  if (!orders || orders.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Заказы не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let filtered = orders;
+  if (currentOrderFilter !== 'all') {
+    filtered = orders.filter(order => {
+      const status = order.order?.status || order.status;
+      return status === currentOrderFilter;
+    });
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Заказы с выбранным фильтром не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(order => {
+    const orderData = order.order || order;
+    const orderId = orderData.id || '-';
+    const user = order.user || {};
+    const userName = user.login || user.username || `ID: ${orderData.userId || '-'}`;
+    const orderItems = orderData.orderItems || [];
+    const itemsPreview = orderItems.length > 0 
+      ? orderItems.slice(0, 2).map(item => {
+          const product = item.productDTO || item.product || {};
+          const productName = product.name || 'Неизвестный товар';
+          const quantity = item.quantity || 0;
+          return `${productName} x${quantity}`;
+        }).join(', ') + (orderItems.length > 2 ? ` и ещё ${orderItems.length - 2}` : '')
+      : 'Нет товаров';
+    const totalCost = orderData.totalCost ? parseFloat(orderData.totalCost).toFixed(2) + ' BYN' : '-';
+    const status = orderData.status || 'UNKNOWN';
+    const statusText = getOrderStatusText(status);
+    const statusClass = getOrderStatusClass(status);
+    const createdAt = orderData.createdAt ? formatDateTime(orderData.createdAt) : '-';
+
+    return `
+      <tr data-order-id="${orderId}">
+        <td>#${orderId}</td>
+        <td>${userName}</td>
+        <td>${itemsPreview}</td>
+        <td>${totalCost}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>${createdAt}</td>
+        <td>
+          <button class="btn-icon btn-primary" title="Просмотреть" onclick="viewOrderDetails(${orderId})">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getOrderStatusText(status) {
+  const statusMap = {
+    'CREATED': 'Создан',
+    'PROCESSING': 'В обработке',
+    'PAID': 'Оплачен',
+    'ERROR_IN_PAID': 'Ошибка оплаты',
+    'SHIPPED': 'Отправлен',
+    'DELIVERED': 'Доставлен',
+    'CANCELLED': 'Отменён'
+  };
+  return statusMap[status] || status;
+}
+
+function getOrderStatusClass(status) {
+  const classMap = {
+    'CREATED': 'status-pending',
+    'PROCESSING': 'status-pending',
+    'PAID': 'status-active',
+    'ERROR_IN_PAID': 'status-banned',
+    'SHIPPED': 'status-active',
+    'DELIVERED': 'status-completed',
+    'CANCELLED': 'status-inactive'
+  };
+  return classMap[status] || 'status-inactive';
+}
+
+async function viewOrderDetails(orderId) {
+  const order = allOrders.find(o => {
+    const oData = o.order || o;
+    return (oData.id || oData.orderId) === orderId;
+  });
+  if (!order) {
+    showError('Заказ не найден');
+    return;
+  }
+
+  // Если данных нет, показываем заглушку
+  if (allOrders.length === 0) {
+    showError('Данные заказов не загружены');
+    return;
+  }
+
+  const modal = qs('#orderDetailsModal');
+  const body = qs('#orderDetailsBody');
+  if (!modal || !body) return;
+
+  modal.classList.add('active');
+
+  const orderData = order.order || order;
+  const user = order.user || {};
+  const payment = order.payment || {};
+  const orderItems = orderData.orderItems || [];
+
+  body.innerHTML = `
+    <div class="detail-section">
+      <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID заказа:</div>
+        <div class="detail-value">#${orderData.id || orderData.orderId || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">ID пользователя:</div>
+        <div class="detail-value">${orderData.userId || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус:</div>
+        <div class="detail-value">
+          <span class="status-badge ${getOrderStatusClass(orderData.status)}">
+            ${getOrderStatusText(orderData.status)}
+          </span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Общая стоимость:</div>
+        <div class="detail-value">${orderData.totalCost ? parseFloat(orderData.totalCost).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Дата создания:</div>
+        <div class="detail-value">${orderData.createdAt ? formatDateTime(orderData.createdAt) : '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-user"></i> Пользователь</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID:</div>
+        <div class="detail-value">${user.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Логин:</div>
+        <div class="detail-value">${user.login || user.username || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Email:</div>
+        <div class="detail-value">${user.email || '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-credit-card"></i> Платеж</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID платежа:</div>
+        <div class="detail-value">${orderData.paymentId || payment.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Сумма:</div>
+        <div class="detail-value">${payment.amount ? parseFloat(payment.amount).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Тип платежа:</div>
+        <div class="detail-value">${payment.paymentType || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус платежа:</div>
+        <div class="detail-value">
+          ${payment.status ? `
+            <span class="status-badge ${getPaymentStatusClass(payment.status)}">
+              ${getPaymentStatusText(payment.status)}
+            </span>
+          ` : '-'}
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Дата платежа:</div>
+        <div class="detail-value">${payment.createdAt ? formatDateTime(payment.createdAt) : '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-shopping-cart"></i> Товары (${orderItems.length})</h4>
+      ${orderItems.length > 0 ? `
+        <ul class="detail-list">
+          ${orderItems.map(item => {
+            const product = item.productDTO || item.product || {};
+            const productName = product.name || 'Неизвестный товар';
+            const quantity = item.quantity || 0;
+            const price = item.productPrice ? parseFloat(item.productPrice).toFixed(2) : '0.00';
+            const total = (parseFloat(price) * quantity).toFixed(2);
+            return `
+              <li class="detail-list-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>${productName}</strong>
+                    <div style="margin-top: 0.5rem; color: var(--gray); font-size: 0.9rem;">
+                      Количество: ${quantity} × ${price} BYN = ${total} BYN
+                    </div>
+                  </div>
+                </div>
+              </li>
+            `;
+          }).join('')}
+        </ul>
+      ` : '<p style="color: var(--gray);">Товары не найдены</p>'}
+    </div>
+  `;
+}
+
+function getPaymentStatusText(status) {
+  const statusMap = {
+    'CREATED': 'Создан',
+    'PAID': 'Оплачен',
+    'FAILED': 'Ошибка',
+    'CANCELLED': 'Отменён',
+    'REFUNDED': 'Возвращён'
+  };
+  return statusMap[status] || status;
+}
+
+function getPaymentStatusClass(status) {
+  const classMap = {
+    'CREATED': 'status-pending',
+    'PAID': 'status-completed',
+    'FAILED': 'status-banned',
+    'CANCELLED': 'status-inactive',
+    'REFUNDED': 'status-inactive'
+  };
+  return classMap[status] || 'status-inactive';
+}
+
+function closeOrderDetailsModal() {
+  const modal = qs('#orderDetailsModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function initOrderFilters() {
+  const filterButtons = qsa('#orders .filter-btn');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentOrderFilter = e.target.getAttribute('data-filter');
+      renderOrders(allOrders);
+    });
+  });
+}
+
+// ========== УТИЛИТЫ ==========
+function formatDateTime(dateTimeString) {
+  if (!dateTimeString) return '-';
+  try {
+    const date = new Date(dateTimeString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  } catch (e) {
+    return dateTimeString;
+  }
+}
+
+function calculateDuration(startTime, endTime) {
+  if (!startTime || !endTime) return '-';
+  try {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end - start;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (diffHours > 0) {
+      return `${diffHours} ч ${diffMinutes} мин`;
+    }
+    return `${diffMinutes} мин`;
+  } catch (e) {
+    return '-';
+  }
+}
+
+// ========== ОТЗЫВЫ ==========
+async function fetchAllReviews() {
+  const container = qs('#reviewsContainer');
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+        <p style="margin-top: 1rem; color: var(--gray);">Загрузка отзывов...</p>
+      </div>
+    `;
+  }
+
+  try {
+    const response = await fetch('/api/v1/reviews/getAllReviews', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch reviews');
+    }
+
+    const data = await response.json();
+    allReviews = Array.isArray(data) ? data : [];
+    console.log('Reviews loaded:', allReviews);
+    renderReviews(allReviews);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--gray);">
+          <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--warning);"></i>
+          <p style="margin-top: 1rem;">Не удалось загрузить список отзывов</p>
+          <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">Проверьте подключение к серверу</p>
+        </div>
+      `;
+    }
+    allReviews = [];
+    showError('Не удалось загрузить список отзывов');
+  }
+}
+
+function renderReviews(reviews) {
+  const container = qs('#reviewsContainer');
+  if (!container) return;
+
+  let filtered = reviews;
+  if (currentReviewFilter !== 'all') {
+    if (currentReviewFilter === 'visible') {
+      filtered = reviews.filter(r => r.isVisible !== false);
+    } else if (currentReviewFilter === 'hidden') {
+      filtered = reviews.filter(r => r.isVisible === false);
+    } else {
+      const stars = parseInt(currentReviewFilter);
+      if (!isNaN(stars)) {
+        filtered = reviews.filter(r => r.stars === stars);
+      }
+    }
+  }
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem; color: var(--gray);">
+        <i class="fas fa-star" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>Отзывы не найдены</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(review => {
+    const user = review.user || {};
+    const userName = user.login || user.username || 'Неизвестный пользователь';
+    const userPhoto = user.photoPath || `https://i.pravatar.cc/50?img=${review.reviewId || 1}`;
+    const stars = review.stars || 0;
+    const isVisible = review.isVisible !== false;
+    const createdAt = review.createdAt ? formatDateTime(review.createdAt) : '-';
+    const reviewText = review.reviewText || 'Нет текста';
+    const reviewId = review.reviewId || review.id;
+
+    const starsHTML = Array.from({ length: 5 }, (_, i) => {
+      return i < stars 
+        ? '<i class="fas fa-star"></i>'
+        : '<i class="far fa-star"></i>';
+    }).join('');
+
+    return `
+      <div class="review-card ${!isVisible ? 'review-hidden' : ''}">
+        <div class="review-header">
+          <div class="review-user">
+            <img src="${userPhoto}" alt="${userName}">
+            <div>
+              <h4>${userName}</h4>
+              <div class="review-rating">${starsHTML}</div>
+            </div>
+          </div>
+          <span class="review-date">${createdAt}</span>
+        </div>
+        <p class="review-text">${reviewText}</p>
+        <div class="review-actions">
+          ${!isVisible ? `
+            <button class="btn-icon btn-success" title="Сделать видимым" onclick="toggleReviewVisibility(${reviewId})">
+              <i class="fas fa-eye"></i>
+            </button>
+          ` : `
+            <button class="btn-icon btn-warning" title="Сделать невидимым" onclick="toggleReviewVisibility(${reviewId})">
+              <i class="fas fa-eye-slash"></i>
+            </button>
+          `}
+          ${!isVisible ? '<span class="status-badge status-inactive" style="margin-left: 0.5rem;">Скрыт</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function toggleReviewVisibility(reviewId) {
+  try {
+    const response = await fetch(`/api/v1/reviews/editVisibility/${reviewId}`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle review visibility');
+    }
+
+    showSuccess('Видимость отзыва изменена');
+    await fetchAllReviews();
+  } catch (error) {
+    console.error('Error toggling review visibility:', error);
+    showError('Не удалось изменить видимость отзыва');
+  }
+}
+
+function initReviewFilters() {
+  const filterButtons = qsa('#reviews .filter-btn');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentReviewFilter = e.target.getAttribute('data-filter');
+      renderReviews(allReviews);
+    });
+  });
+}
+
+// ========== ПЛАТЕЖИ ==========
+async function fetchAllPayments() {
+  const tbody = qs('#paymentsTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+          <p style="margin-top: 1rem; color: var(--gray);">Загрузка платежей...</p>
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const response = await fetch('/api/v1/admin/payments/getAllPayments', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch payments');
+    }
+
+    const data = await response.json();
+    allPayments = Array.isArray(data) ? data : [];
+    console.log('Payments loaded:', allPayments);
+    renderPayments(allPayments);
+  } catch (error) {
+    console.error('Error fetching payments:', error);
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--warning);"></i>
+            <p style="margin-top: 1rem;">Не удалось загрузить список платежей</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">Проверьте подключение к серверу</p>
+          </td>
+        </tr>
+      `;
+    }
+    allPayments = [];
+    showError('Не удалось загрузить список платежей');
+  }
+}
+
+function renderPayments(payments) {
+  const tbody = qs('#paymentsTableBody');
+  if (!tbody) return;
+
+  let filtered = payments;
+  if (currentPaymentFilter !== 'all') {
+    filtered = payments.filter(payment => {
+      const status = payment.payment?.status || payment.status;
+      return status === currentPaymentFilter;
+    });
+  }
+
+  if (!filtered || filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Платежи не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(payment => {
+    const paymentData = payment.payment || payment;
+    const user = payment.user || {};
+    const order = payment.order || {};
+    const paymentId = paymentData.paymentId || paymentData.id || '-';
+    const userName = user.login || user.username || `ID: ${paymentData.userId || '-'}`;
+    const paymentType = paymentData.paymentType || '-';
+    const amount = paymentData.amount ? parseFloat(paymentData.amount).toFixed(2) + ' BYN' : '-';
+    const status = paymentData.status || 'UNKNOWN';
+    const statusText = getPaymentStatusText(status);
+    const statusClass = getPaymentStatusClass(status);
+    const createdAt = paymentData.createdAt ? formatDateTime(paymentData.createdAt) : '-';
+
+    return `
+      <tr data-payment-id="${paymentId}">
+        <td>#${paymentId}</td>
+        <td>${userName}</td>
+        <td>${paymentType}</td>
+        <td>${amount}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>${createdAt}</td>
+        <td>
+          <button class="btn-icon btn-primary" title="Просмотреть" onclick="viewPaymentDetails(${paymentId})">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function viewPaymentDetails(paymentId) {
+  const payment = allPayments.find(p => {
+    const pData = p.payment || p;
+    return (pData.paymentId || pData.id) === paymentId;
+  });
+  if (!payment) {
+    showError('Платеж не найден');
+    return;
+  }
+
+  if (allPayments.length === 0) {
+    showError('Данные платежей не загружены');
+    return;
+  }
+
+  const modal = qs('#paymentDetailsModal');
+  const body = qs('#paymentDetailsBody');
+  if (!modal || !body) return;
+
+  modal.classList.add('active');
+
+  const paymentData = payment.payment || payment;
+  const user = payment.user || {};
+  const order = payment.order || {};
+  const orderItems = order.orderItems || [];
+
+  body.innerHTML = `
+    <div class="detail-section">
+      <h4><i class="fas fa-info-circle"></i> Основная информация о платеже</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID платежа:</div>
+        <div class="detail-value">#${paymentData.paymentId || paymentData.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Сумма:</div>
+        <div class="detail-value">${paymentData.amount ? parseFloat(paymentData.amount).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Тип платежа:</div>
+        <div class="detail-value">${paymentData.paymentType || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус:</div>
+        <div class="detail-value">
+          <span class="status-badge ${getPaymentStatusClass(paymentData.status)}">
+            ${getPaymentStatusText(paymentData.status)}
+          </span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Дата создания:</div>
+        <div class="detail-value">${paymentData.createdAt ? formatDateTime(paymentData.createdAt) : '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-user"></i> Пользователь</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID:</div>
+        <div class="detail-value">${user.id || paymentData.userId || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Логин:</div>
+        <div class="detail-value">${user.login || user.username || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Email:</div>
+        <div class="detail-value">${user.email || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Баланс:</div>
+        <div class="detail-value">${user.wallet ? parseFloat(user.wallet).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+    </div>
+
+    ${order.id ? `
+    <div class="detail-section">
+      <h4><i class="fas fa-shopping-cart"></i> Заказ</h4>
+      <div class="detail-row">
+        <div class="detail-label">ID заказа:</div>
+        <div class="detail-value">#${order.id || '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Статус заказа:</div>
+        <div class="detail-value">
+          <span class="status-badge ${getOrderStatusClass(order.status)}">
+            ${getOrderStatusText(order.status)}
+          </span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Общая стоимость:</div>
+        <div class="detail-value">${order.totalCost ? parseFloat(order.totalCost).toFixed(2) + ' BYN' : '-'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Дата создания:</div>
+        <div class="detail-value">${order.createdAt ? formatDateTime(order.createdAt) : '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4><i class="fas fa-box"></i> Товары в заказе (${orderItems.length})</h4>
+      ${orderItems.length > 0 ? `
+        <ul class="detail-list">
+          ${orderItems.map(item => {
+            const product = item.productDTO || item.product || {};
+            const productName = product.name || 'Неизвестный товар';
+            const quantity = item.quantity || 0;
+            const price = item.productPrice ? parseFloat(item.productPrice).toFixed(2) : '0.00';
+            const total = (parseFloat(price) * quantity).toFixed(2);
+            return `
+              <li class="detail-list-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>${productName}</strong>
+                    <div style="margin-top: 0.5rem; color: var(--gray); font-size: 0.9rem;">
+                      Количество: ${quantity} × ${price} BYN = ${total} BYN
+                    </div>
+                  </div>
+                </div>
+              </li>
+            `;
+          }).join('')}
+        </ul>
+      ` : '<p style="color: var(--gray);">Товары не найдены</p>'}
+    </div>
+    ` : `
+    <div class="detail-section">
+      <h4><i class="fas fa-shopping-cart"></i> Заказ</h4>
+      <p style="color: var(--gray);">Заказ не связан с этим платежом</p>
+    </div>
+    `}
+  `;
+}
+
+function closePaymentDetailsModal() {
+  const modal = qs('#paymentDetailsModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function initPaymentFilters() {
+  const filterButtons = qsa('#payments .filter-btn');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentPaymentFilter = e.target.getAttribute('data-filter');
+      renderPayments(allPayments);
+    });
+  });
+}
+
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 async function init() {
   initNavigation();
@@ -1215,6 +2253,9 @@ async function init() {
   initCategoryFilter();
   initTariffPreview();
   initComputerSearch();
+  initOrderFilters();
+  initPaymentFilters();
+  initReviewFilters();
 
   await fetchAllUsers();
   await fetchAllComputers();
