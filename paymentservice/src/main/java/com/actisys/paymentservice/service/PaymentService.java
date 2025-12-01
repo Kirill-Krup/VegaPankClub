@@ -13,4 +13,6 @@ public interface PaymentService {
     void updateStatus(Long paymentId, OperationType status);
 
     PaymentDTO createReplenishment(CreateReplenishment createReplenishment, Long userId);
+
+  PaymentDTO getPaymentById(Long id);
 }

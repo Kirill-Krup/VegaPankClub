@@ -40,4 +40,6 @@ public interface UserService {
   void replenishmentMoney(CreateWalletEvent createWalletEvent);
 
   void refundMoneys(RefundMoneyEvent refundMoneyEvent);
+
+  UserDTO getUser(Long id);
 }

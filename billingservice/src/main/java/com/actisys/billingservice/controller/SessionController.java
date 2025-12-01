@@ -64,7 +64,14 @@ public class SessionController {
           @RequestBody CreateSessionDTO createSessionDTO) {
     SessionDTO sessionDTO = sessionService.createSession(createSessionDTO, userId);
     return ResponseEntity.ok(sessionDTO);
+  }
 
-
+  /**
+   * for admin microservice
+   * */
+  @GetMapping("/getAllSessions")
+  public ResponseEntity<List<SessionDTO>> getAllSessions() {
+    List<SessionDTO> allSessions = sessionService.getAllSessions();
+    return ResponseEntity.ok(allSessions);
   }
 }

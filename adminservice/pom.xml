@@ -76,6 +76,10 @@
       <version>2.38.7</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

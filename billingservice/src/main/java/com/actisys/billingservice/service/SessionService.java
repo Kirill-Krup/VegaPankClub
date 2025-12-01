@@ -22,4 +22,6 @@ public interface SessionService {
     SessionDTO createSession(CreateSessionDTO createSessionDTO, String userId);
 
     void updateStatus(Long orderId, OperationType status);
+
+  List<SessionDTO> getAllSessions();
 }

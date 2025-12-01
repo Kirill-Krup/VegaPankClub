@@ -39,5 +39,11 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse("USER_NOT_DELETED", e.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
+
+  @ExceptionHandler(ReviewNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleReviewNotFoundException(ReviewNotFoundException e) {
+    ErrorResponse error = new ErrorResponse("REVIEW NOT FOUND", e.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+  }
 }
 
