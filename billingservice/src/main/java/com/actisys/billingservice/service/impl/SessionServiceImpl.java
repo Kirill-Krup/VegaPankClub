@@ -156,4 +156,9 @@ public class SessionServiceImpl implements SessionService {
     }
 
   }
+
+  @Override
+  public List<SessionDTO> getAllSessions() {
+    return sessionRepository.findAll().stream().map(sessionMapper::toDTO).collect(Collectors.toList());
+  }
 }

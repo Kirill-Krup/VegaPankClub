@@ -59,4 +59,10 @@ public class UserController {
     userService.deleteUser(id);
     return ResponseEntity.noContent().build();
   }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
+    UserDTO user = userService.getUser(id);
+    return ResponseEntity.ok(user);
+  }
 }

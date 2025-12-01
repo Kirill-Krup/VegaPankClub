@@ -97,6 +97,13 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toDto(payment);
     }
 
+    @Override
+    public PaymentDTO getPaymentById(Long id) {
+        Payment payment = paymentRepository.findById(id)
+            .orElseThrow(() -> new PaymentNotFoundException(id));
+        return paymentMapper.toDto(payment);
+    }
+
     private PaymentStatus statusHandler(OperationType operationType){
         return operationType ==  OperationType.ERROR ? PaymentStatus.FAILED : PaymentStatus.PAID;
     }

@@ -327,4 +327,11 @@ public class UserServiceImpl implements UserService {
     kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
   }
 
+  @Override
+  public UserDTO getUser(Long id) {
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new UserNotFoundException(id));
+    return userMapper.toDTO(user);
+  }
+
 }
