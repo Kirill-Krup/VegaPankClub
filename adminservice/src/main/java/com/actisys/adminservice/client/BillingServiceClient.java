@@ -7,4 +7,6 @@ import reactor.core.publisher.Mono;
 public interface BillingServiceClient {
 
   Mono<List<SessionDTO>> getAllSessions();
+
+  Mono<SessionDTO> getSessionById(Long orderId);
 }

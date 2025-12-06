@@ -43,16 +43,6 @@ public class UserServiceImpl implements UserService {
   private final UserPhotoStorageService userPhotoStorageService;
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
-
-  /**
-   * Update user profile.
-   * Invalidates admin users list cache.
-   *
-   * @param id user identifier
-   * @param updated DTO with updated profile data
-   * @return updated UserDTO
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -72,13 +62,6 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDTO(savedEntity);
   }
 
-  /**
-   * Delete user from the system.
-   * Invalidates admin users list cache.
-   *
-   * @param id user identifier to delete
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -90,16 +73,6 @@ public class UserServiceImpl implements UserService {
     userRepository.deleteById(id);
   }
 
-  /**
-   * Update user's bonus coins amount.
-   * Adds specified amount to current balance.
-   * Invalidates admin users list cache.
-   *
-   * @param id user identifier
-   * @param coins amount of coins to add (can be negative to deduct)
-   * @return updated UserDTO
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -116,14 +89,6 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDTO(saved);
   }
 
-  /**
-   * Update user's profile photo path.
-   * Invalidates admin users list cache.
-   *
-   * @param userId user identifier
-   * @param photoPath new photo path
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -136,15 +101,6 @@ public class UserServiceImpl implements UserService {
     return userMapper.toDTO(saved);
   }
 
-  /**
-   * Get simple user profile (without external service data).
-   * Contains only basic information: login, balance, photo, ban status.
-   * No caching - simple query.
-   *
-   * @param userId user identifier
-   * @return simple user profile
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   public UserSimpleProfileDTO getProfile(Long userId) {
     log.debug("Fetching simple profile from database: {}", userId);
@@ -159,15 +115,6 @@ public class UserServiceImpl implements UserService {
         .build();
   }
 
-  /**
-   * Get full user profile with data from Billing Service.
-   * Includes session statistics and game time.
-   * Caching is done at Reactor level for external service calls.
-   *
-   * @param userId user identifier
-   * @return Mono with full user profile
-   * @throws UserNotFoundException if user not found
-   */
   @Override
   public Mono<UserAllProfileDTO> getAllProfile(Long userId) {
     log.debug("Fetching full profile for user: {}", userId);
@@ -190,12 +137,6 @@ public class UserServiceImpl implements UserService {
         .cache(Duration.ofMinutes(10));
   }
 
-  /**
-   * Get list of all users in the system.
-   * Cached for admin panel. Only this should be cached for production.
-   *
-   * @return list of all users
-   */
   @Override
   @Cacheable(value = "allUsers")
   public List<UserDTO> getAllUsers() {
@@ -206,16 +147,7 @@ public class UserServiceImpl implements UserService {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Block user.
-   * Administrators cannot be blocked.
-   * Invalidates admin users list cache.
-   *
-   * @param id user identifier to block
-   * @return updated UserDTO
-   * @throws UserNotFoundException if user not found
-   * @throws RuntimeException if attempting to block administrator
-   */
+
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -236,14 +168,7 @@ public class UserServiceImpl implements UserService {
     return result;
   }
 
-  /**
-   * Unblock user.
-   * Invalidates admin users list cache.
-   *
-   * @param id user identifier to unblock
-   * @return updated UserDTO
-   * @throws UserNotFoundException if user not found
-   */
+
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)

@@ -41,15 +41,7 @@ public class AuthServiceImpl implements AuthService {
     this.passwordEncoder = passwordEncoder;
   }
 
-  /**
-   * Register new user in the system.
-   * Creates user with default role (USER), generates JWT token.
-   * Invalidates all users cache to reflect new user in admin panel.
-   *
-   * @param registerRequest registration data (login, email, password, etc.)
-   * @return authentication response with user data and JWT token
-   * @throws IllegalArgumentException if username or email already exists
-   */
+
   @Override
   @Transactional
   @CacheEvict(value = "allUsers", allEntries = true)
@@ -88,15 +80,7 @@ public class AuthServiceImpl implements AuthService {
     return new AuthResponse(dto, token);
   }
 
-  /**
-   * Authenticate user and generate JWT token.
-   * Supports login by username or email.
-   * Updates last login timestamp.
-   *
-   * @param authRequest login credentials (login/email and password)
-   * @return authentication response with user data and JWT token
-   * @throws IllegalArgumentException if credentials are invalid
-   */
+
   @Override
   @Transactional
   public AuthResponse login(AuthRequest authRequest) {
@@ -130,12 +114,6 @@ public class AuthServiceImpl implements AuthService {
     return new AuthResponse(dto, token);
   }
 
-  /**
-   * Map role code to role name.
-   *
-   * @param code role code (1 = USER, 2 = ADMIN)
-   * @return role name as string
-   */
   private String mapRole(int code) {
     return code == 2 ? "ADMIN" : "USER";
   }

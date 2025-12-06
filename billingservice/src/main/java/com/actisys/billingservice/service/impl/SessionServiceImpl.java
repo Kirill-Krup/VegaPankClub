@@ -6,6 +6,7 @@ import com.actisys.billingservice.dto.SessionDtos.CreateSessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionDTO;
 import com.actisys.billingservice.dto.SessionDtos.SessionResponseDto;
 import com.actisys.billingservice.dto.SessionDtos.SessionsInfoDTO;
+import com.actisys.billingservice.exception.OrderNotFoundException;
 import com.actisys.billingservice.exception.SessionNotFoundException;
 import com.actisys.billingservice.exception.TariffNotFoundException;
 import com.actisys.billingservice.mapper.SessionMapper;
@@ -39,9 +40,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class SessionServiceImpl implements SessionService {
-
-  @Value("${pepper}")
-  private String pepper;
 
   private final SessionRepository sessionRepository;
   private final SessionMapper sessionMapper;
@@ -148,13 +146,12 @@ public class SessionServiceImpl implements SessionService {
   @Override
   public void updateStatus(Long orderId, OperationType status) {
     Session session = sessionRepository.findById(orderId).orElseThrow(()->
-        new RuntimeException("Order not found"));
+        new OrderNotFoundException(orderId));
     if (status == OperationType.ERROR) {
       session.setStatus(SessionStatus.ERROR);
     } else {
       session.setStatus(SessionStatus.PAID);
     }
-
   }
 
   @Override

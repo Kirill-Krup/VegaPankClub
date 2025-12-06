@@ -25,5 +25,11 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse("SESSION NOT FOUND", e.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
+
+  @ExceptionHandler(OrderNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleOrderNotFoundException(OrderNotFoundException e) {
+    ErrorResponse error = new ErrorResponse("ORDER NOT FOUND", e.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+  }
 }
 

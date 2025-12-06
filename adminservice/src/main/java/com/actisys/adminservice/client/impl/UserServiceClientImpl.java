@@ -1,7 +1,7 @@
 package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.UserServiceClient;
-import com.actisys.adminservice.config.UserServiceProperties;
+import com.actisys.adminservice.config.ServiceProperties.UserServiceProperties;
 import com.actisys.common.user.UserDTO;
 import java.time.Duration;
 import org.springframework.stereotype.Component;

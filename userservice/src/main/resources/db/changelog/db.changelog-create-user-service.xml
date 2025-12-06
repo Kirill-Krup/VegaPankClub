@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
     <changeSet id="user_service_1" author="your_name">
@@ -55,6 +55,42 @@
         </createIndex>
         <createIndex tableName="users" indexName="idx_users_email">
             <column name="email"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="user_service_3" author="your_name">
+        <createTable tableName="review">
+            <column name="id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"
+                  foreignKeyName="fk_review_user"
+                  referencedTableName="users"
+                  referencedColumnNames="id"/>
+            </column>
+            <column name="review_text" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stars" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_visible" type="BOOLEAN" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="user_service_4" author="your_name">
+        <createIndex tableName="review" indexName="idx_review_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="review" indexName="idx_review_created_at">
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="review" indexName="idx_review_visible">
+            <column name="is_visible"/>
         </createIndex>
     </changeSet>
 
