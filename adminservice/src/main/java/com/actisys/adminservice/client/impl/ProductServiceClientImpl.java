@@ -1,7 +1,7 @@
 package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.ProductServiceClient;
-import com.actisys.adminservice.config.ProductServiceProperties;
+import com.actisys.adminservice.config.ServiceProperties.ProductServiceProperties;
 import com.actisys.adminservice.dto.orderDtos.OrderDTO;
 import java.time.Duration;
 import java.util.List;
@@ -31,6 +31,15 @@ public class ProductServiceClientImpl implements ProductServiceClient {
         .uri(properties.getEndpoints().getGetAllOrders())
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<OrderDTO>>() {})
+        .timeout(Duration.ofSeconds(5));
+  }
+
+  @Override
+  public Mono<OrderDTO> getOrderById(Long orderId) {
+    return webClient.get()
+        .uri(properties.getEndpoints().getGetOrder(), orderId)
+        .retrieve()
+        .bodyToMono(OrderDTO.class)
         .timeout(Duration.ofSeconds(5));
   }
 }

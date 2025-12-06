@@ -1,4 +1,4 @@
-package com.actisys.adminservice.config;
+package com.actisys.adminservice.config.ServiceProperties;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "productservice")
 @Getter
+@Setter
 public class ProductServiceProperties {
   private String host;
   private Endpoints endpoints = new Endpoints();
@@ -16,5 +17,6 @@ public class ProductServiceProperties {
   @Setter
   public static class Endpoints {
     private String getAllOrders;
+    private String getOrder;
   }
 }

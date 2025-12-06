@@ -1,9 +1,11 @@
 package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.PaymentServiceClient;
-import com.actisys.adminservice.config.PaymentServiceProperties;
+import com.actisys.adminservice.config.ServiceProperties.PaymentServiceProperties;
 import com.actisys.adminservice.dto.PaymentInfoDTO;
+import com.actisys.adminservice.dto.paymentDtos.PaymentDTO;
 import java.time.Duration;
+import java.util.List;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -21,6 +23,11 @@ public class PaymentServiceClientImpl implements PaymentServiceClient {
     this.webClient = webClientBuilder
         .baseUrl(properties.getHost())
         .build();
+  }
+
+  @Override
+  public Mono<List<PaymentDTO>> getAllPayments() {
+    return null;
   }
 
   @Override

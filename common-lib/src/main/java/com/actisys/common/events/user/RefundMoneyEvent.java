@@ -16,5 +16,4 @@ public class RefundMoneyEvent {
   private Long userId;
   private Long paymentId;
   private BigDecimal amount;
-  private String pepper;
 }

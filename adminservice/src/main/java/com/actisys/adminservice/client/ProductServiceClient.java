@@ -7,4 +7,6 @@ import reactor.core.publisher.Mono;
 public interface ProductServiceClient {
 
   Mono<List<OrderDTO>> getAllOrders();
+
+  Mono<OrderDTO> getOrderById(Long orderId);
 }

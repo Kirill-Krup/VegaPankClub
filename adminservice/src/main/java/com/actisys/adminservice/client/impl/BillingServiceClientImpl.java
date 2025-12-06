@@ -1,12 +1,10 @@
 package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.BillingServiceClient;
-import com.actisys.adminservice.config.BillingServiceProperties;
-import com.actisys.adminservice.config.ProductServiceProperties;
+import com.actisys.adminservice.config.ServiceProperties.BillingServiceProperties;
 import com.actisys.adminservice.dto.sessionDtos.SessionDTO;
 import java.time.Duration;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -34,5 +32,10 @@ public class BillingServiceClientImpl implements BillingServiceClient {
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<SessionDTO>>() {})
         .timeout(Duration.ofSeconds(5));
+  }
+
+  @Override
+  public Mono<SessionDTO> getSessionById(Long orderId) {
+    return null;
   }
 }

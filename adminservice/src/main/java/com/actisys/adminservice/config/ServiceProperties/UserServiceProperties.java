@@ -1,20 +1,20 @@
-package com.actisys.adminservice.config;
-
+package com.actisys.adminservice.config.ServiceProperties;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "paymentservice")
+@ConfigurationProperties(prefix = "userservice")
 @Getter
-public class PaymentServiceProperties {
+@Setter
+public class UserServiceProperties {
   private String host;
   private Endpoints endpoints = new Endpoints();
 
   @Getter
   @Setter
   public static class Endpoints {
-    private String getPayment;
+    private String getUser;
   }
 }

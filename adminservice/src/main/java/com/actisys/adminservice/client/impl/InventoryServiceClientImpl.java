@@ -1,10 +1,9 @@
 package com.actisys.adminservice.client.impl;
 
 import com.actisys.adminservice.client.InventoryServiceClient;
-import com.actisys.adminservice.config.InventoryServiceProperties;
+import com.actisys.adminservice.config.ServiceProperties.InventoryServiceProperties;
 import com.actisys.adminservice.dto.sessionDtos.PCDTO;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
