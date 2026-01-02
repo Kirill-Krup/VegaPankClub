@@ -1,5 +1,6 @@
 package com.actisys.paymentservice.dto;
 
+import com.actisys.common.events.PaymentType;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

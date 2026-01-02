@@ -4,8 +4,10 @@ import com.actisys.adminservice.client.PaymentServiceClient;
 import com.actisys.adminservice.config.ServiceProperties.PaymentServiceProperties;
 import com.actisys.adminservice.dto.PaymentInfoDTO;
 import com.actisys.adminservice.dto.paymentDtos.PaymentDTO;
+import java.lang.reflect.ParameterizedType;
 import java.time.Duration;
 import java.util.List;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -27,7 +29,11 @@ public class PaymentServiceClientImpl implements PaymentServiceClient {
 
   @Override
   public Mono<List<PaymentDTO>> getAllPayments() {
-    return null;
+    return webClient.get()
+        .uri(properties.getEndpoints().getGetAllPayments())
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<PaymentDTO>>() {})
+        .timeout(Duration.ofSeconds(5));
   }
 
   @Override

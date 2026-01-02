@@ -14,12 +14,14 @@ import com.actisys.common.events.PaymentType;
 import com.actisys.common.user.UserDTO;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
   private final PaymentServiceClient paymentServiceClient;
@@ -32,35 +34,76 @@ public class PaymentServiceImpl implements PaymentService {
   public Mono<List<AllPaymentDTO>> getAllPayments() {
     return paymentServiceClient.getAllPayments()
         .flatMapMany(Flux::fromIterable)
-        .flatMap(paymentDTO -> {
-          Mono<UserDTO> userMono = userServiceClient.getUserById(paymentDTO.getUserId());
-          Mono<OrderDTO> orderMono = Mono.empty();
-          Mono<SessionDTO> sessionMono = Mono.empty();
-          Mono<PCDTO> pcMono = Mono.empty();
-          if(paymentDTO.getPaymentType() == PaymentType.BAR_BUY){
-            orderMono = productServiceClient.getOrderById(paymentDTO.getOrderId())
-                .switchIfEmpty(Mono.empty());
-          }else if(paymentDTO.getPaymentType() == PaymentType.BOOKING){
-            sessionMono = billingServiceClient.getSessionById(paymentDTO.getOrderId())
-                .switchIfEmpty(Mono.empty());
-            pcMono = sessionMono.filter(sessionDTO -> sessionDTO.getPcId() != null)
-                .map(SessionDTO::getPcId)
-                .flatMap(inventoryServiceClient::getPcById)
-                .switchIfEmpty(Mono.empty());
-          }
-          return Mono.zip(
-              userMono,
-              orderMono.defaultIfEmpty(null),
-              sessionMono.defaultIfEmpty(null),
-              pcMono.defaultIfEmpty(null)
-          ) .map(tuple-> AllPaymentDTO.builder()
-              .paymentDTO(paymentDTO)
-              .userDTO(tuple.getT1())
-              .orderDTO(tuple.getT2())
-              .sessionDTO(tuple.getT3())
-              .pcDTO(tuple.getT4())
-              .build());
-        })
+        .flatMap(paymentDTO ->
+            userServiceClient.getUserById(paymentDTO.getUserId())
+                .onErrorResume(e -> Mono.just(createEmptyUserDTO(paymentDTO.getUserId())))
+                .flatMap(user -> {
+                  if (paymentDTO.getOrderId() == null || paymentDTO.getOrderId() <= 0) {
+                    return Mono.just(AllPaymentDTO.builder()
+                        .paymentDTO(paymentDTO)
+                        .userDTO(user)
+                        .build());
+                  }
+
+                  if (paymentDTO.getPaymentType() == PaymentType.BAR_BUY) {
+                    return productServiceClient.getOrderById(paymentDTO.getOrderId())
+                        .onErrorResume(e -> Mono.empty())
+                        .map(order -> AllPaymentDTO.builder()
+                            .paymentDTO(paymentDTO)
+                            .userDTO(user)
+                            .orderDTO(order)
+                            .build())
+                        .defaultIfEmpty(AllPaymentDTO.builder()
+                            .paymentDTO(paymentDTO)
+                            .userDTO(user)
+                            .build());
+                  }
+
+                  if (paymentDTO.getPaymentType() == PaymentType.BOOKING) {
+                    return billingServiceClient.getSessionById(paymentDTO.getOrderId())
+                        .onErrorResume(e -> Mono.empty())
+                        .flatMap(session -> {
+                          if (session.getPcId() == null) {
+                            return Mono.just(AllPaymentDTO.builder()
+                                .paymentDTO(paymentDTO)
+                                .userDTO(user)
+                                .sessionDTO(session)
+                                .build());
+                          }
+
+                          return inventoryServiceClient.getPcById(session.getPcId())
+                              .onErrorResume(e -> Mono.empty())
+                              .map(pc -> AllPaymentDTO.builder()
+                                  .paymentDTO(paymentDTO)
+                                  .userDTO(user)
+                                  .sessionDTO(session)
+                                  .pcDTO(pc)
+                                  .build())
+                              .defaultIfEmpty(AllPaymentDTO.builder()
+                                  .paymentDTO(paymentDTO)
+                                  .userDTO(user)
+                                  .sessionDTO(session)
+                                  .build());
+                        })
+                        .defaultIfEmpty(AllPaymentDTO.builder()
+                            .paymentDTO(paymentDTO)
+                            .userDTO(user)
+                            .build());
+                  }
+
+                  return Mono.just(AllPaymentDTO.builder()
+                      .paymentDTO(paymentDTO)
+                      .userDTO(user)
+                      .build());
+                })
+        )
         .collectList();
+  }
+
+  private UserDTO createEmptyUserDTO(Long userId) {
+    UserDTO dto = new UserDTO();
+    dto.setId(userId);
+    dto.setLogin("Не найден");
+    return dto;
   }
 }

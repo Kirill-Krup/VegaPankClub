@@ -13,6 +13,8 @@ import com.actisys.paymentservice.model.Payment;
 import com.actisys.paymentservice.model.PaymentStatus;
 import com.actisys.paymentservice.repository.PaymentRepository;
 import com.actisys.paymentservice.service.PaymentService;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -36,13 +38,13 @@ public class PaymentServiceImpl implements PaymentService {
         paymentDTO.setCreatedAt(LocalDateTime.now());
         paymentDTO.setStatus(PaymentStatus.CREATED);
 
-        Payment save = paymentMapper.toEntity(paymentDTO);
-        paymentRepository.save(save);
+        Payment savedEntity = paymentMapper.toEntity(paymentDTO);
+        paymentRepository.save(savedEntity);
 
         CreateWalletEvent createWalletEvent = new CreateWalletEvent();
         createWalletEvent.setCost(createPaymentDTO.getAmount());
         createWalletEvent.setUserId(createPaymentDTO.getUserId());
-        createWalletEvent.setPaymentId(createWalletEvent.getPaymentId());
+        createWalletEvent.setPaymentId(savedEntity.getPaymentId());
         createWalletEvent.setPaymentType(createPaymentDTO.getPaymentType());
 
         kafkaTemplate.send("CREATE_WALLET_EVENT", createWalletEvent);
@@ -72,9 +74,9 @@ public class PaymentServiceImpl implements PaymentService {
         paymentCreteEvent.setStatus(OperationType.SUCCESS);
         paymentCreteEvent.setOrderId(payment.getOrderId());
         if(payment.getPaymentType().equals(PaymentType.BOOKING)){
-            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BOOKING", paymentId);
+            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BOOKING", paymentCreteEvent);
         } else if(payment.getPaymentType().equals(PaymentType.BAR_BUY)){
-            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY", paymentId);
+            kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY", paymentCreteEvent);
         }
 
     }
@@ -102,6 +104,14 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(id)
             .orElseThrow(() -> new PaymentNotFoundException(id));
         return paymentMapper.toDto(payment);
+    }
+
+    @Override
+    public List<PaymentDTO> getAllPayments() {
+        return paymentRepository.findAll()
+            .stream()
+            .map(paymentMapper::toDto)
+            .collect(Collectors.toList());
     }
 
     private PaymentStatus statusHandler(OperationType operationType){

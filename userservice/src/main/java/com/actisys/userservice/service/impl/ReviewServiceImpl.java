@@ -57,4 +57,19 @@ public class ReviewServiceImpl implements ReviewService {
     review.setStars(updateReviewDTO.getStars());
     reviewRepository.save(review);
   }
+
+  @Override
+  public List<ReviewDTO> getUserReview(Long userId) {
+    return reviewRepository.findAllByUserId(userId)
+        .stream()
+        .map(reviewMapper::toDTO)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public void deleteReviewById(Long id) {
+    Review review = reviewRepository.findById(id)
+        .orElseThrow(()-> new ReviewNotFoundException(id));
+    reviewRepository.delete(review);
+  }
 }

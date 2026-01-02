@@ -51,7 +51,7 @@ public class SessionServiceImpl implements SessionService {
   @Override
   public SessionStatsDTO getUserStats(Long userId) {
     List<Session> sessions = sessionRepository.findAllByUserIdAndEndTimeIsNotNull(userId);
-
+    updateSessionsStatuses(sessions);
     int totalSessions = sessions.size();
 
     double totalHours = sessions.stream()
@@ -65,20 +65,28 @@ public class SessionServiceImpl implements SessionService {
   public List<SessionsInfoDTO> getSessionsInRange(LocalDateTime rangeStart,
       LocalDateTime rangeEnd) {
     List<Session> allSessionForRange = sessionRepository.findSessionsIntersectingDay(rangeStart, rangeEnd);
+
+    updateSessionsStatuses(allSessionForRange);
+
     return allSessionForRange.stream().map(sessionMapper::toInfoDTO).collect(Collectors.toList());
   }
 
   @Override
   public List<SessionResponseDto> getUserSessions(Long userId) {
     List<Session> sessions = sessionRepository.findAllByUserId(userId);
+
+    updateSessionsStatuses(sessions);
+
     if(sessions.isEmpty()) {
       log.debug("No sessions found for user: {}", userId);
       return List.of();
     }
+
     Set<Long> pcIds = sessions.stream().map(Session::getPcId).collect(Collectors.toSet());
     List<PcResponseDTO> pcs = inventoryServiceClient.getPcInfoByIds(new ArrayList<>(pcIds));
     Map<Long, PcResponseDTO> pcMap = pcs.stream().collect(Collectors.toMap(PcResponseDTO::getId,
         pc -> pc));
+
     return sessions.stream()
         .map(session -> SessionResponseDto.builder()
             .sessionId(session.getSessionId())
@@ -97,8 +105,17 @@ public class SessionServiceImpl implements SessionService {
   public void cancelSession(Long id) {
     Session session = sessionRepository.findById(id).orElseThrow(()->
         new SessionNotFoundException(id));
+    session = updateSessionStatusBasedOnTime(session);
+    if (session.getStatus() == SessionStatus.IN_PROGRESS) {
+      throw new IllegalStateException("Cannot cancel session that is in progress");
+    }
+    if (session.getStatus() == SessionStatus.COMPLETED) {
+      throw new IllegalStateException("Cannot cancel completed session");
+    }
+
     session.setStatus(SessionStatus.CANCELLED);
     sessionRepository.save(session);
+
     RefundMoneyEvent refundMoneyEvent = new RefundMoneyEvent();
     refundMoneyEvent.setUserId(session.getUserId());
     refundMoneyEvent.setPaymentId(session.getPaymentId());
@@ -108,9 +125,17 @@ public class SessionServiceImpl implements SessionService {
 
   @Override
   public SessionDTO createSession(CreateSessionDTO createSessionDTO, String userId) {
+    LocalDateTime now = LocalDateTime.now();
+    if (createSessionDTO.getStartTime().isBefore(now)) {
+      throw new IllegalArgumentException("Session start time cannot be in the past");
+    }
+
+    if (createSessionDTO.getEndTime().isBefore(createSessionDTO.getStartTime())) {
+      throw new IllegalArgumentException("Session end time cannot be before start time");
+    }
 
     Tariff tariff = tariffRepository.findById(createSessionDTO.getTariffId()).orElseThrow(() ->
-            new TariffNotFoundException(createSessionDTO.getTariffId()));
+        new TariffNotFoundException(createSessionDTO.getTariffId()));
 
     long minutes = Duration
         .between(createSessionDTO.getStartTime(), createSessionDTO.getEndTime()).toMinutes();
@@ -122,14 +147,14 @@ public class SessionServiceImpl implements SessionService {
     BigDecimal totalCost = pricePerHour.multiply(hours).setScale(2, RoundingMode.HALF_UP);
 
     Session session = Session.builder()
-            .pcId(createSessionDTO.getPcId())
-            .userId(Long.valueOf(userId))
-            .tariff(tariff)
-            .totalCost(totalCost)
-            .startTime(createSessionDTO.getStartTime())
-            .endTime(createSessionDTO.getEndTime())
-            .status(SessionStatus.PENDING)
-            .build();
+        .pcId(createSessionDTO.getPcId())
+        .userId(Long.valueOf(userId))
+        .tariff(tariff)
+        .totalCost(totalCost)
+        .startTime(createSessionDTO.getStartTime())
+        .endTime(createSessionDTO.getEndTime())
+        .status(SessionStatus.PENDING)
+        .build();
 
     Session savedSession = sessionRepository.save(session);
 
@@ -144,18 +169,89 @@ public class SessionServiceImpl implements SessionService {
   }
 
   @Override
+  @Transactional
   public void updateStatus(Long orderId, OperationType status) {
     Session session = sessionRepository.findById(orderId).orElseThrow(()->
         new OrderNotFoundException(orderId));
+
     if (status == OperationType.ERROR) {
       session.setStatus(SessionStatus.ERROR);
     } else {
       session.setStatus(SessionStatus.PAID);
     }
+
+    sessionRepository.save(session);
+
+    if (status == OperationType.SUCCESS) {
+      updateSessionStatusBasedOnTime(session);
+    }
   }
 
   @Override
   public List<SessionDTO> getAllSessions() {
-    return sessionRepository.findAll().stream().map(sessionMapper::toDTO).collect(Collectors.toList());
+    List<Session> sessions = sessionRepository.findAll();
+    updateSessionsStatuses(sessions);
+    return sessions.stream().map(sessionMapper::toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public SessionDTO getSessionById(Long id) {
+    Session session = sessionRepository.findById(id)
+        .orElseThrow(() -> new SessionNotFoundException(id));
+    log.info(session.toString() + " with id {}", id);
+    session = updateSessionStatusBasedOnTime(session);
+    log.info(session.toString());
+    return sessionMapper.toDTO(session);
+  }
+
+  private Session updateSessionStatusBasedOnTime(Session session){
+    LocalDateTime now = LocalDateTime.now();
+    if(now.isAfter(session.getStartTime()) && now.isBefore(session.getEndTime())){
+      session.setStatus(SessionStatus.IN_PROGRESS);
+    }else if(now.isAfter(session.getEndTime())){
+      session.setStatus(SessionStatus.COMPLETED);
+    } else {
+      return session;
+    }
+    return sessionRepository.save(session);
+  }
+
+  private void updateSessionsStatuses(List<Session> sessions) {
+    LocalDateTime now = LocalDateTime.now();
+    List<Session> sessionsToUpdate = new ArrayList<>();
+
+    for (Session session : sessions) {
+      if (session.getStatus() == SessionStatus.COMPLETED ||
+          session.getStatus() == SessionStatus.CANCELLED ||
+          session.getStatus() == SessionStatus.ERROR ||
+          session.getStatus() == SessionStatus.REFUNDED ||
+          session.getStatus() == SessionStatus.NOT_SHOW) {
+        continue;
+      }
+
+      SessionStatus newStatus = null;
+
+      if(now.isAfter(session.getStartTime()) && now.isBefore(session.getEndTime())){
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+          newStatus = SessionStatus.IN_PROGRESS;
+        }
+      } else if(now.isAfter(session.getEndTime())){
+        if (session.getStatus() != SessionStatus.COMPLETED) {
+          newStatus = SessionStatus.COMPLETED;
+        }
+      }
+
+      if (newStatus != null) {
+        log.info("Session {} status changed from {} to {}",
+            session.getSessionId(), session.getStatus(), newStatus);
+        session.setStatus(newStatus);
+        sessionsToUpdate.add(session);
+      }
+    }
+
+    if (!sessionsToUpdate.isEmpty()) {
+      sessionRepository.saveAll(sessionsToUpdate);
+      log.info("Saved {} updated sessions to database", sessionsToUpdate.size());
+    }
   }
 }

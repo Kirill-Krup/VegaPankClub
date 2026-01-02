@@ -6,6 +6,7 @@ import com.actisys.userservice.service.ReviewService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,9 +35,15 @@ public class ReviewController {
     return ResponseEntity.ok(reviewService.addReview(createReviewDTO, Long.parseLong(userId)));
   }
 
-  @PutMapping({"/editVisibility/{reviewId}", "/deleteReview/{id}"})
+  @PutMapping("/editVisibility/{reviewId}")
   public ResponseEntity<Void> editVisibility(@PathVariable Long reviewId){
     reviewService.editVisibility(reviewId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @DeleteMapping("/deleteReview/{id}")
+  public ResponseEntity<Void> deleteReview(@PathVariable Long id){
+    reviewService.deleteReviewById(id);
     return ResponseEntity.noContent().build();
   }
 
@@ -45,5 +52,11 @@ public class ReviewController {
       @RequestBody CreateReviewDTO updateReviewDTO){
     reviewService.updateReview(reviewId, updateReviewDTO);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/my")
+  public ResponseEntity<List<ReviewDTO>> myReviews(
+      @RequestHeader(value = "X-User-Id", required = false) String userId){
+      return ResponseEntity.ok(reviewService.getUserReview(Long.parseLong(userId)));
   }
 }

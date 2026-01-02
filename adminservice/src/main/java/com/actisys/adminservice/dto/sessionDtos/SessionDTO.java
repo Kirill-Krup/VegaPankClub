@@ -5,11 +5,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
+@Builder
 public class SessionDTO {
   private final Long sessionId;
 
@@ -31,6 +33,4 @@ public class SessionDTO {
   private final BigDecimal totalCost;
 
   private final SessionStatus status;
-
-  private final PCDTO pcdto;
 }

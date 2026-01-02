@@ -29,9 +29,11 @@ public class Payment {
     @Column(name = "order_id")
     private Long orderId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_type", nullable = false, length = 50)
     private PaymentType paymentType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status;
 
