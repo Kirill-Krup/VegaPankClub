@@ -253,6 +253,205 @@ async function uploadAvatar(file) {
   }
 }
 
+// ========== BALANCE REPLENISHMENT ==========
+
+let selectedAmount = 5; // Значение по умолчанию
+
+async function submitTopup() {
+  const customAmountInput = document.getElementById("customAmount");
+  let amount;
+
+  // Проверяем, есть ли значение в кастомном поле
+  if (customAmountInput && customAmountInput.value.trim() !== "") {
+    amount = parseFloat(customAmountInput.value);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Пожалуйста, введите корректную сумму");
+      customAmountInput.focus();
+      return;
+    }
+    if (amount > 1000) {
+      alert("Максимальная сумма пополнения: 1 000 BYN");
+      customAmountInput.focus();
+      return;
+    }
+  } else {
+    // Используем выбранную кнопку
+    amount = selectedAmount;
+  }
+
+  try {
+    // Показываем индикатор загрузки
+    const confirmBtn = document.getElementById("confirmTopup");
+    const originalText = confirmBtn.textContent;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обработка...';
+    confirmBtn.disabled = true;
+
+    // Отправляем запрос на пополнение С КУКАМИ
+    const response = await fetch("/api/v1/payments/createReplenishment", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        replenishmentAmount: amount
+      })
+    });
+
+    // Проверяем статус ответа
+    if (!response.ok) {
+      let errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+
+      // Определяем Content-Type
+      const contentType = response.headers.get('content-type');
+
+      if (contentType && contentType.includes('application/json')) {
+        // Если это JSON, парсим его
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } else {
+        // Если это не JSON, читаем как текст
+        const text = await response.text();
+        if (text && text.trim()) {
+          errorMessage = text;
+        }
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    // Закрываем модальное окно
+    const modal = document.getElementById("topupModal");
+    if (modal) {
+      modal.style.display = "none";
+    }
+
+    // Сбрасываем форму
+    resetTopupForm();
+
+    // Обновляем баланс пользователя
+    await fetchAndFillProfile();
+
+    // Показываем успешное сообщение
+    showSuccessNotification(`Баланс успешно пополнен на ${amount} BYN!`);
+
+  } catch (error) {
+    console.error("Error during topup:", error);
+
+    // Более информативное сообщение об ошибке
+    if (error.message.includes("Invalid credentials") ||
+        error.message.includes("401") ||
+        error.message.includes("Unauthorized")) {
+      alert("Сессия истекла. Пожалуйста, войдите снова.");
+      window.location.href = "/static/html/login.html";
+    } else if (error.message.includes("403") ||
+        error.message.includes("Forbidden")) {
+      alert("У вас нет прав для выполнения этого действия.");
+    } else if (error.message.includes("400") ||
+        error.message.includes("Bad Request")) {
+      alert("Неверный запрос: " + error.message);
+    } else if (error.message.includes("500") ||
+        error.message.includes("Internal Server Error")) {
+      alert("Внутренняя ошибка сервера. Попробуйте позже.");
+    } else {
+      alert("Ошибка при пополнении баланса: " + error.message);
+    }
+  } finally {
+    const confirmBtn = document.getElementById("confirmTopup");
+    if (confirmBtn) {
+      confirmBtn.textContent = "Пополнить";
+      confirmBtn.disabled = false;
+    }
+  }
+}
+
+function resetTopupForm() {
+  const amountBtns = document.querySelectorAll(".amount-btn");
+  amountBtns.forEach(btn => btn.classList.remove("active"));
+
+  if (amountBtns.length > 0) {
+    amountBtns[0].classList.add("active");
+    selectedAmount = 5;
+  }
+
+  const customAmount = document.getElementById("customAmount");
+  if (customAmount) {
+    customAmount.value = "";
+  }
+}
+
+function showSuccessNotification(message) {
+  const notification = document.createElement("div");
+  notification.className = "success-notification";
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease forwards;
+    max-width: 350px;
+    font-family: 'Inter', sans-serif;
+  `;
+
+  notification.innerHTML = `
+    <i class="fas fa-check-circle" style="font-size: 1.2rem;"></i>
+    <span>${message}</span>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Добавляем CSS анимацию, если ее еще нет
+  if (!document.querySelector('#notification-animations')) {
+    const style = document.createElement('style');
+    style.id = 'notification-animations';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+      .success-notification {
+        animation: slideInRight 0.3s ease forwards;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Удаляем через 5 секунд
+  setTimeout(() => {
+    notification.style.animation = "slideOutRight 0.3s ease forwards";
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 5000);
+}
+
+// ========== SESSIONS ==========
 
 // ========== SESSIONS ==========
 
@@ -273,6 +472,7 @@ async function fetchUserSessions() {
     const sessions = await response.json();
     console.log("Sessions loaded:", sessions);
 
+    // Разделяем на активные и историю
     const bookings = sessions.filter(s =>
         ["PENDING", "PAID", "IN_PROGRESS"].includes(s.status)
     );
@@ -281,12 +481,14 @@ async function fetchUserSessions() {
         ["COMPLETED", "NOT_SHOW", "CANCELLED", "REFUNDED"].includes(s.status)
     );
 
+    // Сортируем активные: IN_PROGRESS всегда наверху
     bookings.sort((a, b) => {
       if (a.status === "IN_PROGRESS" && b.status !== "IN_PROGRESS") return -1;
       if (a.status !== "IN_PROGRESS" && b.status === "IN_PROGRESS") return 1;
       return new Date(a.startTime) - new Date(b.startTime);
     });
 
+    // История сортируется по дате окончания (новые сверху)
     history.sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
 
     renderBookings(bookings);
@@ -319,6 +521,7 @@ function renderBookings(bookings) {
     const statusInfo = getStatusInfo(session.status);
     const canCancel = ["PENDING", "PAID"].includes(session.status);
     const isInProgress = session.status === "IN_PROGRESS";
+    const canOrderFromBar = isInProgress; // Только если сессия IN_PROGRESS
     const duration = calculateDuration(session.startTime, session.endTime);
 
     return `
@@ -359,17 +562,25 @@ function renderBookings(bookings) {
             <span class="total-amount">${session.totalCost} BYN</span>
           </div>
           <div class="order-actions">
-            ${canCancel || isInProgress ? `
-              ${canCancel ? `
-                <button class="btn btn-secondary" onclick="cancelSession(${session.sessionId})">
-                  <i class="fas fa-times"></i>
-                  Отменить
-                </button>
-              ` : ''}
+            ${canCancel ? `
+              <button class="btn btn-secondary" onclick="cancelSession(${session.sessionId})">
+                <i class="fas fa-times"></i>
+                Отменить
+              </button>
+            ` : ''}
+            
+            ${canOrderFromBar ? `
               <button class="btn btn-primary" onclick="makeOrder(${session.sessionId}, ${session.pc.id})">
                 <i class="fas fa-cocktail"></i>
                 Заказ из бара
               </button>
+            ` : ''}
+            
+            ${!canCancel && !canOrderFromBar ? `
+              <span class="no-actions-message">
+                <i class="fas fa-info-circle"></i>
+                ${isInProgress ? 'Доступно только заказ из бара' : 'Действия недоступны для этого статуса'}
+              </span>
             ` : ''}
           </div>
         </div>
@@ -448,9 +659,11 @@ function renderHistoryItems(sessions) {
   return sessions.map(session => {
     const statusInfo = getStatusInfo(session.status);
     const duration = calculateDuration(session.startTime, session.endTime);
+    const isCompleted = session.status === 'COMPLETED';
+    const isCancelled = session.status === 'CANCELLED';
 
     return `
-      <div class="history-item">
+      <div class="history-item ${isCompleted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}">
         <div class="history-image">
           <i class="fas fa-desktop"></i>
         </div>
@@ -472,6 +685,10 @@ function renderHistoryItems(sessions) {
 }
 
 async function cancelSession(sessionId) {
+  if (!confirm("Вы уверены, что хотите отменить бронирование?")) {
+    return;
+  }
+
   try {
     const response = await fetch(`/api/v1/sessions/cancelSession/${sessionId}`, {
       method: 'PUT',
@@ -486,7 +703,8 @@ async function cancelSession(sessionId) {
       throw new Error(errorData.message || 'Failed to cancel session');
     }
 
-    alert('Бронирование успешно отменено');
+    alert('Бронирование успешно отменено!');
+    // Перезагружаем сессии
     await fetchUserSessions();
 
   } catch (error) {
@@ -1167,39 +1385,87 @@ function initInteractions() {
     });
   }
 
+  // ========== BALANCE TOPUP INTERACTIONS ==========
+
   const topupBtn = document.getElementById("topupBtn");
-  const modal = document.getElementById("topupModal");
+  const topupModal = document.getElementById("topupModal");
   const modalClose = document.getElementById("modalClose");
   const cancelTopup = document.getElementById("cancelTopup");
+  const confirmTopup = document.getElementById("confirmTopup");
 
-  if (topupBtn && modal) {
+  // Открытие модального окна пополнения
+  if (topupBtn && topupModal) {
     topupBtn.addEventListener("click", () => {
-      modal.style.display = "flex";
-    });
-  }
-  if (modalClose && modal) {
-    modalClose.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
-  }
-  if (cancelTopup && modal) {
-    cancelTopup.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
-  }
-  if (modal) {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.style.display = "none";
+      topupModal.style.display = "flex";
+      // Сброс формы при открытии
+      resetTopupForm();
     });
   }
 
+  // Закрытие модального окна
+  if (modalClose && topupModal) {
+    modalClose.addEventListener("click", () => {
+      topupModal.style.display = "none";
+    });
+  }
+
+  if (cancelTopup && topupModal) {
+    cancelTopup.addEventListener("click", () => {
+      topupModal.style.display = "none";
+    });
+  }
+
+  // Подтверждение пополнения
+  if (confirmTopup) {
+    confirmTopup.addEventListener("click", submitTopup);
+  }
+
+  // Закрытие по клику вне модального окна
+  if (topupModal) {
+    topupModal.addEventListener("click", (e) => {
+      if (e.target === topupModal) {
+        topupModal.style.display = "none";
+      }
+    });
+  }
+
+  // Выбор суммы из кнопок
   const amountBtns = document.querySelectorAll(".amount-btn");
   amountBtns.forEach((btn) => {
-    btn.addEventListener("click", function () {
-      amountBtns.forEach((b) => b.classList.remove("active"));
-      this.classList.add("active");
+    btn.addEventListener("click", function() {
+      // Проверяем, это кнопка с суммой или нет
+      if (this.hasAttribute("data-amount")) {
+        amountBtns.forEach((b) => b.classList.remove("active"));
+        this.classList.add("active");
+        selectedAmount = parseFloat(this.getAttribute("data-amount"));
+
+        // Сбрасываем кастомное поле
+        const customAmount = document.getElementById("customAmount");
+        if (customAmount) {
+          customAmount.value = "";
+        }
+      }
     });
   });
+
+  // Обработка ввода в кастомное поле
+  const customAmount = document.getElementById("customAmount");
+  if (customAmount) {
+    customAmount.addEventListener("input", function() {
+      const value = parseFloat(this.value);
+      if (!isNaN(value) && value > 0) {
+        // Снимаем выделение с кнопок
+        amountBtns.forEach((b) => b.classList.remove("active"));
+      }
+    });
+
+    customAmount.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitTopup();
+      }
+    });
+  }
 
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
@@ -1223,7 +1489,6 @@ function initInteractions() {
       }
     });
   }
-
 }
 
 function initBarOrderModal() {
@@ -1255,10 +1520,6 @@ function initBarOrderModal() {
     });
   }
 }
-
-
-
-
 
 // ========== INIT ==========
 

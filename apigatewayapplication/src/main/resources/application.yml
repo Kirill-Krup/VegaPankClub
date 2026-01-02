@@ -42,11 +42,11 @@ spring:
             - id: adminservice-route
               uri: http://localhost:8085
               predicates:
-                - Path=/api/v1/admin/sessions/**,/api/v1/admin/payments/**,/api/v1/orders/**
+                - Path=/api/v1/admin/sessions/**,/api/v1/admin/payments/**,/api/v1/admin/orders/**
             - id: payment-service-route
               uri: http://localhost:8086
               predicates:
-                - Path=/api/v1/payments
+                - Path=/api/v1/payments/**
 
 
 jwt:

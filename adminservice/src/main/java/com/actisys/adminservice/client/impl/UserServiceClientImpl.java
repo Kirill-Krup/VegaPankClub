@@ -4,10 +4,12 @@ import com.actisys.adminservice.client.UserServiceClient;
 import com.actisys.adminservice.config.ServiceProperties.UserServiceProperties;
 import com.actisys.common.user.UserDTO;
 import java.time.Duration;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class UserServiceClientImpl implements UserServiceClient {
 

@@ -43,4 +43,8 @@ public interface ReviewService {
    * @param updateReviewDTO new review data (text, stars)
    */
   void updateReview(Long reviewId, CreateReviewDTO updateReviewDTO);
+
+  List<ReviewDTO> getUserReview(Long userId);
+
+  void deleteReviewById(Long id);
 }

@@ -4,6 +4,7 @@ import com.actisys.common.events.OperationType;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
 import com.actisys.paymentservice.dto.CreateReplenishment;
 import com.actisys.paymentservice.dto.PaymentDTO;
+import java.util.List;
 
 public interface PaymentService {
 
@@ -42,4 +43,9 @@ public interface PaymentService {
    * @return PaymentDTO with full payment details
    */
   PaymentDTO getPaymentById(Long id);
+
+  /**
+   * Returns all payments from db
+   */
+  List<PaymentDTO> getAllPayments();
 }

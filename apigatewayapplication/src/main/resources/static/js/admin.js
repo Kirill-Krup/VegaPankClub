@@ -14,6 +14,89 @@ let currentTariff = null;
 let currentComputer = null;
 let currentCategoryFilter = 'all';
 
+
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString('ru-RU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+function getStatusBadge(status) {
+  if (!status) {
+    return '<span class="status-badge">Неизвестно</span>';
+  }
+
+  const normalizedStatus = status.toString().toLowerCase().replace(/\s+/g, '_');
+
+  const statusConfigs = {
+    'pending': {
+      text: 'Ожидание',
+      class: 'status-warning',
+      icon: 'fas fa-clock'
+    },
+    'paid': {
+      text: 'Оплачена',
+      class: 'status-active',
+      icon: 'fas fa-check-circle'
+    },
+    'in_progress': {
+      text: 'В процессе',
+      class: 'status-info',
+      icon: 'fas fa-play-circle'
+    },
+    'completed': {
+      text: 'Завершена',
+      class: 'status-success',
+      icon: 'fas fa-flag-checkered'
+    },
+    'not_show': {
+      text: 'Не явился',
+      class: 'status-banned',
+      icon: 'fas fa-user-slash'
+    },
+    'cancelled': {
+      text: 'Отменена',
+      class: 'status-danger',
+      icon: 'fas fa-times-circle'
+    },
+    'refunded': {
+      text: 'Возврат',
+      class: 'status-secondary',
+      icon: 'fas fa-undo'
+    },
+    'error': {
+      text: 'Ошибка',
+      class: 'status-danger',
+      icon: 'fas fa-exclamation-triangle'
+    }
+  };
+
+  const config = statusConfigs[normalizedStatus];
+
+  if (config) {
+    return `
+      <span class="status-badge ${config.class}">
+        <i class="${config.icon}"></i>
+        ${config.text}
+      </span>
+    `;
+  }
+
+  return `<span class="status-badge">${status}</span>`;
+}
+
+
 // ========== ТАРИФЫ ==========
 async function fetchAllTariffs() {
   try {
@@ -576,31 +659,27 @@ function renderSessions(sessions) {
   }
 
   tbody.innerHTML = sessions.map(s => {
-    // Правильный доступ к полям из SessionDTO
-    const pc = s.pcdto || s.computer || s.pc;
+    const pc = s.pcdto;
     const pcName = pc?.name || `#${s.pcId || '-'}`;
-    const tariffName = s.tariff?.name || `ID ${s.tariffId || '-'}`;
-    const start = s.startTime || s.startDate || s.start || '';
-    const end = s.endTime || s.endDate || s.end || '';
-    const price = (s.totalCost || s.price || s.totalPrice || 0).toFixed(2);
-    const status = s.status || s.sessionStatus || 'UNKNOWN';
-    
-    // Пытаемся найти пользователя в уже загруженных данных
-    const user = allUsers.find(u => u.id === s.userId);
-    const userName = user?.login || user?.username || `ID ${s.userId || '-'}`;
+    const tariffName = s.tariff?.name || 'Неизвестный тариф';
+    const start = s.startTime || '';
+    const end = s.endTime || '';
+    const price = (s.totalCost || 0).toFixed(2);
+    const status = s.status || 'UNKNOWN';
+    const userName = s.user?.login || s.user?.username || `ID ${s.userId || '-'}`;
 
     return `
-      <tr data-session-id="${s.sessionId || s.id}">
-        <td>${s.sessionId || s.id}</td>
+      <tr data-session-id="${s.sessionId}">
+        <td>${s.sessionId}</td>
         <td>${userName}</td>
         <td>${pcName}</td>
         <td>${tariffName}</td>
-        <td>${start}</td>
-        <td>${end || '-'}</td>
+        <td>${formatDateTime(start)}</td>
+        <td>${end ? formatDateTime(end) : '-'}</td>
         <td>${price} BYN</td>
-        <td>${status}</td>
+        <td>${getStatusBadge(status)}</td>
         <td>
-          <button class="btn-icon btn-primary" title="Подробнее" onclick="openSessionDetailsModal('${s.sessionId || s.id}')">
+          <button class="btn-icon btn-primary" title="Подробнее" onclick="openSessionDetailsModal('${s.sessionId}')">
             <i class="fas fa-eye"></i>
           </button>
         </td>
@@ -614,54 +693,16 @@ function openSessionDetailsModal(sessionId) {
   const body = qs('#sessionDetailsBody');
   if (!modal || !body) return;
 
-  const session = allSessions.find(s => (s.sessionId || s.id) == sessionId);
+  const session = allSessions.find(s => s.sessionId == sessionId);
   if (!session) {
     showError('Сессия не найдена');
     return;
   }
 
-  // Правильный доступ к полям из SessionDTO
-  const pc = session.pcdto || session.computer || session.pc;
+  const pc = session.pcdto;
   const room = pc?.roomDTO || pc?.room;
   const tariff = session.tariff;
-  
-  // Пытаемся найти пользователя в уже загруженных данных
-  const user = allUsers.find(u => u.id === session.userId);
-  
-  // Форматирование дат
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
-  const startTime = formatDateTime(session.startTime || session.startDate || session.start);
-  const endTime = formatDateTime(session.endTime || session.endDate || session.end);
-  const totalCost = (session.totalCost || session.price || session.totalPrice || 0).toFixed(2);
-  const status = session.status || session.sessionStatus || 'UNKNOWN';
-  
-  // Статус сессии с цветом
-  const getStatusBadge = (status) => {
-    const statusLower = (status || '').toLowerCase();
-    if (statusLower.includes('active') || statusLower.includes('актив')) {
-      return '<span class="status-badge status-active">Активна</span>';
-    } else if (statusLower.includes('completed') || statusLower.includes('заверш')) {
-      return '<span class="status-badge status-active">Завершена</span>';
-    } else if (statusLower.includes('cancelled') || statusLower.includes('отмен')) {
-      return '<span class="status-badge status-banned">Отменена</span>';
-    }
-    return `<span class="status-badge">${status}</span>`;
-  };
+  const user = session.user;
 
   body.innerHTML = `
     <div class="session-details">
@@ -671,23 +712,23 @@ function openSessionDetailsModal(sessionId) {
         <div class="details-grid">
           <div class="detail-item">
             <span class="detail-label">ID сессии:</span>
-            <span class="detail-value">#${session.sessionId || session.id}</span>
+            <span class="detail-value">#${session.sessionId}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Статус:</span>
-            <span class="detail-value">${getStatusBadge(status)}</span>
+            <span class="detail-value">${getStatusBadge(session.status)}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Начало:</span>
-            <span class="detail-value">${startTime}</span>
+            <span class="detail-value">${formatDateTime(session.startTime)}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Конец:</span>
-            <span class="detail-value">${endTime}</span>
+            <span class="detail-value">${session.endTime ? formatDateTime(session.endTime) : '-'}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Стоимость:</span>
-            <span class="detail-value"><strong>${totalCost} BYN</strong></span>
+            <span class="detail-value"><strong>${(session.totalCost || 0).toFixed(2)} BYN</strong></span>
           </div>
         </div>
       </div>
@@ -716,7 +757,7 @@ function openSessionDetailsModal(sessionId) {
           ` : `
           <div class="detail-item">
             <span class="detail-label">Информация:</span>
-            <span class="detail-value" style="color: var(--gray);">Загрузите список пользователей для отображения полной информации</span>
+            <span class="detail-value" style="color: var(--gray);">Пользователь не найден</span>
           </div>
           `}
         </div>
@@ -729,7 +770,7 @@ function openSessionDetailsModal(sessionId) {
         <div class="details-grid">
           <div class="detail-item">
             <span class="detail-label">ID:</span>
-            <span class="detail-value">#${pc.id || session.pcId || '-'}</span>
+            <span class="detail-value">#${pc.id || session.pcId}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Название:</span>
@@ -807,18 +848,14 @@ function openSessionDetailsModal(sessionId) {
         ${tariff ? `
         <div class="details-grid">
           <div class="detail-item">
-            <span class="detail-label">ID:</span>
-            <span class="detail-value">#${tariff.tariffId || '-'}</span>
-          </div>
-          <div class="detail-item">
             <span class="detail-label">Название:</span>
             <span class="detail-value">
               ${tariff.name || '-'}
-              ${tariff.isVip || tariff.vip ? ' <span class="vip-badge"><i class="fas fa-crown"></i> VIP</span>' : ''}
+              ${tariff.isVip ? ' <span class="vip-badge"><i class="fas fa-crown"></i> VIP</span>' : ''}
             </span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Стоимость:</span>
+            <span class="detail-label">Стоимость за час:</span>
             <span class="detail-value"><strong>${(tariff.price || 0).toFixed(2)} BYN</strong></span>
           </div>
           <div class="detail-item">
@@ -828,7 +865,7 @@ function openSessionDetailsModal(sessionId) {
           <div class="detail-item">
             <span class="detail-label">VIP тариф:</span>
             <span class="detail-value">
-              ${tariff.isVip || tariff.vip ? '<span class="status-badge status-active">Да</span>' : '<span class="status-badge">Нет</span>'}
+              ${tariff.isVip ? '<span class="status-badge status-active">Да</span>' : '<span class="status-badge">Нет</span>'}
             </span>
           </div>
         </div>
@@ -843,6 +880,7 @@ function openSessionDetailsModal(sessionId) {
 
   modal.classList.add('active');
 }
+
 
 function closeSessionDetailsModal() {
   const modal = qs('#sessionDetailsModal');

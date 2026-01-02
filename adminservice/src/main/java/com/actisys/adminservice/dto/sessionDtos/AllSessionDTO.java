@@ -1,36 +1,41 @@
 package com.actisys.adminservice.dto.sessionDtos;
 
+import com.actisys.common.user.UserDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Builder
-public class SessionDTO {
-  private final Long sessionId;
+@Getter
+@Setter
+@NoArgsConstructor
+public class AllSessionDTO {
 
-  @NotNull(message = "User ID is required")
-  private final Long userId;
+  private Long sessionId;
 
-  @NotNull(message = "PC ID is required")
-  private final Long pcId;
+  private UserDTO user;
 
-  private final TariffDTO tariff;
+  private TariffDTO tariff;
 
   @NotNull(message = "Start time is required")
   @PastOrPresent(message = "Start time must be in the past or present")
-  private final LocalDateTime startTime;
+  private LocalDateTime startTime;
 
-  private final LocalDateTime endTime;
+  private LocalDateTime endTime;
 
   @DecimalMin(value = "0.00", message = "Total cost must be positive")
-  private final BigDecimal totalCost;
+  private BigDecimal totalCost;
 
-  private final SessionStatus status;
+  private SessionStatus status;
+
+  private PCDTO pcdto;
+
 }

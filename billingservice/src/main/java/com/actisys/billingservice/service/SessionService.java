@@ -71,4 +71,11 @@ public interface SessionService {
    * @return list of all sessions as DTOs
    */
   List<SessionDTO> getAllSessions();
+
+  /**
+   * Returns session by sessionId
+   *
+   * @param id session identifier
+   */
+  SessionDTO getSessionById(Long id);
 }

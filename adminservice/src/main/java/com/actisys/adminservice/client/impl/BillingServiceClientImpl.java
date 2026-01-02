@@ -5,11 +5,13 @@ import com.actisys.adminservice.config.ServiceProperties.BillingServicePropertie
 import com.actisys.adminservice.dto.sessionDtos.SessionDTO;
 import java.time.Duration;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class BillingServiceClientImpl implements BillingServiceClient {
 
@@ -36,6 +38,10 @@ public class BillingServiceClientImpl implements BillingServiceClient {
 
   @Override
   public Mono<SessionDTO> getSessionById(Long orderId) {
-    return null;
+    return webClient.get()
+        .uri(properties.getEndpoints().getGetSession(), orderId)
+        .retrieve()
+        .bodyToMono(SessionDTO.class)
+        .timeout(Duration.ofSeconds(3));
   }
 }

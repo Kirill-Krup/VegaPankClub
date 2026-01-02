@@ -74,4 +74,9 @@ public class SessionController {
     List<SessionDTO> allSessions = sessionService.getAllSessions();
     return ResponseEntity.ok(allSessions);
   }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<SessionDTO> getSession(@PathVariable("id") Long id) {
+    return ResponseEntity.ok(sessionService.getSessionById(id));
+  }
 }
