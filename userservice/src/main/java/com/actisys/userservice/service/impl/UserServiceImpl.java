@@ -219,7 +219,7 @@ public class UserServiceImpl implements UserService {
     user.setWallet(user.getWallet().subtract(event.getCost()));
 
     if (event.getPaymentType().equals(PaymentType.BOOKING)) {
-      user.setBonusCoins(event.getCost().multiply(BigDecimal.valueOf(10)).intValue());
+      user.setBonusCoins(user.getBonusCoins() + event.getCost().multiply(BigDecimal.valueOf(10)).intValue());
     }
 
     userRepository.save(user);

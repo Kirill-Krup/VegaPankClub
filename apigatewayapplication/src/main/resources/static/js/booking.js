@@ -468,6 +468,7 @@ function initBonusSystem() {
   const sliderContainer = qs('#bonusSliderContainer');
   const slider = qs('#bonusSlider');
   const bonusUseValue = qs('#bonusUseValue');
+  const bonusInRubles = qs('#bonusInRubles');
 
   if (!checkbox || !sliderContainer || !slider) return;
 
@@ -488,6 +489,11 @@ function initBonusSystem() {
     if (bonusUseValue) {
       bonusUseValue.textContent = usedBonusCoins;
     }
+
+    if (bonusInRubles) {
+      bonusInRubles.textContent = (usedBonusCoins / 100).toFixed(2);
+    }
+
     updatePriceBreakdown();
   });
 }
@@ -500,7 +506,12 @@ function updateBonusSlider() {
   if (!slider) return;
 
   const originalPrice = calculateOriginalPrice();
-  const maxUsableCoins = Math.min(userBonusCoins, Math.floor(originalPrice));
+
+  const maxUsableCoinsInByn = originalPrice * 0.5;
+  const maxUsableCoins = Math.min(
+      userBonusCoins,
+      Math.floor(maxUsableCoinsInByn * 100)
+  );
 
   slider.max = maxUsableCoins;
   slider.value = 0;
@@ -526,13 +537,14 @@ function calculateOriginalPrice() {
 }
 
 function calculateFinalPrice() {
-  const originalPrice = calculateOriginalPrice();
-  return Math.max(0, originalPrice - usedBonusCoins);
+  const originalPrice = calculateOriginalPrice(); // в BYN
+  const discountInByn = usedBonusCoins / 100;
+  return Math.max(0, originalPrice - discountInByn);
 }
 
 function calculateEarnedCoins() {
-  const finalPrice = calculateFinalPrice();
-  return Math.floor(finalPrice * 0.2);
+  const finalPrice = calculateFinalPrice(); // цена в BYN
+  return Math.floor(finalPrice * 0.1 * 100);
 }
 
 function updatePriceBreakdown() {
@@ -550,7 +562,11 @@ function updatePriceBreakdown() {
 
   if (usedBonusCoins > 0) {
     if (discountRow) discountRow.style.display = 'flex';
-    if (discountValue) discountValue.textContent = `-${usedBonusCoins.toFixed(2)} BYN`;
+    if (discountValue) {
+
+      const discountInByn = (usedBonusCoins / 100).toFixed(2);
+      discountValue.textContent = `-${discountInByn} BYN`;
+    }
   } else {
     if (discountRow) discountRow.style.display = 'none';
   }
@@ -561,6 +577,7 @@ function updatePriceBreakdown() {
 
   const earnCoinsEl = qs('#earnCoins');
   if (earnCoinsEl) {
+
     earnCoinsEl.textContent = calculateEarnedCoins();
   }
 }
