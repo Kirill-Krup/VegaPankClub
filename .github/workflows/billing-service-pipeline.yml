@@ -68,29 +68,3 @@ jobs:
         run: |
           cd billingservice
           mvn -B test
-
-  docker:
-    name: Build & Push Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME_KIRILL }}
-          password: ${{ secrets.DOCKER_PASSWORD_KIRILL }}
-
-      - name: Build Docker image
-        run: |
-          cd billingservice
-          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/billingservice:${{ github.sha }} .
-
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/billingservice:${{ github.sha }}
-          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/billingservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/billingservice:latest
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/billingservice:latest

@@ -41,28 +41,3 @@ jobs:
         run: |
           cd inventoryservice
           mvn -B test
-
-  docker:
-    name: Build & Push Docker Image
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME_KIRILL }}
-          password: ${{ secrets.DOCKER_PASSWORD_KIRILL }}
-
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME_KIRILL }}/inventoryservice:${{ github.sha }} -f inventoryservice/Dockerfile .
-
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/inventoryservice:${{ github.sha }}
-          docker tag ${{ secrets.DOCKER_USERNAME_KIRILL }}/inventoryservice:${{ github.sha }} ${{ secrets.DOCKER_USERNAME_KIRILL }}/inventoryservice:latest
-          docker push ${{ secrets.DOCKER_USERNAME_KIRILL }}/inventoryservice:latest
