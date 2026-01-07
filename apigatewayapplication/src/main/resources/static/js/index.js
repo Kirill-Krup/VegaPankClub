@@ -92,6 +92,76 @@ async function fetchUserProfile() {
   }
 }
 
+async function fetchUserProfile() {
+  try {
+    console.log('Fetching user profile...');
+
+    const response = await fetch('/api/v1/profile/getProfile', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+
+    console.log('Profile response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        console.log('User not authenticated (401/403)');
+        renderAuth(null);
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const userData = await response.json();
+    console.log('User profile loaded:', userData);
+
+    // Проверки блокировки и админки
+    if (userData.banned === true || userData.isBanned === true) {
+      window.location.href = "/static/html/YouAreBlocked.html";
+      return null;
+    }
+    if (userData.role === 2) {
+      window.location.href = "/static/html/admin.html";
+      return null;
+    }
+
+    let finalAvatar = null;
+    if (userData.photoPath && userData.photoPath.trim().length > 0) {
+      finalAvatar = userData.photoPath;
+      try {
+        localStorage.setItem(AVATAR_KEY, finalAvatar);
+      } catch (e) {
+        console.warn('Cannot write avatar to localStorage:', e);
+      }
+    } else {
+      // Если фото нет, удаляем из localStorage
+      try {
+        localStorage.removeItem(AVATAR_KEY);
+      } catch (e) {
+        console.warn('Cannot remove avatar from localStorage:', e);
+      }
+    }
+
+    const userProfile = {
+      id: userData.id,
+      username: userData.login,
+      balance: userData.wallet || 0,
+      avatar: finalAvatar, // Может быть null
+      email: userData.email
+    };
+
+    currentUser = userProfile;
+    renderAuth(userProfile);
+    return userProfile;
+
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    renderAuth(null);
+    return null;
+  }
+}
+
 function renderAuth(user) {
   const guest = qs('[data-guest-section]');
   const userSection = qs('[data-user-section]');
@@ -114,19 +184,17 @@ function renderAuth(user) {
       balEl.textContent = (user.balance ?? 0).toFixed(2);
     }
 
-    // Берём актуальный URL из localStorage, если он есть
-    let avatarUrl = user.avatar;
-    try {
-      const stored = localStorage.getItem(AVATAR_KEY);
-      if (stored && stored.trim().length > 0) {
-        avatarUrl = stored;
-      }
-    } catch (e) {
-      console.warn('Cannot read avatar from localStorage in renderAuth:', e);
-    }
-
     if (avatarEl) {
-      avatarEl.src = avatarUrl || `https://i.pravatar.cc/100?img=15`;
+      // Если есть валидная аватарка
+      if (user.avatar && user.avatar.trim().length > 0) {
+        avatarEl.src = user.avatar;
+        avatarEl.style.display = 'block';
+        avatarEl.parentElement.classList.remove('no-avatar');
+      } else {
+        // Если аватарки нет - скрываем картинку и показываем иконку
+        avatarEl.style.display = 'none';
+        avatarEl.parentElement.classList.add('no-avatar');
+      }
     }
   } else {
     console.log('Rendering guest section');

@@ -214,7 +214,18 @@ function renderAuth(user) {
     const avatar = qs('[data-avatar]');
     if (nameEl) nameEl.textContent = user.username || 'Пользователь';
     if (balEl) balEl.textContent = (user.balance ?? 0).toFixed(2);
-    if (avatar) avatar.src = user.avatar;
+
+    if (avatar) {
+      if (user.avatar && user.avatar.trim().length > 0) {
+        avatar.src = user.avatar;
+        avatar.style.display = 'block';
+      } else {
+        // Скрываем картинку и показываем placeholder
+        avatar.style.display = 'none';
+        // Добавляем иконку через псевдоэлемент или заменяем на FontAwesome
+        avatar.parentElement.classList.add('no-avatar');
+      }
+    }
   } else {
     guest.style.display = 'flex';
     userSection.style.display = 'none';
