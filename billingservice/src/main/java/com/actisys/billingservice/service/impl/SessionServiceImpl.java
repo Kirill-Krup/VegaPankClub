@@ -170,10 +170,10 @@ public class SessionServiceImpl implements SessionService {
 
   @Override
   @Transactional
-  public void updateStatus(Long orderId, OperationType status) {
+  public void updateStatus(Long paymentId, Long orderId, OperationType status) {
     Session session = sessionRepository.findById(orderId).orElseThrow(()->
         new OrderNotFoundException(orderId));
-
+    session.setPaymentId(paymentId);
     if (status == OperationType.ERROR) {
       session.setStatus(SessionStatus.ERROR);
     } else {

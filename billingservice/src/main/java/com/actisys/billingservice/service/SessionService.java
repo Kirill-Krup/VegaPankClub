@@ -63,7 +63,7 @@ public interface SessionService {
    * @param orderId session identifier
    * @param status payment operation result
    */
-  void updateStatus(Long orderId, OperationType status);
+  void updateStatus(Long paymentId, Long orderId, OperationType status);
 
   /**
    * Retrieves all sessions for administrative purposes.

@@ -16,6 +16,6 @@ public class PaymentEventConsumer {
     @KafkaListener(topics = "UPDATE_PAYMENT_STATUS_FOR_BOOKING",groupId = "payment-service-group")
     public void handlePaymentStatus(CreatePaymentEvent event) {
         log.info("Payment event received: {}", event);
-        sessionService.updateStatus(event.getOrderId(), event.getStatus());
+        sessionService.updateStatus(event.getPaymentId(), event.getOrderId(), event.getStatus());
     }
 }

@@ -15,6 +15,78 @@ let bookingData = {
   pcsInfo: []
 };
 
+// Notification System
+function createNotification(type, title, message, duration = 5000) {
+  const container = document.getElementById('notificationContainer');
+  if (!container) return null;
+
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.setAttribute('role', 'alert');
+  notification.setAttribute('aria-live', 'assertive');
+
+  const icons = {
+    success: 'fas fa-check-circle',
+    error: 'fas fa-times-circle',
+    warning: 'fas fa-exclamation-triangle',
+    info: 'fas fa-info-circle'
+  };
+
+  notification.innerHTML = `
+    <div class="notification-icon">
+      <i class="${icons[type] || icons.info}"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-message">${message}</div>
+    </div>
+    <button class="notification-close" aria-label="Закрыть">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="notification-progress"></div>
+  `;
+
+  container.appendChild(notification);
+
+  const closeBtn = notification.querySelector('.notification-close');
+  closeBtn.addEventListener('click', () => {
+    removeNotification(notification);
+  });
+
+  setTimeout(() => {
+    removeNotification(notification);
+  }, duration);
+
+  return notification;
+}
+
+function removeNotification(notification) {
+  if (!notification) return;
+
+  notification.style.animation = 'fadeOut 0.3s ease forwards';
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 300);
+}
+
+function showSuccess(message, title = 'Успешно!') {
+  return createNotification('success', title, message, 5000);
+}
+
+function showError(message, title = 'Ошибка!') {
+  return createNotification('error', title, message, 6000);
+}
+
+function showWarning(message, title = 'Внимание!') {
+  return createNotification('warning', title, message, 4000);
+}
+
+function showInfo(message, title = 'Информация') {
+  return createNotification('info', title, message, 4000);
+}
+
 async function fetchUserProfile() {
   try {
     const response = await fetch('/api/v1/profile/getProfile', {
@@ -671,21 +743,27 @@ function initConfirmBooking() {
 
   confirmBtn?.addEventListener('click', async () => {
     if (!currentUser) {
-      alert('Пожалуйста, войдите в систему для бронирования');
-      window.location.href = '/static/html/Authentication/login.html';
+      showError('Пожалуйста, войдите в систему для бронирования', 'Требуется авторизация');
+
+      setTimeout(() => {
+        window.location.href = '/static/html/Authentication/login.html';
+      }, 2000);
       return;
     }
 
     if (!bookingData.tariff || !bookingData.date || !bookingData.startTime ||
         !bookingData.endTime || bookingData.seats.length === 0) {
-      alert('Пожалуйста, заполните все данные и выберите хотя бы один ПК');
+      showWarning('Пожалуйста, заполните все данные и выберите хотя бы один ПК', 'Неполные данные');
       return;
     }
 
     const finalPrice = calculateFinalPrice();
 
     if (currentUser.balance < finalPrice) {
-      alert(`Недостаточно средств. Необходимо: ${finalPrice.toFixed(2)} BYN, Доступно: ${currentUser.balance.toFixed(2)} BYN`);
+      showError(
+          `Недостаточно средств. Необходимо: ${finalPrice.toFixed(2)} BYN, Доступно: ${currentUser.balance.toFixed(2)} BYN`,
+          'Недостаточно средств'
+      );
       return;
     }
 
@@ -693,9 +771,11 @@ function initConfirmBooking() {
     const endDateTime = getEndDateTimeISO();
 
     if (!startDateTime || !endDateTime) {
-      alert('Не удалось определить время бронирования. Пожалуйста, попробуйте снова.');
+      showError('Не удалось определить время бронирования. Пожалуйста, попробуйте снова.', 'Ошибка времени');
       return;
     }
+
+    const processingNotification = showInfo('Создание бронирования...', 'Обработка');
 
     try {
       const sessionPromises = bookingData.seats.map(async seat => {
@@ -730,15 +810,49 @@ function initConfirmBooking() {
 
       await Promise.all(sessionPromises);
 
+      if (processingNotification) {
+        removeNotification(processingNotification);
+      }
+
       const earnedCoins = calculateEarnedCoins();
-      alert(`Успешно! 
-Бронирований: ${bookingData.seats.length}
-Оплачено: ${finalPrice.toFixed(2)} BYN
-${usedBonusCoins > 0 ? `Использовано бонусов: ${usedBonusCoins}\n` : ''}Начислено бонусов: ${earnedCoins}`);
-      window.location.href = '/static/html/profile.html';
+
+      const successMessage = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div><strong>Бронирований:</strong> ${bookingData.seats.length}</div>
+          <div><strong>Оплачено:</strong> ${finalPrice.toFixed(2)} BYN</div>
+          ${usedBonusCoins > 0 ? `<div><strong>Использовано бонусов:</strong> ${usedBonusCoins}</div>` : ''}
+          <div><strong>Начислено бонусов:</strong> ${earnedCoins}</div>
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px;">
+            <i class="fas fa-clock"></i> Через 3 секунды вы будете перенаправлены в профиль
+          </div>
+        </div>
+      `;
+
+      showSuccess(successMessage, 'Бронирование успешно создано!');
+
+      setTimeout(() => {
+        window.location.href = '/static/html/profile.html';
+      }, 3000);
+
     } catch (error) {
       console.error('Booking error:', error);
-      alert('Ошибка при создании бронирования: ' + error.message);
+
+      if (processingNotification) {
+        removeNotification(processingNotification);
+      }
+
+      let errorMessage = error.message;
+      let errorTitle = 'Ошибка при создании бронирования';
+
+      if (error.message.includes('Недостаточно средств')) {
+        errorTitle = 'Недостаточно средств';
+      } else if (error.message.includes('уже занят')) {
+        errorTitle = 'Место уже занято';
+      } else if (error.message.includes('времени')) {
+        errorTitle = 'Ошибка времени';
+      }
+
+      showError(errorMessage, errorTitle);
     }
   });
 }

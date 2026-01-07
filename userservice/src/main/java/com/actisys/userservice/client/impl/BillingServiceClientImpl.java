@@ -16,7 +16,7 @@ public class BillingServiceClientImpl implements BillingServiceClient {
   private final WebClient webClient;
 
   public BillingServiceClientImpl(
-      @Value("${billing.service.url:http://localhost:8084}") String billingServiceUrl,
+      @Value("${services.billingUrl:http://localhost:8084}") String billingServiceUrl,
       WebClient.Builder webClientBuilder) {
     this.webClient = webClientBuilder
         .baseUrl(billingServiceUrl)

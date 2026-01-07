@@ -1,6 +1,12 @@
 const AVATAR_KEY = 'vegapank_user_avatar_url';
 
-// ========== PROFILE DATA ==========
+let currentUser = null;
+let selectedAmount = 5;
+let currentSessionId = null;
+let currentPcId = null;
+let products = [];
+let cart = [];
+let confirmationCallback = null;
 
 async function fetchAndFillProfile() {
   try {
@@ -9,174 +15,105 @@ async function fetchAndFillProfile() {
       credentials: "include",
     });
 
-    if (!response.ok) {
-      throw new Error("Не удалось получить информацию о профиле");
-    }
+    if (!response.ok) throw new Error("Не удалось получить информацию о профиле");
     const profile = await response.json();
     setInfo(profile);
   } catch (err) {
     console.error(err);
-    alert("Ошибка загрузки профиля");
+    showError("Ошибка загрузки профиля");
   }
 }
 
 function parseDate(dateValue) {
   if (!dateValue) return null;
-
   if (Array.isArray(dateValue) && dateValue.length === 2 && dateValue[0] === "java.sql.Timestamp") {
     dateValue = dateValue[1];
   }
-
   if (typeof dateValue === 'string' && dateValue.includes(' ')) {
     dateValue = dateValue.replace(' ', 'T');
   }
-
   const date = new Date(dateValue);
   return isNaN(date.getTime()) ? null : date;
 }
 
 function setInfo(profile) {
-  console.log("Full profile data:", JSON.stringify(profile, null, 2));
-
   const safe = (v) => (v === null || v === undefined ? "" : v);
 
-  // === Аватары + localStorage ===
   let backendAvatar = safe(profile.photoPath);
   if (!backendAvatar) backendAvatar = "";
 
   let storedAvatar = null;
-  try {
-    storedAvatar = localStorage.getItem(AVATAR_KEY);
-  } catch (e) {
-    console.warn('Cannot read avatar from localStorage in setInfo:', e);
-  }
+  try { storedAvatar = localStorage.getItem(AVATAR_KEY); } catch (e) {}
 
-  const finalAvatar =
-      (backendAvatar && backendAvatar.trim().length > 0)
-          ? backendAvatar
-          : (storedAvatar || "https://i.pravatar.cc/160");
+  const finalAvatar = (backendAvatar && backendAvatar.trim().length > 0)
+      ? backendAvatar
+      : (storedAvatar || "https://i.pravatar.cc/160");
 
-  // сохраняем актуальный URL
-  try {
-    localStorage.setItem(AVATAR_KEY, finalAvatar);
-  } catch (e) {
-    console.warn('Cannot write avatar to localStorage in setInfo:', e);
-  }
+  try { localStorage.setItem(AVATAR_KEY, finalAvatar); } catch (e) {}
 
   const avatar = document.getElementById("profileAvatar");
   if (avatar) avatar.src = finalAvatar;
-
   const userAvatar = document.getElementById("userAvatar");
   if (userAvatar) userAvatar.src = finalAvatar;
-
   const previewAvatar = document.getElementById("previewAvatar");
   if (previewAvatar) previewAvatar.src = finalAvatar;
 
-
-  // Имя и логин
   const profileName = document.getElementById("profileName");
   if (profileName) profileName.textContent = safe(profile.login);
-
   const userName = document.getElementById("userName");
   if (userName) userName.textContent = safe(profile.login);
 
-  // Email
   const profileEmail = document.getElementById("profileEmail");
   if (profileEmail) profileEmail.textContent = safe(profile.email);
 
-  // Баланс
   const balanceAmount = document.getElementById("balanceAmount");
-  if (balanceAmount) balanceAmount.textContent = `${safe(profile.wallet)} BYN`;
-
+  if (balanceAmount) balanceAmount.textContent = `${parseFloat(safe(profile.wallet) || 0).toFixed(2)} BYN`;
   const userBalance = document.getElementById("userBalance");
-  if (userBalance) userBalance.textContent = `${safe(profile.wallet)} BYN`;
+  if (userBalance) userBalance.textContent = `${parseFloat(safe(profile.wallet) || 0).toFixed(2)} BYN`;
 
-  // Настройки
   const fullName = document.getElementById("fullName");
   if (fullName) fullName.value = safe(profile.fullName);
-
   const email = document.getElementById("email");
   if (email) email.value = safe(profile.email);
-
   const phone = document.getElementById("phone");
   if (phone) phone.value = safe(profile.phone);
 
-  // Дата рождения
   const birthDateInput = document.getElementById("birthDate");
   if (birthDateInput) {
     const birthDate = parseDate(profile.birthDate);
-    if (birthDate) {
-      birthDateInput.value = birthDate.toISOString().split('T')[0];
-      console.log("Birth date set:", birthDateInput.value);
-    } else {
-      console.warn("Invalid birthDate:", profile.birthDate);
-    }
+    if (birthDate) birthDateInput.value = birthDate.toISOString().split('T')[0];
     birthDateInput.disabled = true;
   }
 
-  // Статистика
   const statOrders = document.getElementById("stat-number-orders");
-  if (statOrders) {
-    const sessions = profile.sessionStats?.totalSessions || 0;
-    statOrders.textContent = sessions;
-    console.log("Total sessions:", sessions);
-  }
+  if (statOrders) statOrders.textContent = profile.sessionStats?.totalSessions || 0;
 
   const statHours = document.getElementById("stat-number-hours");
-  if (statHours) {
-    const hours = profile.sessionStats?.totalGameHour || 0;
-    statHours.textContent = Math.round(hours);
-    console.log("Total hours:", hours);
-  }
+  if (statHours) statHours.textContent = Math.round(profile.sessionStats?.totalGameHour || 0);
 
   const statDays = document.getElementById("stat-number-days");
-  if (statDays) {
-    const days = calculateDaysSinceRegistration(profile.registrationDate);
-    statDays.textContent = days;
-    console.log("Days since registration:", days, "from", profile.registrationDate);
-  }
+  if (statDays) statDays.textContent = calculateDaysSinceRegistration(profile.registrationDate);
 
   const statBonus = document.getElementById("stat-number-bonus");
-  if (statBonus) {
-    const bonusCoins = profile.bonusCoins || 0;
-    statBonus.textContent = bonusCoins;
-    console.log("Bonus coins:", bonusCoins);
-  }
+  if (statBonus) statBonus.textContent = profile.bonusCoins || 0;
 }
 
 function calculateDaysSinceRegistration(registrationDate) {
-  if (!registrationDate) {
-    console.warn("No registration date provided");
-    return 0;
-  }
-
+  if (!registrationDate) return 0;
   const regDate = parseDate(registrationDate);
-  if (!regDate) {
-    console.warn("Invalid registration date:", registrationDate);
-    return 0;
-  }
-
+  if (!regDate) return 0;
   const currentDate = new Date();
   const timeDiff = currentDate - regDate;
   const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-
-  console.log("Registration date:", regDate, "Current date:", currentDate, "Days:", days);
-
   return days >= 0 ? days : 0;
 }
-
-// ========== USER PROFILE UPDATES ==========
 
 async function saveProfileSettings() {
   const fullName = document.getElementById("fullName").value;
   const email = document.getElementById("email").value;
   const phone = document.getElementById("phone").value;
 
-  const data = {
-    fullName,
-    email,
-    phone
-  };
+  const data = { fullName, email, phone };
 
   try {
     const response = await fetch("/api/v1/profile/update", {
@@ -186,41 +123,30 @@ async function saveProfileSettings() {
       body: JSON.stringify(data)
     });
 
-    if (!response.ok) {
-      throw new Error("Не удалось сохранить изменения");
-    }
-
+    if (!response.ok) throw new Error("Не удалось сохранить изменения");
     const updatedUser = await response.json();
     updateUIWithUserData(updatedUser);
-
-    alert("Настройки успешно сохранены!");
+    showSuccess("Настройки успешно сохранены!");
   } catch (err) {
     console.error(err);
-    alert("Ошибка при сохранении настроек");
+    showError("Ошибка при сохранении настроек");
   }
 }
 
 function updateUIWithUserData(user) {
   const safe = (v) => (v === null || v === undefined ? "" : v);
-
   const fullName = document.getElementById("fullName");
   if (fullName) fullName.value = safe(user.fullName);
-
   const email = document.getElementById("email");
   if (email) email.value = safe(user.email);
-
   const profileEmail = document.getElementById("profileEmail");
   if (profileEmail) profileEmail.textContent = safe(user.email);
-
   const phone = document.getElementById("phone");
   if (phone) phone.value = safe(user.phone);
-
-  console.log("UI updated with new user data");
 }
 
 async function uploadAvatar(file) {
   const formData = new FormData();
-  // имя параметра должно совпадать с @RequestParam в контроллере
   formData.append("file", file);
 
   try {
@@ -230,22 +156,13 @@ async function uploadAvatar(file) {
       body: formData
     });
 
-    if (!response.ok) {
-      throw new Error("Не удалось загрузить фото");
-    }
-
-    // ожидаем UserDTO с новым photoPath
+    if (!response.ok) throw new Error("Не удалось загрузить фото");
     const user = await response.json();
     const newPhotoPath = user.photoPath;
 
     if (newPhotoPath && newPhotoPath.trim().length > 0) {
-      try {
-        localStorage.setItem(AVATAR_KEY, newPhotoPath);
-      } catch (e) {
-        console.warn('Cannot save avatar to localStorage after upload:', e);
-      }
+      try { localStorage.setItem(AVATAR_KEY, newPhotoPath); } catch (e) {}
     }
-
     return newPhotoPath;
   } catch (err) {
     console.error("Ошибка загрузки фото:", err);
@@ -253,247 +170,156 @@ async function uploadAvatar(file) {
   }
 }
 
-// ========== BALANCE REPLENISHMENT ==========
-
-let selectedAmount = 5; // Значение по умолчанию
-
 async function submitTopup() {
   const customAmountInput = document.getElementById("customAmount");
   let amount;
 
-  // Проверяем, есть ли значение в кастомном поле
   if (customAmountInput && customAmountInput.value.trim() !== "") {
     amount = parseFloat(customAmountInput.value);
     if (isNaN(amount) || amount <= 0) {
-      alert("Пожалуйста, введите корректную сумму");
+      showWarning("Пожалуйста, введите корректную сумму");
       customAmountInput.focus();
       return;
     }
     if (amount > 1000) {
-      alert("Максимальная сумма пополнения: 1 000 BYN");
+      showWarning("Максимальная сумма пополнения: 1 000 BYN");
       customAmountInput.focus();
       return;
     }
   } else {
-    // Используем выбранную кнопку
     amount = selectedAmount;
   }
 
-  try {
-    // Показываем индикатор загрузки
-    const confirmBtn = document.getElementById("confirmTopup");
-    const originalText = confirmBtn.textContent;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обработка...';
-    confirmBtn.disabled = true;
+  showConfirmation(
+      "Пополнение баланса",
+      `Вы уверены, что хотите пополнить баланс на ${amount} BYN?`,
+      `
+        <div class="detail-row">
+            <span class="detail-label">Сумма:</span>
+            <span class="detail-value">${amount} BYN</span>
+        </div>
+        `,
+      async () => {
+        try {
+          const response = await fetch("/api/v1/payments/createReplenishment", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ replenishmentAmount: amount })
+          });
 
-    // Отправляем запрос на пополнение С КУКАМИ
-    const response = await fetch("/api/v1/payments/createReplenishment", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        replenishmentAmount: amount
-      })
-    });
+          if (!response.ok) {
+            let errorMessage = `Ошибка ${response.status}`;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } else {
+              const text = await response.text();
+              if (text && text.trim()) errorMessage = text;
+            }
+            throw new Error(errorMessage);
+          }
 
-    // Проверяем статус ответа
-    if (!response.ok) {
-      let errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+          const modal = document.getElementById("topupModal");
+          if (modal) modal.style.display = "none";
+          resetTopupForm();
+          await fetchAndFillProfile();
+          showSuccess(`Баланс успешно пополнен на ${amount} BYN!`);
 
-      // Определяем Content-Type
-      const contentType = response.headers.get('content-type');
-
-      if (contentType && contentType.includes('application/json')) {
-        // Если это JSON, парсим его
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } else {
-        // Если это не JSON, читаем как текст
-        const text = await response.text();
-        if (text && text.trim()) {
-          errorMessage = text;
+        } catch (error) {
+          console.error("Error during topup:", error);
+          if (error.message.includes("Invalid credentials") || error.message.includes("401") || error.message.includes("Unauthorized")) {
+            showError("Сессия истекла. Пожалуйста, войдите снова.");
+            setTimeout(() => window.location.href = "/static/html/login.html", 2000);
+          } else if (error.message.includes("403") || error.message.includes("Forbidden")) {
+            showError("У вас нет прав для выполнения этого действия.");
+          } else if (error.message.includes("400") || error.message.includes("Bad Request")) {
+            showError("Неверный запрос");
+          } else if (error.message.includes("500") || error.message.includes("Internal Server Error")) {
+            showError("Внутренняя ошибка сервера. Попробуйте позже.");
+          } else {
+            showError("Ошибка при пополнении баланса: " + error.message);
+          }
         }
       }
+  );
+}
 
-      throw new Error(errorMessage);
-    }
+function showConfirmation(title, text, details, onConfirm, isDanger = false) {
+  const modal = document.getElementById('confirmationModal');
+  const modalTitle = document.getElementById('confirmationTitle');
+  const modalText = document.getElementById('confirmationText');
+  const modalDetails = document.getElementById('confirmationDetails');
+  const modalIcon = document.getElementById('confirmationIcon');
+  const confirmBtn = document.getElementById('confirmationConfirmBtn');
+  const cancelBtn = document.getElementById('confirmationCancelBtn');
+  const overlay = document.getElementById('confirmationOverlay');
 
-    // Закрываем модальное окно
-    const modal = document.getElementById("topupModal");
-    if (modal) {
-      modal.style.display = "none";
-    }
+  if (!modal) return;
 
-    // Сбрасываем форму
-    resetTopupForm();
+  modalTitle.textContent = title;
+  modalText.textContent = text;
+  modalDetails.innerHTML = details || '';
 
-    // Обновляем баланс пользователя
-    await fetchAndFillProfile();
-
-    // Показываем успешное сообщение
-    showSuccessNotification(`Баланс успешно пополнен на ${amount} BYN!`);
-
-  } catch (error) {
-    console.error("Error during topup:", error);
-
-    // Более информативное сообщение об ошибке
-    if (error.message.includes("Invalid credentials") ||
-        error.message.includes("401") ||
-        error.message.includes("Unauthorized")) {
-      alert("Сессия истекла. Пожалуйста, войдите снова.");
-      window.location.href = "/static/html/login.html";
-    } else if (error.message.includes("403") ||
-        error.message.includes("Forbidden")) {
-      alert("У вас нет прав для выполнения этого действия.");
-    } else if (error.message.includes("400") ||
-        error.message.includes("Bad Request")) {
-      alert("Неверный запрос: " + error.message);
-    } else if (error.message.includes("500") ||
-        error.message.includes("Internal Server Error")) {
-      alert("Внутренняя ошибка сервера. Попробуйте позже.");
-    } else {
-      alert("Ошибка при пополнении баланса: " + error.message);
-    }
-  } finally {
-    const confirmBtn = document.getElementById("confirmTopup");
-    if (confirmBtn) {
-      confirmBtn.textContent = "Пополнить";
-      confirmBtn.disabled = false;
-    }
+  if (isDanger) {
+    modalIcon.className = 'confirmation-icon danger';
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    confirmBtn.classList.add('danger');
+  } else {
+    modalIcon.className = 'confirmation-icon warning';
+    modalIcon.innerHTML = '<i class="fas fa-question-circle"></i>';
+    confirmBtn.classList.remove('danger');
   }
+
+  confirmationCallback = onConfirm;
+
+  modal.classList.add('active');
+
+  const closeModal = () => modal.classList.remove('active');
+
+  cancelBtn.onclick = closeModal;
+  overlay.onclick = closeModal;
+  confirmBtn.onclick = () => {
+    if (confirmationCallback) confirmationCallback();
+    closeModal();
+  };
 }
 
 function resetTopupForm() {
   const amountBtns = document.querySelectorAll(".amount-btn");
   amountBtns.forEach(btn => btn.classList.remove("active"));
-
   if (amountBtns.length > 0) {
     amountBtns[0].classList.add("active");
     selectedAmount = 5;
   }
-
   const customAmount = document.getElementById("customAmount");
-  if (customAmount) {
-    customAmount.value = "";
-  }
+  if (customAmount) customAmount.value = "";
 }
-
-function showSuccessNotification(message) {
-  const notification = document.createElement("div");
-  notification.className = "success-notification";
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #10b981;
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    animation: slideInRight 0.3s ease forwards;
-    max-width: 350px;
-    font-family: 'Inter', sans-serif;
-  `;
-
-  notification.innerHTML = `
-    <i class="fas fa-check-circle" style="font-size: 1.2rem;"></i>
-    <span>${message}</span>
-  `;
-
-  document.body.appendChild(notification);
-
-  // Добавляем CSS анимацию, если ее еще нет
-  if (!document.querySelector('#notification-animations')) {
-    const style = document.createElement('style');
-    style.id = 'notification-animations';
-    style.textContent = `
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-      .success-notification {
-        animation: slideInRight 0.3s ease forwards;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Удаляем через 5 секунд
-  setTimeout(() => {
-    notification.style.animation = "slideOutRight 0.3s ease forwards";
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }, 5000);
-}
-
-// ========== SESSIONS ==========
-
-// ========== SESSIONS ==========
 
 async function fetchUserSessions() {
   try {
     const response = await fetch("/api/v1/sessions/mySessions", {
       method: "GET",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json"
-      }
+      headers: { "Content-Type": "application/json" }
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch sessions");
-    }
-
+    if (!response.ok) throw new Error("Failed to fetch sessions");
     const sessions = await response.json();
-    console.log("Sessions loaded:", sessions);
 
-    // Разделяем на активные и историю
-    const bookings = sessions.filter(s =>
-        ["PENDING", "PAID", "IN_PROGRESS"].includes(s.status)
-    );
+    const bookings = sessions.filter(s => ["PENDING", "PAID", "IN_PROGRESS"].includes(s.status));
+    const history = sessions.filter(s => ["COMPLETED", "NOT_SHOW", "CANCELLED", "REFUNDED"].includes(s.status));
 
-    const history = sessions.filter(s =>
-        ["COMPLETED", "NOT_SHOW", "CANCELLED", "REFUNDED"].includes(s.status)
-    );
-
-    // Сортируем активные: IN_PROGRESS всегда наверху
     bookings.sort((a, b) => {
       if (a.status === "IN_PROGRESS" && b.status !== "IN_PROGRESS") return -1;
       if (a.status !== "IN_PROGRESS" && b.status === "IN_PROGRESS") return 1;
       return new Date(a.startTime) - new Date(b.startTime);
     });
 
-    // История сортируется по дате окончания (новые сверху)
     history.sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
-
     renderBookings(bookings);
     renderHistory(history);
-
   } catch (error) {
     console.error("Error fetching sessions:", error);
     showError("Не удалось загрузить брони");
@@ -502,7 +328,6 @@ async function fetchUserSessions() {
 
 function renderBookings(bookings) {
   const ordersList = document.querySelector(".orders-list");
-
   if (!ordersList) return;
 
   if (bookings.length === 0) {
@@ -521,7 +346,7 @@ function renderBookings(bookings) {
     const statusInfo = getStatusInfo(session.status);
     const canCancel = ["PENDING", "PAID"].includes(session.status);
     const isInProgress = session.status === "IN_PROGRESS";
-    const canOrderFromBar = isInProgress; // Только если сессия IN_PROGRESS
+    const canOrderFromBar = isInProgress;
     const duration = calculateDuration(session.startTime, session.endTime);
 
     return `
@@ -536,7 +361,6 @@ function renderBookings(bookings) {
             ${statusInfo.text}
           </div>
         </div>
-        
         <div class="order-items">
           <div class="order-item">
             <div class="item-image">
@@ -544,44 +368,24 @@ function renderBookings(bookings) {
             </div>
             <div class="item-info">
               <h4 class="item-name">${session.pc.name} — ${session.pc.roomName}</h4>
-              <p class="item-description">
-                ${session.pc.cpu} • ${session.pc.gpu} • ${session.pc.ram}
-              </p>
-              <p class="item-tariff">
-                <i class="fas fa-ticket-alt"></i>
-                ${session.tariff.name} — ${duration}
-              </p>
+              <p class="item-description">${session.pc.cpu} • ${session.pc.gpu} • ${session.pc.ram}</p>
+              <p class="item-tariff"><i class="fas fa-ticket-alt"></i> ${session.tariff.name} — ${duration}</p>
             </div>
             <div class="item-price">${session.totalCost} BYN</div>
           </div>
         </div>
-        
         <div class="order-footer">
           <div class="order-total">
             <span class="total-label">Итого:</span>
             <span class="total-amount">${session.totalCost} BYN</span>
           </div>
           <div class="order-actions">
-            ${canCancel ? `
-              <button class="btn btn-secondary" onclick="cancelSession(${session.sessionId})">
-                <i class="fas fa-times"></i>
-                Отменить
-              </button>
-            ` : ''}
-            
-            ${canOrderFromBar ? `
-              <button class="btn btn-primary" onclick="makeOrder(${session.sessionId}, ${session.pc.id})">
-                <i class="fas fa-cocktail"></i>
-                Заказ из бара
-              </button>
-            ` : ''}
-            
-            ${!canCancel && !canOrderFromBar ? `
-              <span class="no-actions-message">
-                <i class="fas fa-info-circle"></i>
-                ${isInProgress ? 'Доступно только заказ из бара' : 'Действия недоступны для этого статуса'}
-              </span>
-            ` : ''}
+            ${canCancel ? `<button class="btn btn-secondary" onclick="showCancelConfirmation(${session.sessionId}, '${session.pc.name}', '${session.startTime}', '${session.endTime}', ${session.totalCost})">
+              <i class="fas fa-times"></i>Отменить</button>` : ''}
+            ${canOrderFromBar ? `<button class="btn btn-primary" onclick="makeOrder(${session.sessionId}, ${session.pc.id})">
+              <i class="fas fa-cocktail"></i>Заказ из бара</button>` : ''}
+            ${!canCancel && !canOrderFromBar ? `<span class="no-actions-message">
+              <i class="fas fa-info-circle"></i>${isInProgress ? 'Доступно только заказ из бара' : 'Действия недоступны'}</span>` : ''}
           </div>
         </div>
       </div>
@@ -591,17 +395,10 @@ function renderBookings(bookings) {
 
 function renderHistory(history) {
   const historyList = document.querySelector(".history-list");
-
   if (!historyList) return;
 
   if (history.length === 0) {
-    historyList.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-history"></i>
-        <h3>История пуста</h3>
-        <p>Ваша игровая история появится здесь</p>
-      </div>
-    `;
+    historyList.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><h3>История пуста</h3><p>Ваша игровая история появится здесь</p></div>`;
     return;
   }
 
@@ -611,47 +408,10 @@ function renderHistory(history) {
   const refunded = history.filter(s => s.status === 'REFUNDED');
 
   let html = '';
-
-  if (completed.length > 0) {
-    html += `<div class="history-group">
-      <h3 class="history-group-title">
-        <i class="fas fa-check-circle"></i>
-        Завершённые (${completed.length})
-      </h3>
-      ${renderHistoryItems(completed)}
-    </div>`;
-  }
-
-  if (cancelled.length > 0) {
-    html += `<div class="history-group">
-      <h3 class="history-group-title">
-        <i class="fas fa-times-circle"></i>
-        Отменённые (${cancelled.length})
-      </h3>
-      ${renderHistoryItems(cancelled)}
-    </div>`;
-  }
-
-  if (noShow.length > 0) {
-    html += `<div class="history-group">
-      <h3 class="history-group-title">
-        <i class="fas fa-user-times"></i>
-        Неявки (${noShow.length})
-      </h3>
-      ${renderHistoryItems(noShow)}
-    </div>`;
-  }
-
-  if (refunded.length > 0) {
-    html += `<div class="history-group">
-      <h3 class="history-group-title">
-        <i class="fas fa-undo"></i>
-        Возвраты (${refunded.length})
-      </h3>
-      ${renderHistoryItems(refunded)}
-    </div>`;
-  }
-
+  if (completed.length > 0) html += `<div class="history-group"><h3 class="history-group-title"><i class="fas fa-check-circle"></i>Завершённые (${completed.length})</h3>${renderHistoryItems(completed)}</div>`;
+  if (cancelled.length > 0) html += `<div class="history-group"><h3 class="history-group-title"><i class="fas fa-times-circle"></i>Отменённые (${cancelled.length})</h3>${renderHistoryItems(cancelled)}</div>`;
+  if (noShow.length > 0) html += `<div class="history-group"><h3 class="history-group-title"><i class="fas fa-user-times"></i>Неявки (${noShow.length})</h3>${renderHistoryItems(noShow)}</div>`;
+  if (refunded.length > 0) html += `<div class="history-group"><h3 class="history-group-title"><i class="fas fa-undo"></i>Возвраты (${refunded.length})</h3>${renderHistoryItems(refunded)}</div>`;
   historyList.innerHTML = html;
 }
 
@@ -664,69 +424,77 @@ function renderHistoryItems(sessions) {
 
     return `
       <div class="history-item ${isCompleted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}">
-        <div class="history-image">
-          <i class="fas fa-desktop"></i>
-        </div>
+        <div class="history-image"><i class="fas fa-desktop"></i></div>
         <div class="history-info">
           <h4 class="history-name">${session.pc.name} — ${duration}</h4>
-          <p class="history-description">
-            ${session.pc.roomName} • ${session.tariff.name}
-          </p>
+          <p class="history-description">${session.pc.roomName} • ${session.tariff.name}</p>
           <span class="history-date">${formatDate(session.endTime)}</span>
         </div>
         <div class="history-price">${session.totalCost} BYN</div>
-        <div class="history-status ${statusInfo.class}">
-          <i class="${statusInfo.icon}"></i>
-          ${statusInfo.text}
-        </div>
+        <div class="history-status ${statusInfo.class}"><i class="${statusInfo.icon}"></i>${statusInfo.text}</div>
       </div>
     `;
   }).join('');
 }
 
-async function cancelSession(sessionId) {
-  if (!confirm("Вы уверены, что хотите отменить бронирование?")) {
-    return;
-  }
+function showCancelConfirmation(sessionId, pcName, startTime, endTime, totalCost) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const dateStr = start.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  const timeStr = start.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-  try {
-    const response = await fetch(`/api/v1/sessions/cancelSession/${sessionId}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+  showConfirmation(
+      "Отмена бронирования",
+      "Вы уверены, что хотите отменить бронирование?",
+      `
+      <div class="detail-row">
+        <span class="detail-label">ПК:</span>
+        <span class="detail-value">${pcName}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Дата:</span>
+        <span class="detail-value">${dateStr}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Время:</span>
+        <span class="detail-value">${timeStr}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Сумма возврата:</span>
+        <span class="detail-value" style="color: #22c55e;">${totalCost} BYN</span>
+      </div>
+    `,
+      async () => {
+        try {
+          const response = await fetch(`/api/v1/sessions/cancelSession/${sessionId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to cancel session');
-    }
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to cancel session');
+          }
 
-    alert('Бронирование успешно отменено!');
-    // Перезагружаем сессии
-    await fetchUserSessions();
+          showSuccess("Бронирование успешно отменено!");
+          await fetchUserSessions();
+          await fetchAndFillProfile();
 
-  } catch (error) {
-    console.error('Error cancelling session:', error);
-    alert('Ошибка при отмене бронирования: ' + error.message);
-  }
+        } catch (error) {
+          console.error('Error cancelling session:', error);
+          showError("Ошибка при отмене бронирования: " + error.message);
+        }
+      },
+      true
+  );
 }
-
-// ========== BAR ORDER ==========
-
-let currentSessionId = null;
-let currentPcId = null;
-let products = [];
-let cart = [];
 
 function makeOrder(sessionId, pcId) {
   currentSessionId = sessionId;
   currentPcId = pcId;
-
   const modal = document.getElementById('barOrderModal');
   const sessionIdSpan = document.getElementById('currentSessionId');
-
   if (modal && sessionIdSpan) {
     sessionIdSpan.textContent = sessionId;
     modal.style.display = 'flex';
@@ -736,15 +504,9 @@ function makeOrder(sessionId, pcId) {
 
 async function loadProducts() {
   const productsGrid = document.getElementById('productsGrid');
-
   if (!productsGrid) return;
 
-  productsGrid.innerHTML = `
-        <div class="loading-products">
-            <i class="fas fa-spinner"></i>
-            <p>Загрузка товаров...</p>
-        </div>
-    `;
+  productsGrid.innerHTML = `<div class="loading-products"><i class="fas fa-spinner"></i><p>Загрузка товаров...</p></div>`;
 
   try {
     const response = await fetch('/api/v1/products/getAllProducts', {
@@ -752,78 +514,51 @@ async function loadProducts() {
       credentials: 'include'
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to load products');
-    }
-
+    if (!response.ok) throw new Error('Failed to load products');
     products = await response.json();
     renderProducts(products);
     setupCategoryFilters();
-
   } catch (error) {
     console.error('Error loading products:', error);
-    productsGrid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-circle"></i>
-                <h3>Ошибка загрузки товаров</h3>
-                <p>Попробуйте позже</p>
-            </div>
-        `;
+    productsGrid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>Ошибка загрузки товаров</h3><p>Попробуйте позже</p></div>`;
   }
 }
 
 function renderProducts(productList) {
   const productsGrid = document.getElementById('productsGrid');
-
   if (!productsGrid) return;
 
   if (productList.length === 0) {
-    productsGrid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-box-open"></i>
-                <h3>Товары не найдены</h3>
-            </div>
-        `;
+    productsGrid.innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><h3>Товары не найдены</h3></div>`;
     return;
   }
 
   productsGrid.innerHTML = productList.map(product => {
     const isOutOfStock = !product.active || product.stock === 0;
-
     return `
-            <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" 
-                 onclick="${!isOutOfStock ? `addToCart(${product.id})` : ''}"
-                 data-category="${product.category?.name || 'Другое'}">
-                <div class="product-image">
-                    ${product.photoPath ?
-        `<img src="${product.photoPath}" alt="${product.name}">` :
-        `<i class="fas fa-box"></i>`
-    }
-                </div>
-                <div class="product-info">
-                    <h4 class="product-name">${product.name}</h4>
-                    <span class="product-category">${product.category?.name || 'Другое'}</span>
-                </div>
-                <div class="product-footer">
-                    <span class="product-price">${product.price} BYN</span>
-                    ${isOutOfStock ?
-        '<span class="out-of-stock-label">Нет в наличии</span>' :
-        `<span class="product-stock">В наличии: ${product.stock}</span>`
-    }
-                </div>
-            </div>
-        `;
+      <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" 
+           onclick="${!isOutOfStock ? `addToCart(${product.id})` : ''}"
+           data-category="${product.category?.name || 'Другое'}">
+        <div class="product-image">${product.photoPath ? `<img src="${product.photoPath}" alt="${product.name}">` : `<i class="fas fa-box"></i>`}</div>
+        <div class="product-info">
+          <h4 class="product-name">${product.name}</h4>
+          <span class="product-category">${product.category?.name || 'Другое'}</span>
+        </div>
+        <div class="product-footer">
+          <span class="product-price">${product.price} BYN</span>
+          ${isOutOfStock ? '<span class="out-of-stock-label">Нет в наличии</span>' : `<span class="product-stock">В наличии: ${product.stock}</span>`}
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
 function setupCategoryFilters() {
   const filterBtns = document.querySelectorAll('.category-btn');
-
   filterBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       filterBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
-
       const category = this.getAttribute('data-category');
       filterProducts(category);
     });
@@ -841,18 +576,13 @@ function filterProducts(category) {
 
 function addToCart(productId) {
   const product = products.find(p => p.id === productId);
-
-  if (!product || !product.active || product.stock === 0) {
-    return;
-  }
-
+  if (!product || !product.active || product.stock === 0) return;
   const existingItem = cart.find(item => item.productId === productId);
-
   if (existingItem) {
     if (existingItem.quantity < product.stock) {
       existingItem.quantity++;
     } else {
-      alert(`Максимальное количество: ${product.stock}`);
+      showWarning(`Максимальное количество: ${product.stock}`);
       return;
     }
   } else {
@@ -864,7 +594,6 @@ function addToCart(productId) {
       maxStock: product.stock
     });
   }
-
   updateCart();
 }
 
@@ -874,62 +603,47 @@ function updateCart() {
   const cartCount = document.getElementById('cartCount');
   const cartTotal = document.getElementById('cartTotal');
   const confirmBtn = document.getElementById('confirmBarOrder');
-
   if (!cartSection || !cartItems) return;
-
   if (cart.length === 0) {
     cartSection.style.display = 'none';
     confirmBtn.disabled = true;
     return;
   }
-
   cartSection.style.display = 'block';
   confirmBtn.disabled = false;
-
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   cartCount.textContent = totalItems;
-
   cartItems.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div class="cart-item-info">
-                <h5 class="cart-item-name">${item.name}</h5>
-                <span class="cart-item-price">${item.price} BYN × ${item.quantity}</span>
-            </div>
-            <div class="cart-item-controls">
-                <div class="quantity-control">
-                    <button class="quantity-btn" onclick="updateQuantity(${item.productId}, -1)">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <span class="quantity-value">${item.quantity}</span>
-                    <button class="quantity-btn" onclick="updateQuantity(${item.productId}, 1)">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <button class="btn-remove-item" onclick="removeFromCart(${item.productId})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <h5 class="cart-item-name">${item.name}</h5>
+        <span class="cart-item-price">${item.price} BYN × ${item.quantity}</span>
+      </div>
+      <div class="cart-item-controls">
+        <div class="quantity-control">
+          <button class="quantity-btn" onclick="updateQuantity(${item.productId}, -1)"><i class="fas fa-minus"></i></button>
+          <span class="quantity-value">${item.quantity}</span>
+          <button class="quantity-btn" onclick="updateQuantity(${item.productId}, 1)"><i class="fas fa-plus"></i></button>
         </div>
-    `).join('');
-
+        <button class="btn-remove-item" onclick="removeFromCart(${item.productId})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  `).join('');
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   cartTotal.textContent = `${total.toFixed(2)} BYN`;
 }
 
 function updateQuantity(productId, delta) {
   const item = cart.find(i => i.productId === productId);
-
   if (!item) return;
-
   const newQuantity = item.quantity + delta;
-
   if (newQuantity <= 0) {
     removeFromCart(productId);
   } else if (newQuantity <= item.maxStock) {
     item.quantity = newQuantity;
     updateCart();
   } else {
-    alert(`Максимальное количество: ${item.maxStock}`);
+    showWarning(`Максимальное количество: ${item.maxStock}`);
   }
 }
 
@@ -945,40 +659,56 @@ function clearCart() {
 
 async function submitBarOrder() {
   if (cart.length === 0) {
-    alert('Корзина пуста');
+    showWarning('Корзина пуста');
     return;
   }
 
-  const orderData = {
-    sessionId: currentSessionId,
-    pcId: currentPcId,
-    items: cart.map(item => ({
-      productId: item.productId,
-      quantity: item.quantity
-    }))
-  };
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  try {
-    const response = await fetch('/api/v1/orders/createOrder', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(orderData)
-    });
+  showConfirmation(
+      "Оформление заказа из бара",
+      "Вы уверены, что хотите оформить заказ?",
+      `
+      <div class="detail-row">
+        <span class="detail-label">Товаров:</span>
+        <span class="detail-value">${cart.length} позиций</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Общая сумма:</span>
+        <span class="detail-value" style="color: #0ea5e9;">${total.toFixed(2)} BYN</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Будет доставлено:</span>
+        <span class="detail-value" style="color: #22c55e;">К вашему месту</span>
+      </div>
+    `,
+      async () => {
+        const orderData = {
+          sessionId: currentSessionId,
+          pcId: currentPcId,
+          items: cart.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity
+          }))
+        };
 
-    if (!response.ok) {
-      throw new Error('Failed to create order');
-    }
+        try {
+          const response = await fetch('/api/v1/orders/createOrder', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+          });
 
-    alert('Заказ успешно оформлен! Ожидайте доставку к вашему месту.');
-    closeBarOrderModal();
-
-  } catch (error) {
-    console.error('Error creating order:', error);
-    alert('Ошибка при оформлении заказа. Попробуйте позже.');
-  }
+          if (!response.ok) throw new Error('Failed to create order');
+          showSuccess('Заказ успешно оформлен! Ожидайте доставку к вашему месту.');
+          closeBarOrderModal();
+        } catch (error) {
+          console.error('Error creating order:', error);
+          showError('Ошибка при оформлении заказа. Попробуйте позже.');
+        }
+      }
+  );
 }
 
 function closeBarOrderModal() {
@@ -990,8 +720,6 @@ function closeBarOrderModal() {
   }
 }
 
-// ========== REVIEWS ==========
-
 function initReviews() {
   const stars = document.querySelectorAll('.stars i');
   let selectedRating = 0;
@@ -1001,7 +729,6 @@ function initReviews() {
       selectedRating = parseInt(this.getAttribute('data-rating'));
       updateStars(selectedRating);
     });
-
     star.addEventListener('mouseenter', function() {
       const hoverRating = parseInt(this.getAttribute('data-rating'));
       updateStars(hoverRating);
@@ -1027,7 +754,6 @@ function initReviews() {
 
   const reviewText = document.getElementById('reviewText');
   const charCount = document.querySelector('.char-count');
-
   if (reviewText && charCount) {
     reviewText.addEventListener('input', () => {
       const length = reviewText.value.length;
@@ -1039,19 +765,17 @@ function initReviews() {
   if (submitBtn) {
     submitBtn.addEventListener('click', async () => {
       if (selectedRating === 0) {
-        alert('Пожалуйста, выберите оценку');
+        showWarning('Пожалуйста, выберите оценку');
         return;
       }
-
       const text = reviewText.value.trim();
       if (!text) {
-        alert('Пожалуйста, напишите отзыв');
+        showWarning('Пожалуйста, напишите отзыв');
         return;
       }
-
       try {
         await submitReview(selectedRating, text);
-        alert('Спасибо за ваш отзыв!');
+        showSuccess('Спасибо за ваш отзыв!');
         reviewText.value = '';
         selectedRating = 0;
         updateStars(0);
@@ -1059,11 +783,10 @@ function initReviews() {
         fetchReviews();
       } catch (error) {
         console.error('Error submitting review:', error);
-        alert('Ошибка при отправке отзыва');
+        showError('Ошибка при отправке отзыва');
       }
     });
   }
-
   fetchReviews();
 }
 
@@ -1071,16 +794,10 @@ async function submitReview(rating, text) {
   const response = await fetch('/api/v1/reviews/create', {
     method: 'POST',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rating, text })
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to submit review');
-  }
-
+  if (!response.ok) throw new Error('Failed to submit review');
   return response.json();
 }
 
@@ -1090,11 +807,7 @@ async function fetchReviews() {
       method: 'GET',
       credentials: 'include'
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch reviews');
-    }
-
+    if (!response.ok) throw new Error('Failed to fetch reviews');
     const reviews = await response.json();
     renderReviews(reviews);
   } catch (error) {
@@ -1105,36 +818,18 @@ async function fetchReviews() {
 function renderReviews(reviews) {
   const reviewsList = document.getElementById('reviewsList');
   if (!reviewsList) return;
-
   if (reviews.length === 0) {
-    reviewsList.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-comment-dots"></i>
-        <h3>У вас пока нет отзывов</h3>
-        <p>Оставьте первый отзыв о нашем клубе</p>
-      </div>
-    `;
+    reviewsList.innerHTML = `<div class="empty-state"><i class="fas fa-comment-dots"></i><h3>У вас пока нет отзывов</h3><p>Оставьте первый отзыв о нашем клубе</p></div>`;
     return;
   }
-
   reviewsList.innerHTML = reviews.map(review => `
     <div class="review-card">
       <div class="review-header">
-        <div class="review-rating">
-          ${generateStars(review.rating)}
-        </div>
+        <div class="review-rating">${generateStars(review.rating)}</div>
         <span class="review-date">${formatDate(review.createdAt)}</span>
       </div>
       <p class="review-text">${review.text}</p>
-      ${review.response ? `
-        <div class="admin-response">
-          <div class="response-header">
-            <i class="fas fa-reply"></i>
-            <span>Ответ администратора</span>
-          </div>
-          <p class="response-text">${review.response}</p>
-        </div>
-      ` : ''}
+      ${review.response ? `<div class="admin-response"><div class="response-header"><i class="fas fa-reply"></i><span>Ответ администратора</span></div><p class="response-text">${review.response}</p></div>` : ''}
     </div>
   `).join('');
 }
@@ -1142,72 +837,30 @@ function renderReviews(reviews) {
 function generateStars(rating) {
   let stars = '';
   for (let i = 1; i <= 5; i++) {
-    if (i <= rating) {
-      stars += '<i class="fas fa-star active"></i>';
-    } else {
-      stars += '<i class="fas fa-star"></i>';
-    }
+    stars += i <= rating ? '<i class="fas fa-star active"></i>' : '<i class="fas fa-star"></i>';
   }
   return stars;
 }
 
-// ========== UTILITIES ==========
-
 function getStatusInfo(status) {
   const statusMap = {
-    PENDING: {
-      text: "Ожидает оплаты",
-      class: "status-pending",
-      icon: "fas fa-clock"
-    },
-    PAID: {
-      text: "Оплачено",
-      class: "status-paid",
-      icon: "fas fa-check-circle"
-    },
-    IN_PROGRESS: {
-      text: "В процессе",
-      class: "status-in-progress",
-      icon: "fas fa-gamepad"
-    },
-    COMPLETED: {
-      text: "Завершено",
-      class: "status-delivered",
-      icon: "fas fa-check-circle"
-    },
-    NOT_SHOW: {
-      text: "Неявка",
-      class: "status-no-show",
-      icon: "fas fa-user-times"
-    },
-    CANCELLED: {
-      text: "Отменено",
-      class: "status-cancelled",
-      icon: "fas fa-times-circle"
-    },
-    REFUNDED: {
-      text: "Возвращено",
-      class: "status-refunded",
-      icon: "fas fa-undo"
-    }
+    PENDING: { text: "Ожидает оплаты", class: "status-pending", icon: "fas fa-clock" },
+    PAID: { text: "Оплачено", class: "status-paid", icon: "fas fa-check-circle" },
+    IN_PROGRESS: { text: "В процессе", class: "status-in-progress", icon: "fas fa-gamepad" },
+    COMPLETED: { text: "Завершено", class: "status-delivered", icon: "fas fa-check-circle" },
+    NOT_SHOW: { text: "Неявка", class: "status-no-show", icon: "fas fa-user-times" },
+    CANCELLED: { text: "Отменено", class: "status-cancelled", icon: "fas fa-times-circle" },
+    REFUNDED: { text: "Возвращено", class: "status-refunded", icon: "fas fa-undo" }
   };
-
-  return statusMap[status] || {
-    text: status,
-    class: "status-unknown",
-    icon: "fas fa-question-circle"
-  };
+  return statusMap[status] || { text: status, class: "status-unknown", icon: "fas fa-question-circle" };
 }
 
 function formatSessionDate(startTime, endTime) {
   const start = new Date(startTime);
   const end = new Date(endTime);
-
   const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
   const timeOptions = { hour: '2-digit', minute: '2-digit' };
-
   const isSameDay = start.toDateString() === end.toDateString();
-
   if (isSameDay) {
     const dateStr = start.toLocaleDateString('ru-RU', dateOptions);
     const startTimeStr = start.toLocaleTimeString('ru-RU', timeOptions);
@@ -1225,87 +878,108 @@ function formatSessionDate(startTime, endTime) {
 function calculateDuration(startTime, endTime) {
   const start = new Date(startTime);
   const end = new Date(endTime);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    console.error('Invalid dates:', startTime, endTime);
-    return 'Неизвестно';
-  }
-
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'Неизвестно';
   const diffMs = end - start;
-
-  if (diffMs < 0) {
-    console.error('End time is before start time:', startTime, endTime);
-    return 'Ошибка';
-  }
-
+  if (diffMs < 0) return 'Ошибка';
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const days = Math.floor(totalMinutes / (24 * 60));
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
   const minutes = totalMinutes % 60;
-
   const parts = [];
-
-  if (days > 0) {
-    parts.push(`${days} ${getDaysLabel(days)}`);
-  }
-
-  if (hours > 0) {
-    parts.push(`${hours} ${getHoursLabel(hours)}`);
-  }
-
-  if (minutes > 0 && days === 0) {
-    parts.push(`${minutes} мин`);
-  }
-
+  if (days > 0) parts.push(`${days} ${getDaysLabel(days)}`);
+  if (hours > 0) parts.push(`${hours} ${getHoursLabel(hours)}`);
+  if (minutes > 0 && days === 0) parts.push(`${minutes} мин`);
   return parts.join(' ') || '0 мин';
 }
 
 function getDaysLabel(days) {
   const lastDigit = days % 10;
   const lastTwoDigits = days % 100;
-
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-    return 'дней';
-  }
-  if (lastDigit === 1) {
-    return 'день';
-  }
-  if (lastDigit >= 2 && lastDigit <= 4) {
-    return 'дня';
-  }
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'дней';
+  if (lastDigit === 1) return 'день';
+  if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
   return 'дней';
 }
 
 function getHoursLabel(hours) {
   const lastDigit = hours % 10;
   const lastTwoDigits = hours % 100;
-
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-    return 'часов';
-  }
-  if (lastDigit === 1) {
-    return 'час';
-  }
-  if (lastDigit >= 2 && lastDigit <= 4) {
-    return 'часа';
-  }
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'часов';
+  if (lastDigit === 1) return 'час';
+  if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
   return 'часов';
 }
 
 function formatDate(dateValue) {
   const date = new Date(dateValue);
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function showError(message) {
-  alert(message);
+// ========== NOTIFICATION SYSTEM ==========
+
+function createNotification(type, title, message, duration = 5000) {
+  const container = document.getElementById('notificationContainer');
+  if (!container) return null;
+
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.setAttribute('role', 'alert');
+  notification.setAttribute('aria-live', 'assertive');
+
+  const icons = {
+    success: 'fas fa-check-circle',
+    error: 'fas fa-times-circle',
+    warning: 'fas fa-exclamation-triangle',
+    info: 'fas fa-info-circle'
+  };
+
+  notification.innerHTML = `
+    <div class="notification-icon">
+      <i class="${icons[type] || icons.info}"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-message">${message}</div>
+    </div>
+    <button class="notification-close" aria-label="Закрыть">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="notification-progress"></div>
+  `;
+
+  container.appendChild(notification);
+
+  const closeBtn = notification.querySelector('.notification-close');
+  closeBtn.addEventListener('click', () => removeNotification(notification));
+
+  setTimeout(() => removeNotification(notification), duration);
+  return notification;
 }
 
-// ========== INTERACTIONS ==========
+function removeNotification(notification) {
+  if (!notification) return;
+  notification.style.animation = 'fadeOut 0.3s ease forwards';
+  setTimeout(() => {
+    if (notification.parentNode) notification.parentNode.removeChild(notification);
+  }, 300);
+}
+
+function showSuccess(message, title = 'Успешно!') {
+  return createNotification('success', title, message);
+}
+
+function showError(message, title = 'Ошибка!') {
+  return createNotification('error', title, message, 6000);
+}
+
+function showWarning(message, title = 'Внимание!') {
+  return createNotification('warning', title, message, 4000);
+}
+
+function showInfo(message, title = 'Информация') {
+  return createNotification('info', title, message, 4000);
+}
+
 
 function initInteractions() {
   const navItems = document.querySelectorAll(".nav-item");
@@ -1327,65 +1001,43 @@ function initInteractions() {
   const previewAvatar = document.getElementById("previewAvatar");
 
   if (uploadAvatarBtn && avatarInput) {
-    uploadAvatarBtn.addEventListener("click", () => {
-      avatarInput.click();
-    });
-
+    uploadAvatarBtn.addEventListener("click", () => avatarInput.click());
     avatarInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
-          previewAvatar.src = event.target.result;
-        };
+        reader.onload = (event) => previewAvatar.src = event.target.result;
         reader.readAsDataURL(file);
 
         try {
           const photoPath = await uploadAvatar(file);
-
           if (photoPath) {
             const avatar = document.getElementById("profileAvatar");
             if (avatar) avatar.src = photoPath;
-
             const userAvatar = document.getElementById("userAvatar");
             if (userAvatar) userAvatar.src = photoPath;
-
             if (previewAvatar) previewAvatar.src = photoPath;
           }
-
-          alert("Фото успешно загружено!");
-
+          showSuccess("Фото успешно загружено!");
         } catch (err) {
           console.error(err);
-          alert("Ошибка при загрузке фото");
+          showError("Ошибка при загрузке фото");
         }
       }
     });
   }
 
   const saveSettingsBtn = document.getElementById("saveSettingsBtn");
-  if (saveSettingsBtn) {
-    saveSettingsBtn.addEventListener("click", async () => {
-      await saveProfileSettings();
-    });
-  }
+  if (saveSettingsBtn) saveSettingsBtn.addEventListener("click", saveProfileSettings);
 
   const cancelSettingsBtn = document.getElementById("cancelSettingsBtn");
-  if (cancelSettingsBtn) {
-    cancelSettingsBtn.addEventListener("click", () => {
-      fetchAndFillProfile();
-    });
-  }
+  if (cancelSettingsBtn) cancelSettingsBtn.addEventListener("click", fetchAndFillProfile);
 
   const menuToggle = document.querySelector(".menu-toggle");
   const navMenu = document.querySelector(".nav-menu");
   if (menuToggle && navMenu) {
-    menuToggle.addEventListener("click", () => {
-      navMenu.classList.toggle("active");
-    });
+    menuToggle.addEventListener("click", () => navMenu.classList.toggle("active"));
   }
-
-  // ========== BALANCE TOPUP INTERACTIONS ==========
 
   const topupBtn = document.getElementById("topupBtn");
   const topupModal = document.getElementById("topupModal");
@@ -1393,72 +1045,50 @@ function initInteractions() {
   const cancelTopup = document.getElementById("cancelTopup");
   const confirmTopup = document.getElementById("confirmTopup");
 
-  // Открытие модального окна пополнения
   if (topupBtn && topupModal) {
     topupBtn.addEventListener("click", () => {
       topupModal.style.display = "flex";
-      // Сброс формы при открытии
       resetTopupForm();
     });
   }
 
-  // Закрытие модального окна
   if (modalClose && topupModal) {
-    modalClose.addEventListener("click", () => {
-      topupModal.style.display = "none";
-    });
+    modalClose.addEventListener("click", () => topupModal.style.display = "none");
   }
 
   if (cancelTopup && topupModal) {
-    cancelTopup.addEventListener("click", () => {
-      topupModal.style.display = "none";
-    });
+    cancelTopup.addEventListener("click", () => topupModal.style.display = "none");
   }
 
-  // Подтверждение пополнения
-  if (confirmTopup) {
-    confirmTopup.addEventListener("click", submitTopup);
-  }
+  if (confirmTopup) confirmTopup.addEventListener("click", submitTopup);
 
-  // Закрытие по клику вне модального окна
   if (topupModal) {
     topupModal.addEventListener("click", (e) => {
-      if (e.target === topupModal) {
-        topupModal.style.display = "none";
-      }
+      if (e.target === topupModal) topupModal.style.display = "none";
     });
   }
 
-  // Выбор суммы из кнопок
   const amountBtns = document.querySelectorAll(".amount-btn");
   amountBtns.forEach((btn) => {
     btn.addEventListener("click", function() {
-      // Проверяем, это кнопка с суммой или нет
       if (this.hasAttribute("data-amount")) {
         amountBtns.forEach((b) => b.classList.remove("active"));
         this.classList.add("active");
         selectedAmount = parseFloat(this.getAttribute("data-amount"));
-
-        // Сбрасываем кастомное поле
         const customAmount = document.getElementById("customAmount");
-        if (customAmount) {
-          customAmount.value = "";
-        }
+        if (customAmount) customAmount.value = "";
       }
     });
   });
 
-  // Обработка ввода в кастомное поле
   const customAmount = document.getElementById("customAmount");
   if (customAmount) {
     customAmount.addEventListener("input", function() {
       const value = parseFloat(this.value);
       if (!isNaN(value) && value > 0) {
-        // Снимаем выделение с кнопок
         amountBtns.forEach((b) => b.classList.remove("active"));
       }
     });
-
     customAmount.addEventListener("keypress", function(e) {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -1471,17 +1101,8 @@ function initInteractions() {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       try {
-        await fetch("/api/v1/auth/logout", {
-          method: "POST",
-          credentials: "include"
-        });
-
-        try {
-          localStorage.removeItem(AVATAR_KEY);
-        } catch (e) {
-          console.warn('Cannot clear avatar from localStorage on logout:', e);
-        }
-
+        await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+        try { localStorage.removeItem(AVATAR_KEY); } catch (e) {}
         window.location.href = "/static/html/index.html";
       } catch (err) {
         console.error("Logout error:", err);
@@ -1498,21 +1119,10 @@ function initBarOrderModal() {
   const confirmBtn = document.getElementById('confirmBarOrder');
   const clearBtn = document.getElementById('clearCartBtn');
 
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeBarOrderModal);
-  }
-
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', closeBarOrderModal);
-  }
-
-  if (confirmBtn) {
-    confirmBtn.addEventListener('click', submitBarOrder);
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearCart);
-  }
+  if (closeBtn) closeBtn.addEventListener('click', closeBarOrderModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeBarOrderModal);
+  if (confirmBtn) confirmBtn.addEventListener('click', submitBarOrder);
+  if (clearBtn) clearBtn.addEventListener('click', clearCart);
 
   if (modal) {
     modal.addEventListener('click', (e) => {
@@ -1520,8 +1130,6 @@ function initBarOrderModal() {
     });
   }
 }
-
-// ========== INIT ==========
 
 document.addEventListener("DOMContentLoaded", () => {
   fetchAndFillProfile();
