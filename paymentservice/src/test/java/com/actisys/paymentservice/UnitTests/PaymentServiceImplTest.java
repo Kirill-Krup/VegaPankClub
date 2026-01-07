@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.actisys.common.events.OperationType;
 import com.actisys.common.events.PaymentType;
+import com.actisys.common.events.payment.CreatePaymentEvent;
 import com.actisys.common.events.user.CreateWalletEvent;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
 import com.actisys.paymentservice.dto.CreateReplenishment;
@@ -51,29 +52,19 @@ class PaymentServiceImplTest {
     MockitoAnnotations.openMocks(this);
   }
 
-  // ---------- createPayment ----------
-
   @Test
   void createPayment_shouldSavePaymentAndSendCreateWalletEvent() {
-
     CreatePaymentDTO request = new CreatePaymentDTO();
     request.setAmount(BigDecimal.valueOf(100));
     request.setUserId(10L);
     request.setOrderId(20L);
     request.setPaymentType(PaymentType.BOOKING);
 
-    PaymentDTO mappedDto = new PaymentDTO();
-    mappedDto.setAmount(request.getAmount());
-    mappedDto.setUserId(request.getUserId());
-    mappedDto.setOrderId(request.getOrderId());
-    mappedDto.setPaymentType(request.getPaymentType());
-    mappedDto.setStatus(PaymentStatus.CREATED);
-    mappedDto.setCreatedAt(LocalDateTime.now());
+    Payment savedEntity = new Payment();
+    savedEntity.setPaymentId(1L);
 
-    Payment entity = new Payment();
-
-    when(paymentMapper.toEntity(any(PaymentDTO.class))).thenReturn(entity);
-    when(paymentRepository.save(any(Payment.class))).thenReturn(entity);
+    when(paymentMapper.toEntity(any(PaymentDTO.class))).thenReturn(savedEntity);
+    when(paymentRepository.save(any(Payment.class))).thenReturn(savedEntity);
 
     PaymentDTO result = paymentService.createPayment(request);
 
@@ -83,27 +74,25 @@ class PaymentServiceImplTest {
     assertEquals(PaymentStatus.CREATED, result.getStatus());
 
     verify(paymentMapper).toEntity(any(PaymentDTO.class));
-    verify(paymentRepository).save(entity);
+    verify(paymentRepository).save(savedEntity);
 
     ArgumentCaptor<CreateWalletEvent> eventCaptor =
-        ArgumentCaptor.forClass(CreateWalletEvent.class);
+            ArgumentCaptor.forClass(CreateWalletEvent.class);
     verify(kafkaTemplate).send(eq("CREATE_WALLET_EVENT"), eventCaptor.capture());
 
     CreateWalletEvent sentEvent = eventCaptor.getValue();
     assertEquals(request.getAmount(), sentEvent.getCost());
     assertEquals(request.getUserId(), sentEvent.getUserId());
+    assertEquals(savedEntity.getPaymentId(), sentEvent.getPaymentId());
     assertEquals(request.getPaymentType(), sentEvent.getPaymentType());
   }
 
-  // ---------- updateStatus ----------
-
   @Test
   void updateStatus_whenPaymentNotFound_shouldThrow() {
-
     when(paymentRepository.findById(1L)).thenReturn(Optional.empty());
 
     assertThrows(PaymentNotFoundException.class,
-        () -> paymentService.updateStatus(1L, OperationType.SUCCESS));
+            () -> paymentService.updateStatus(1L, OperationType.SUCCESS));
 
     verify(paymentRepository, never()).save(any());
     verifyNoInteractions(kafkaTemplate);
@@ -111,10 +100,10 @@ class PaymentServiceImplTest {
 
   @Test
   void updateStatus_whenRefunded_shouldSetRefundedAndNotSendKafka() {
-
     Payment payment = new Payment();
     payment.setPaymentId(1L);
     payment.setOrderId(123L);
+    payment.setPaymentType(PaymentType.BOOKING);
     payment.setStatus(PaymentStatus.CREATED);
 
     when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
@@ -128,7 +117,6 @@ class PaymentServiceImplTest {
 
   @Test
   void updateStatus_whenOrderIdZero_shouldUpdateStatusWithoutKafka() {
-
     Payment payment = new Payment();
     payment.setPaymentId(1L);
     payment.setOrderId(0L);
@@ -145,8 +133,7 @@ class PaymentServiceImplTest {
   }
 
   @Test
-  void updateStatus_whenBookingPayment_shouldSendBookingTopic() {
-
+  void updateStatus_whenBookingPaymentSuccess_shouldSendBookingTopicWithEvent() {
     Payment payment = new Payment();
     payment.setPaymentId(1L);
     payment.setOrderId(99L);
@@ -159,14 +146,21 @@ class PaymentServiceImplTest {
 
     assertEquals(PaymentStatus.PAID, payment.getStatus());
     verify(paymentRepository).save(payment);
-    verify(kafkaTemplate).send("UPDATE_PAYMENT_STATUS_FOR_BOOKING", 1L);
-    verify(kafkaTemplate, never())
-        .send(eq("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY"), any());
+
+    ArgumentCaptor<CreatePaymentEvent> eventCaptor =
+            ArgumentCaptor.forClass(CreatePaymentEvent.class);
+    verify(kafkaTemplate).send(eq("UPDATE_PAYMENT_STATUS_FOR_BOOKING"), eventCaptor.capture());
+
+    CreatePaymentEvent sentEvent = eventCaptor.getValue();
+    assertEquals(1L, sentEvent.getPaymentId());
+    assertEquals(OperationType.SUCCESS, sentEvent.getStatus());
+    assertEquals(99L, sentEvent.getOrderId());
+
+    verify(kafkaTemplate, never()).send(eq("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY"), any());
   }
 
   @Test
-  void updateStatus_whenBarBuyPayment_shouldSendBarTopic() {
-
+  void updateStatus_whenBarBuyPaymentSuccess_shouldSendBarTopicWithEvent() {
     Payment payment = new Payment();
     payment.setPaymentId(1L);
     payment.setOrderId(99L);
@@ -179,14 +173,21 @@ class PaymentServiceImplTest {
 
     assertEquals(PaymentStatus.PAID, payment.getStatus());
     verify(paymentRepository).save(payment);
-    verify(kafkaTemplate).send("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY", 1L);
-    verify(kafkaTemplate, never())
-        .send(eq("UPDATE_PAYMENT_STATUS_FOR_BOOKING"), any());
+
+    ArgumentCaptor<CreatePaymentEvent> eventCaptor =
+            ArgumentCaptor.forClass(CreatePaymentEvent.class);
+    verify(kafkaTemplate).send(eq("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY"), eventCaptor.capture());
+
+    CreatePaymentEvent sentEvent = eventCaptor.getValue();
+    assertEquals(1L, sentEvent.getPaymentId());
+    assertEquals(OperationType.SUCCESS, sentEvent.getStatus());
+    assertEquals(99L, sentEvent.getOrderId());
+
+    verify(kafkaTemplate, never()).send(eq("UPDATE_PAYMENT_STATUS_FOR_BOOKING"), any());
   }
 
   @Test
-  void updateStatus_whenError_shouldSetFailed() {
-
+  void updateStatus_whenError_shouldSetFailedAndSendEvent() {
     Payment payment = new Payment();
     payment.setPaymentId(1L);
     payment.setOrderId(99L);
@@ -199,37 +200,41 @@ class PaymentServiceImplTest {
 
     assertEquals(PaymentStatus.FAILED, payment.getStatus());
     verify(paymentRepository).save(payment);
-    // Kafka всё равно пошлётся, т.к. orderId != 0; проверяем, что топик верный
-    verify(kafkaTemplate).send("UPDATE_PAYMENT_STATUS_FOR_BOOKING", 1L);
-  }
 
-  // ---------- createReplenishment ----------
+    ArgumentCaptor<CreatePaymentEvent> eventCaptor =
+            ArgumentCaptor.forClass(CreatePaymentEvent.class);
+    verify(kafkaTemplate).send(eq("UPDATE_PAYMENT_STATUS_FOR_BOOKING"), eventCaptor.capture());
+
+    CreatePaymentEvent sentEvent = eventCaptor.getValue();
+    assertEquals(1L, sentEvent.getPaymentId());
+    assertEquals(OperationType.SUCCESS, sentEvent.getStatus());
+    assertEquals(99L, sentEvent.getOrderId());
+  }
 
   @Test
   void createReplenishment_shouldSavePaymentAndSendWalletReplenishmentEvent() {
-
     CreateReplenishment request = new CreateReplenishment();
     request.setReplenishmentAmount(BigDecimal.valueOf(50));
     Long userId = 77L;
 
-    Payment saved = new Payment();
-    saved.setPaymentId(5L);
-    saved.setAmount(request.getReplenishmentAmount());
-    saved.setUserId(userId);
-    saved.setOrderId(0L);
-    saved.setStatus(PaymentStatus.CREATED);
-    saved.setPaymentType(PaymentType.REPLENISHMENT);
-    saved.setCreatedAt(LocalDateTime.now());
+    Payment savedPayment = new Payment();
+    savedPayment.setPaymentId(5L);
+    savedPayment.setAmount(request.getReplenishmentAmount());
+    savedPayment.setUserId(userId);
+    savedPayment.setOrderId(0L);
+    savedPayment.setStatus(PaymentStatus.CREATED);
+    savedPayment.setPaymentType(PaymentType.REPLENISHMENT);
+    savedPayment.setCreatedAt(LocalDateTime.now());
 
     PaymentDTO dto = new PaymentDTO();
-    dto.setAmount(saved.getAmount());
-    dto.setUserId(saved.getUserId());
-    dto.setOrderId(saved.getOrderId());
-    dto.setStatus(saved.getStatus());
-    dto.setPaymentType(saved.getPaymentType());
-    dto.setCreatedAt(saved.getCreatedAt());
+    dto.setAmount(savedPayment.getAmount());
+    dto.setUserId(savedPayment.getUserId());
+    dto.setOrderId(savedPayment.getOrderId());
+    dto.setStatus(savedPayment.getStatus());
+    dto.setPaymentType(savedPayment.getPaymentType());
+    dto.setCreatedAt(savedPayment.getCreatedAt());
 
-    when(paymentRepository.save(any(Payment.class))).thenReturn(saved);
+    when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
     when(paymentMapper.toDto(any(Payment.class))).thenReturn(dto);
 
     PaymentDTO result = paymentService.createReplenishment(request, userId);
@@ -244,14 +249,14 @@ class PaymentServiceImplTest {
     verify(paymentMapper).toDto(any(Payment.class));
 
     ArgumentCaptor<CreateWalletEvent> eventCaptor =
-        ArgumentCaptor.forClass(CreateWalletEvent.class);
+            ArgumentCaptor.forClass(CreateWalletEvent.class);
     verify(kafkaTemplate).send(eq("CREATE_WALLET_REPLENISHMENT_EVENT"),
-        eventCaptor.capture());
+            eventCaptor.capture());
 
     CreateWalletEvent sentEvent = eventCaptor.getValue();
     assertEquals(request.getReplenishmentAmount(), sentEvent.getCost());
     assertEquals(userId, sentEvent.getUserId());
-    assertEquals(saved.getPaymentId(), sentEvent.getPaymentId());
+    assertEquals(savedPayment.getPaymentId(), sentEvent.getPaymentId());
   }
 
 }

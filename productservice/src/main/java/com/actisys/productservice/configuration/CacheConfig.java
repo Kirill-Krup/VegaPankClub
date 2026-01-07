@@ -1,5 +1,7 @@
 package com.actisys.productservice.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -18,22 +20,37 @@ public class CacheConfig {
 
   @Bean
   public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+
+    GenericJackson2JsonRedisSerializer serializer =
+            new GenericJackson2JsonRedisSerializer(objectMapper);
+
     RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-        .entryTtl(Duration.ofMinutes(30))
-        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+            .entryTtl(Duration.ofMinutes(30))
+            .serializeKeysWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
     RedisCacheConfiguration productConfig = RedisCacheConfiguration.defaultCacheConfig()
-        .entryTtl(Duration.ofHours(3))
-        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+            .entryTtl(Duration.ofHours(3))
+            .serializeKeysWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
     RedisCacheConfiguration orderConfig = RedisCacheConfiguration.defaultCacheConfig()
-        .entryTtl(Duration.ofMinutes(10))
-        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+            .entryTtl(Duration.ofMinutes(10))
+            .serializeKeysWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
     return RedisCacheManager.builder(connectionFactory)
-        .cacheDefaults(defaultConfig)
-        .withCacheConfiguration("products", productConfig)
-        .withCacheConfiguration("orders", orderConfig)
-        .build();
+            .cacheDefaults(defaultConfig)
+            .withCacheConfiguration("products", productConfig)
+            .withCacheConfiguration("orders", orderConfig)
+            .build();
   }
 }

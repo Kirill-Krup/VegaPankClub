@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.jaxb.SpringDataJaxb;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,6 @@ public class OrderServiceImpl implements OrderService {
   public OrderDTO createOrder(CreateOrderDTO order, Long userId) {
     log.info("Creating order for user {}", userId);
 
-    // Создаем Order
     Order orderForSave = new Order();
     orderForSave.setCreatedAt(LocalDateTime.now());
     orderForSave.setStatus(Status.CREATED);
@@ -123,11 +123,21 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
+  @CacheEvict(value = "orders", allEntries = true)
   public void updateStatusByEvent(CreatePaymentEvent event) {
     Order order = orderRepository.findById(event.getOrderId())
         .orElseThrow(()->new OrderNotFoundException(event.getOrderId()));
     order.setPaymentId(event.getPaymentId());
     order.setStatus(statusHandler(event.getStatus()));
+    orderRepository.save(order);
+  }
+
+  @Override
+  @CacheEvict(value = "orders", allEntries = true)
+  public void markOrderAsDelivered(Long orderId) {
+    Order order = orderRepository.findById(orderId)
+            .orElseThrow(()->new OrderNotFoundException(orderId));
+    order.setStatus(Status.DELIVERED);
     orderRepository.save(order);
   }
 

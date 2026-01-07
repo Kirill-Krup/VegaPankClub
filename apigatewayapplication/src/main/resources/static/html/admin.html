@@ -111,11 +111,13 @@
         </button>
       </div>
 
-      <div class="filter-buttons" id="categoryFilters">
-        <button class="filter-btn active" data-category="all">Все</button>
-        <button class="filter-btn" data-category="1">Напитки</button>
-        <button class="filter-btn" data-category="2">Снэки</button>
-        <button class="filter-btn" data-category="3">Сладости</button>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">Все</button>
+        <button class="filter-btn" data-filter="CREATED">Создан</button>
+        <button class="filter-btn" data-filter="PROCESSING">В обработке</button>
+        <button class="filter-btn" data-filter="PAID">Оплачен</button>
+        <button class="filter-btn" data-filter="DELIVERED">Доставлен</button>
+        <button class="filter-btn" data-filter="CANCELLED">Отменен</button>
       </div>
 
       <div class="cards-grid" id="productsContainer"></div>
@@ -220,14 +222,15 @@
             <th>Пользователь</th>
             <th>Товары</th>
             <th>Сумма</th>
-            <th>Статус</th>
+            <th>Статус заказа</th>
+            <th>Статус платежа</th>
             <th>Дата</th>
             <th>Действия</th>
           </tr>
           </thead>
           <tbody id="ordersTableBody">
           <tr>
-            <td colspan="7" style="text-align: center; padding: 2rem;">
+            <td colspan="8" style="text-align: center; padding: 2rem;">
               <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
               <p style="margin-top: 1rem; color: var(--gray);">Загрузка заказов...</p>
             </td>

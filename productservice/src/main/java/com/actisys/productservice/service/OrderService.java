@@ -69,4 +69,9 @@ public interface OrderService {
    * @param event payment event containing orderId, paymentId and status
    */
   void updateStatusByEvent(CreatePaymentEvent event);
+
+  /**
+   * Updates order status in Status.DELIVERED
+   */
+  void markOrderAsDelivered(Long orderId);
 }

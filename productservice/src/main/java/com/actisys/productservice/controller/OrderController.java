@@ -35,6 +35,12 @@ public class OrderController {
     return ResponseEntity.ok(orderDTO);
   }
 
+  @PutMapping("/markAsDelivered/{orderId}")
+  public ResponseEntity<Void> markAsDelivered(@PathVariable Long orderId){
+    orderService.markOrderAsDelivered(orderId);
+    return ResponseEntity.ok().build();
+  }
+
   @GetMapping("/{id}")
   public ResponseEntity<OrderDTO> getOrderById(@PathVariable("id") Long id) {
     OrderDTO orderDTO = orderService.getOrderById(id);

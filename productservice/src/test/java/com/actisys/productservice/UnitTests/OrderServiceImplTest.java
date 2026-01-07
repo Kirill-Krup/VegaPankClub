@@ -10,12 +10,14 @@ import com.actisys.productservice.dto.OrderDtos.OrderItemDTO;
 import com.actisys.productservice.dto.ProductDtos.ProductDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.exception.OrderNotFoundException;
+import com.actisys.productservice.exception.ProductNotFoundException;
 import com.actisys.productservice.mapper.OrderItemMapper;
 import com.actisys.productservice.mapper.OrderMapper;
 import com.actisys.productservice.model.Order;
 import com.actisys.productservice.model.OrderItem;
 import com.actisys.productservice.model.Product;
 import com.actisys.productservice.repository.OrderRepository;
+import com.actisys.productservice.repository.ProductRepository;
 import com.actisys.productservice.service.impl.OrderServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +50,7 @@ class OrderServiceImplTest {
   private OrderRepository orderRepository;
 
   @Mock
-  private OrderItemMapper orderItemMapper;
+  private ProductRepository productRepository;
 
   @Mock
   private KafkaTemplate<String, Object> kafkaTemplate;
@@ -59,7 +61,6 @@ class OrderServiceImplTest {
   private Order testOrder;
   private OrderDTO testOrderDTO;
   private CreateOrderDTO createOrderDTO;
-  private List<OrderItem> orderItems;
   private List<OrderItemDTO> orderItemDTOs;
 
   @BeforeEach
@@ -74,6 +75,11 @@ class OrderServiceImplTest {
     testProductDTO.setName("Test Product");
     testProductDTO.setPrice(new BigDecimal("50.00"));
 
+    OrderItemDTO orderItemDTO1 = new OrderItemDTO(1L, null, testProductDTO, new BigDecimal("50.00"), 2);
+    OrderItemDTO orderItemDTO2 = new OrderItemDTO(2L, null, testProductDTO, new BigDecimal("50.00"), 1);
+
+    orderItemDTOs = List.of(orderItemDTO1, orderItemDTO2);
+
     OrderItem orderItem1 = new OrderItem();
     orderItem1.setOrderItemId(1L);
     orderItem1.setProduct(testProduct);
@@ -84,14 +90,7 @@ class OrderServiceImplTest {
     orderItem2.setProduct(testProduct);
     orderItem2.setQuantity(1);
 
-    orderItems = List.of(orderItem1, orderItem2);
-
-    OrderItemDTO orderItemDTO1 = new OrderItemDTO(1L, 1L, testProductDTO, new BigDecimal("50.00"),
-        2);
-    OrderItemDTO orderItemDTO2 = new OrderItemDTO(2L, 1L, testProductDTO, new BigDecimal("50.00"),
-        1);
-
-    orderItemDTOs = List.of(orderItemDTO1, orderItemDTO2);
+    List<OrderItem> orderItems = List.of(orderItem1, orderItem2);
 
     testOrder = new Order();
     testOrder.setId(1L);
@@ -108,7 +107,6 @@ class OrderServiceImplTest {
     testOrderDTO.setTotalCost(new BigDecimal("150.00"));
     testOrderDTO.setStatus(Status.CREATED);
     testOrderDTO.setCreatedAt(LocalDateTime.now());
-    testOrderDTO.setOrderItems(orderItemDTOs);
     testOrderDTO.setPaymentId(null);
 
     createOrderDTO = new CreateOrderDTO();
@@ -120,7 +118,13 @@ class OrderServiceImplTest {
   @DisplayName("Should create order successfully and send Kafka event")
   void testCreateOrderSuccess() {
     Long userId = 123L;
-    when(orderItemMapper.toEntityList(createOrderDTO.getOrderItems())).thenReturn(orderItems);
+
+    Product testProduct = new Product();
+    testProduct.setId(101L);
+    testProduct.setName("Test Product");
+    testProduct.setPrice(new BigDecimal("50.00"));
+
+    when(productRepository.findById(101L)).thenReturn(Optional.of(testProduct));
     when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
     when(orderMapper.toDto(testOrder)).thenReturn(testOrderDTO);
 
@@ -131,8 +135,8 @@ class OrderServiceImplTest {
     assertEquals(userId, result.getUserId());
     assertEquals(Status.CREATED, result.getStatus());
 
+    verify(productRepository, times(2)).findById(101L);
     verify(orderRepository, times(1)).save(any(Order.class));
-    verify(orderItemMapper, times(1)).toEntityList(createOrderDTO.getOrderItems());
 
     ArgumentCaptor<CreateOrderEvent> eventCaptor = ArgumentCaptor.forClass(CreateOrderEvent.class);
     verify(kafkaTemplate, times(1)).send(eq("CREATE_ORDER_EVENT"), eventCaptor.capture());
@@ -142,6 +146,20 @@ class OrderServiceImplTest {
     assertEquals(userId, sentEvent.getUserId());
     assertEquals(createOrderDTO.getTotalCost(), sentEvent.getAmount());
     assertEquals(PaymentType.BAR_BUY, sentEvent.getPaymentType());
+  }
+
+  @Test
+  @DisplayName("Should throw ProductNotFoundException when product not found")
+  void testCreateOrderProductNotFound() {
+    Long userId = 123L;
+
+    when(productRepository.findById(101L)).thenReturn(Optional.empty());
+
+    assertThrows(ProductNotFoundException.class, () -> orderService.createOrder(createOrderDTO, userId));
+
+    verify(productRepository, times(1)).findById(101L);
+    verify(orderRepository, never()).save(any());
+    verify(kafkaTemplate, never()).send(any(), any());
   }
 
   @Test
@@ -276,7 +294,7 @@ class OrderServiceImplTest {
     when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
     assertThrows(OrderNotFoundException.class,
-        () -> orderService.updateOrderStatus(orderId, newStatus));
+            () -> orderService.updateOrderStatus(orderId, newStatus));
     verify(orderRepository, times(1)).findById(orderId);
     verify(orderRepository, never()).save(any());
   }

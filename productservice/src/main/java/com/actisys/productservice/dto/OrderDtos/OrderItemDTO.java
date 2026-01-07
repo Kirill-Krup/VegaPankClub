@@ -4,30 +4,28 @@ import com.actisys.productservice.dto.ProductDtos.ProductDTO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Negative;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Getter
+@Setter
 @NoArgsConstructor(force = true)
 @AllArgsConstructor
 public class OrderItemDTO {
-  private final Long orderItemId;
+  private Long orderItemId;
 
   @NotNull(message = "Order ID is required")
-  private final Long orderId;
+  private Long orderId;
 
   @NotNull(message = "Product is required")
-  private final ProductDTO productDTO;
+  private ProductDTO productDTO;
 
   @NotNull(message = "Product price is required")
   @Negative(message = "Product price can not be negative")
-  private final BigDecimal productPrice;
+  private BigDecimal productPrice;
 
   @NotNull(message = "Quantity is required")
   @Min(value = 1, message = "Quantity must be at least 1")
-  private final Integer quantity;
+  private Integer quantity;
 }

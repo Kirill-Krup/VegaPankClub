@@ -887,117 +887,6 @@ function closeSessionDetailsModal() {
   if (modal) modal.classList.remove('active');
 }
 
-// ========== ЗАКАЗЫ МИНИ-БАРА ==========
-async function fetchAllOrders() {
-  try {
-    const response = await fetch('/api/v1/admin/orders/getAllOrders', {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch orders');
-    }
-
-    allOrders = await response.json();
-    console.log('Orders loaded:', allOrders);
-    renderOrders(allOrders);
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    showError('Не удалось загрузить заказы мини-бара');
-  }
-}
-
-function renderOrders(orders) {
-  const tbody = qs('#ordersTableBody');
-  if (!tbody) return;
-
-  if (!orders || orders.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
-          Заказы не найдены
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = orders.map(o => {
-    const order = o.order || o;
-    const userName = order.user?.login || order.user?.username || `ID ${order.userId || '-'}`;
-    const items = (order.orderItems || [])
-        .map(i => `${i.productName || i.product?.name || 'Товар'} x${i.quantity || i.count || 1}`)
-        .join(', ');
-    const amount = (order.totalPrice || order.amount || 0).toFixed(2);
-    const status = order.status || order.orderStatus || 'UNKNOWN';
-    const createdAt = order.createdAt || order.createdDate || order.date || '';
-
-    return `
-      <tr data-order-id="${order.orderId || order.id}">
-        <td>${order.orderId || order.id}</td>
-        <td>${userName}</td>
-        <td>${items || '-'}</td>
-        <td>${amount} BYN</td>
-        <td>${status}</td>
-        <td>${createdAt}</td>
-        <td>
-          <button class="btn-icon btn-primary" title="Подробнее" onclick="openOrderDetailsModal('${order.orderId || order.id}')">
-            <i class="fas fa-eye"></i>
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function openOrderDetailsModal(orderId) {
-  const modal = qs('#orderDetailsModal');
-  const body = qs('#orderDetailsBody');
-  if (!modal || !body) return;
-
-  const wrapper = allOrders.find(o => {
-    const ord = o.order || o;
-    return (ord.orderId || ord.id) == orderId;
-  });
-  const order = wrapper?.order || wrapper;
-
-  if (!order) {
-    showError('Заказ не найден');
-    return;
-  }
-
-  const itemsHtml = (order.orderItems || []).map(i => `
-    <li>
-      <strong>${i.productName || i.product?.name || 'Товар'}</strong> — 
-      ${i.quantity || i.count || 1} шт. × ${(i.price || i.unitPrice || 0).toFixed(2)} BYN
-    </li>
-  `).join('') || '<li>Товары не найдены</li>';
-
-  body.innerHTML = `
-    <div class="details-grid">
-      <div><strong>ID заказа:</strong> ${order.orderId || order.id}</div>
-      <div><strong>Пользователь:</strong> ${order.user?.login || order.user?.username || order.userId || '-'}</div>
-      <div><strong>Статус:</strong> ${order.status || order.orderStatus || 'UNKNOWN'}</div>
-      <div><strong>Дата:</strong> ${order.createdAt || order.createdDate || order.date || '-'}</div>
-      <div><strong>Сумма:</strong> ${(order.totalPrice || order.amount || 0).toFixed(2)} BYN</div>
-    </div>
-    <div style="margin-top: 1.5rem;">
-      <h4>Товары:</h4>
-      <ul>
-        ${itemsHtml}
-      </ul>
-    </div>
-  `;
-
-  modal.classList.add('active');
-}
-
-function closeOrderDetailsModal() {
-  const modal = qs('#orderDetailsModal');
-  if (modal) modal.classList.remove('active');
-}
-
 // ========== ПЛАТЕЖИ ==========
 async function fetchAllPayments() {
   try {
@@ -2027,7 +1916,545 @@ async function initLogout() {
   });
 }
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
+async function fetchAllOrders() {
+  try {
+    const response = await fetch('/api/v1/admin/orders/getAllOrders', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch orders');
+    }
+
+    allOrders = await response.json();
+    console.log('Orders loaded:', allOrders);
+    renderOrders(allOrders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    showError('Не удалось загрузить заказы мини-бара');
+  }
+}
+
+function renderOrders(orders) {
+  const tbody = qs('#ordersTableBody');
+  if (!tbody) return;
+
+  if (!orders || orders.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray);">
+          Заказы не найдены
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = new Date(a.order?.createdAt || 0);
+    const dateB = new Date(b.order?.createdAt || 0);
+    return dateB - dateA;
+  });
+
+  tbody.innerHTML = sortedOrders.map(orderWrapper => {
+    const order = orderWrapper.order;
+    const payment = orderWrapper.payment;
+    const user = orderWrapper.user;
+
+    if (!order) return '';
+
+    const userName = user?.login || user?.username || `ID ${order.userId || '-'}`;
+    const items = (order.orderItems || [])
+        .map(item => {
+          const productName = item.productDTO?.name || 'Товар';
+          const quantity = item.quantity || 1;
+          return `${productName} x${quantity}`;
+        })
+        .join(', ');
+
+    const amount = order.totalCost ? parseFloat(order.totalCost).toFixed(2) : '0.00';
+    const status = order.status || 'CREATED';
+    const createdAt = order.createdAt ? formatDateTime(order.createdAt) : '-';
+    const paymentStatus = payment?.status || 'Неизвестно';
+    const paymentStatusBadge = getPaymentStatusBadge(paymentStatus);
+    const orderStatusBadge = getOrderStatusBadge(status);
+
+    return `
+      <tr data-order-id="${order.id}">
+        <td>#${order.id}</td>
+        <td>
+          <div class="user-info-cell">
+            <img src="${user?.photoPath || 'https://i.pravatar.cc/30?img=' + (user?.id || '1')}" 
+                 alt="${userName}" 
+                 class="user-avatar">
+            <span>${userName}</span>
+          </div>
+        </td>
+        <td title="${items}">${items.length > 50 ? items.substring(0, 50) + '...' : items}</td>
+        <td><strong>${amount} BYN</strong></td>
+        <td>${orderStatusBadge}</td>
+        <td>${paymentStatusBadge}</td>
+        <td>${createdAt}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-icon btn-primary" title="Подробнее" onclick="openOrderDetailsModal('${order.id}')">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn-icon btn-success" title="Отметить как доставленный" 
+                    onclick="markOrderAsDelivered('${order.id}')"
+                    ${status === 'DELIVERED' || status === 'CANCELLED' ? 'disabled' : ''}>
+              <i class="fas fa-check"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getPaymentStatusBadge(status) {
+  const statusConfigs = {
+    'CREATED': { class: 'status-secondary', text: 'Создан', icon: 'fas fa-plus-circle' },
+    'PAID': { class: 'status-success', text: 'Оплачен', icon: 'fas fa-check-circle' },
+    'FAILED': { class: 'status-danger', text: 'Ошибка', icon: 'fas fa-times-circle' },
+    'CANCELLED': { class: 'status-warning', text: 'Отменен', icon: 'fas fa-ban' },
+    'REFUNDED': { class: 'status-info', text: 'Возврат', icon: 'fas fa-undo' },
+    'SUCCESSFULLY': { class: 'status-active', text: 'Успешно', icon: 'fas fa-check-double' }
+  };
+
+  const config = statusConfigs[status] || { class: 'status-secondary', text: status, icon: 'fas fa-question-circle' };
+
+  return `
+    <span class="status-badge ${config.class}">
+      <i class="${config.icon}"></i>
+      ${config.text}
+    </span>
+  `;
+}
+
+function getOrderStatusBadge(status) {
+  const statusConfigs = {
+    'CREATED': { class: 'status-secondary', text: 'Создан', icon: 'fas fa-plus-circle' },
+    'PROCESSING': { class: 'status-info', text: 'В обработке', icon: 'fas fa-spinner fa-spin' },
+    'PAID': { class: 'status-success', text: 'Оплачен', icon: 'fas fa-check-circle' },
+    'ERROR_IN_PAID': { class: 'status-danger', text: 'Ошибка оплаты', icon: 'fas fa-exclamation-triangle' },
+    'SHIPPED': { class: 'status-warning', text: 'Отправлен', icon: 'fas fa-shipping-fast' },
+    'DELIVERED': { class: 'status-active', text: 'Доставлен', icon: 'fas fa-check-double' },
+    'CANCELLED': { class: 'status-banned', text: 'Отменен', icon: 'fas fa-ban' }
+  };
+
+  const config = statusConfigs[status] || { class: 'status-secondary', text: status, icon: 'fas fa-question-circle' };
+
+  return `
+    <span class="status-badge ${config.class}">
+      <i class="${config.icon}"></i>
+      ${config.text}
+    </span>
+  `;
+}
+
+async function markOrderAsDelivered(orderId) {
+  try {
+    const response = await fetch(`/api/v1/orders/markAsDelivered/${orderId}`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to mark order as delivered');
+    }
+
+    showSuccess('Заказ отмечен как доставленный');
+    await fetchAllOrders();
+  } catch (error) {
+    console.error('Error marking order as delivered:', error);
+    showError('Не удалось обновить статус заказа: ' + error.message);
+  }
+}
+
+function openOrderDetailsModal(orderId) {
+  const modal = qs('#orderDetailsModal');
+  const body = qs('#orderDetailsBody');
+  if (!modal || !body) return;
+
+  const wrapper = allOrders.find(o => o.order?.id == orderId);
+  if (!wrapper) {
+    showError('Заказ не найден');
+    return;
+  }
+
+  const order = wrapper.order;
+  const payment = wrapper.payment;
+  const user = wrapper.user;
+
+  if (!order) {
+    showError('Данные заказа не найдены');
+    return;
+  }
+
+  const itemsHtml = (order.orderItems || []).map(item => {
+    const product = item.productDTO;
+    const price = product.price ? parseFloat(product.price).toFixed(2) : '0.00';
+    const total = item.quantity * parseFloat(product.price || 0);
+
+    return `
+      <div class="order-item-detail">
+        <div class="order-item-header">
+          <img src="${product?.photoPath || 'https://via.placeholder.com/50'}" 
+               alt="${product?.name || 'Товар'}" 
+               class="order-item-image">
+          <div class="order-item-info">
+            <div class="order-item-name">${product?.name || 'Товар'}</div>
+            <div class="order-item-category">${product?.category?.name || 'Категория не указана'}</div>
+          </div>
+        </div>
+        <div class="order-item-details">
+          <div class="detail-row">
+            <span>Цена:</span>
+            <strong>${price} BYN</strong>
+          </div>
+          <div class="detail-row">
+            <span>Количество:</span>
+            <strong>${item.quantity || 1} шт.</strong>
+          </div>
+          <div class="detail-row">
+            <span>Итого:</span>
+            <strong>${total.toFixed(2)} BYN</strong>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div class="no-items">Товары не найдены</div>';
+
+  const userInfo = user ? `
+    <div class="detail-section">
+      <h4><i class="fas fa-user"></i> Пользователь</h4>
+      <div class="details-grid">
+        <div class="detail-row">
+          <span>ID:</span>
+          <span>${user.id || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <span>Логин:</span>
+          <span>${user.login || user.username || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <span>Email:</span>
+          <span>${user.email || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <span>Телефон:</span>
+          <span>${user.phone || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <span>Баланс:</span>
+          <span>${(user.wallet || 0).toFixed(2)} BYN</span>
+        </div>
+        <div class="detail-row">
+          <span>Бонусы:</span>
+          <span>${user.bonusCoins || 0}</span>
+        </div>
+      </div>
+    </div>
+  ` : '<div class="detail-section"><p>Информация о пользователе недоступна</p></div>';
+
+  const paymentInfo = payment ? `
+    <div class="detail-section">
+      <h4><i class="fas fa-credit-card"></i> Платеж</h4>
+      <div class="details-grid">
+        <div class="detail-row">
+          <span>Сумма:</span>
+          <strong>${(payment.amount || 0).toFixed(2)} BYN</strong>
+        </div>
+        <div class="detail-row">
+          <span>Тип платежа:</span>
+          <span>${payment.paymentType || '-'}</span>
+        </div>
+        <div class="detail-row">
+          <span>Статус платежа:</span>
+          ${getPaymentStatusBadge(payment.status)}
+        </div>
+        <div class="detail-row">
+          <span>Дата платежа:</span>
+          <span>${payment.createdAt ? formatDateTime(payment.createdAt) : '-'}</span>
+        </div>
+      </div>
+    </div>
+  ` : '<div class="detail-section"><p>Информация о платеже недоступна</p></div>';
+
+  body.innerHTML = `
+    <div class="order-details-container">
+      <div class="detail-section">
+        <h4><i class="fas fa-receipt"></i> Информация о заказе</h4>
+        <div class="details-grid">
+          <div class="detail-row">
+            <span>ID заказа:</span>
+            <strong>#${order.id}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Дата создания:</span>
+            <span>${order.createdAt ? formatDateTime(order.createdAt) : '-'}</span>
+          </div>
+          <div class="detail-row">
+            <span>Статус заказа:</span>
+            ${getOrderStatusBadge(order.status)}
+          </div>
+          <div class="detail-row">
+            <span>Общая стоимость:</span>
+            <strong class="order-total">${order.totalCost ? parseFloat(order.totalCost).toFixed(2) : '0.00'} BYN</strong>
+          </div>
+        </div>
+      </div>
+
+      ${userInfo}
+
+      ${paymentInfo}
+
+      <div class="detail-section">
+        <h4><i class="fas fa-shopping-cart"></i> Товары в заказе</h4>
+        <div class="order-items-list">
+          ${itemsHtml}
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn btn--primary" onclick="markOrderAsDelivered('${order.id}')"
+                ${order.status === 'DELIVERED' || order.status === 'CANCELLED' ? 'disabled' : ''}>
+          <i class="fas fa-check"></i> Отметить как доставленный
+        </button>
+        <button class="btn btn--secondary" onclick="closeOrderDetailsModal()">
+          <i class="fas fa-times"></i> Закрыть
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('active');
+}
+
+function closeOrderDetailsModal() {
+  const modal = qs('#orderDetailsModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function addOrderStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .user-info-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+    }
+    
+    .order-details-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .detail-section {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    
+    .detail-section h4 {
+      margin: 0 0 1rem 0;
+      color: var(--text);
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .detail-section h4 i {
+      color: var(--primary);
+    }
+    
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-row span:first-child {
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+    
+    .order-total {
+      font-size: 1.2rem;
+      color: var(--success);
+    }
+    
+    .order-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .order-item-detail {
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 1rem;
+      border: 1px solid var(--border);
+    }
+    
+    .order-item-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .order-item-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    
+    .order-item-info {
+      flex: 1;
+    }
+    
+    .order-item-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .order-item-category {
+      font-size: 0.85rem;
+      color: var(--gray);
+    }
+    
+    .order-item-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      background: var(--card-bg);
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+    
+    .no-items {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray);
+      font-style: italic;
+    }
+    
+    .detail-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    
+    /* Стили для модалки заказа */
+    .modal-content-large {
+      max-width: 800px;
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .status-success {
+      background: var(--success-light);
+      color: var(--success-dark);
+      border: 1px solid var(--success);
+    }
+    
+    .status-danger {
+      background: var(--danger-light);
+      color: var(--danger-dark);
+      border: 1px solid var(--danger);
+    }
+    
+    .status-warning {
+      background: var(--warning-light);
+      color: var(--warning-dark);
+      border: 1px solid var(--warning);
+    }
+    
+    .status-info {
+      background: var(--info-light);
+      color: var(--info-dark);
+      border: 1px solid var(--info);
+    }
+    
+    .status-secondary {
+      background: var(--gray-light);
+      color: var(--gray-dark);
+      border: 1px solid var(--gray);
+    }
+    
+    .status-active {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid var(--primary);
+    }
+    
+    .status-banned {
+      background: var(--danger-light);
+      color: var(--danger-dark);
+      border: 1px solid var(--danger);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+async function initOrdersSection() {
+  await fetchAllOrders();
+
+  const filterBtns = qsa('#orders .filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.getAttribute('data-filter');
+
+      let filtered = allOrders;
+      if (filter !== 'all') {
+        filtered = allOrders.filter(o => o.order?.status === filter);
+      }
+
+      renderOrders(filtered);
+    });
+  });
+}
+
 async function init() {
   initNavigation();
   initModals();
@@ -2037,9 +2464,11 @@ async function init() {
   initTariffPreview();
   initComputerSearch();
   initReviewFilters();
+  addOrderStyles();
 
   await fetchAllUsers();
   await fetchAllComputers();
+  await initOrdersSection();
 }
 
 document.addEventListener('DOMContentLoaded', init);
