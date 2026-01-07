@@ -665,7 +665,28 @@ async function submitBarOrder() {
     return;
   }
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const orderItems = cart.map(cartItem => {
+    const product = products.find(p => p.id === cartItem.productId);
+
+    return {
+      productDTO: {
+        id: product?.id || cartItem.productId,
+        name: product?.name || cartItem.name,
+        price: product?.price || cartItem.price,
+        stock: product?.stock || cartItem.maxStock,
+        active: product?.active || true,
+        photoPath: product?.photoPath || '',
+        category: product?.category ? {
+          id: product.category.id,
+          name: product.category.name
+        } : null
+      },
+      productPrice: cartItem.price,
+      quantity: cartItem.quantity
+    };
+  });
+
+  const totalCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   showConfirmation(
       "Оформление заказа из бара",
@@ -677,7 +698,7 @@ async function submitBarOrder() {
       </div>
       <div class="detail-row">
         <span class="detail-label">Общая сумма:</span>
-        <span class="detail-value" style="color: #0ea5e9;">${total.toFixed(2)} BYN</span>
+        <span class="detail-value" style="color: #0ea5e9;">${totalCost.toFixed(2)} BYN</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">Будет доставлено:</span>
@@ -686,13 +707,11 @@ async function submitBarOrder() {
     `,
       async () => {
         const orderData = {
-          sessionId: currentSessionId,
-          pcId: currentPcId,
-          items: cart.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity
-          }))
+          totalCost: totalCost,
+          orderItems: orderItems
         };
+
+        console.log('Sending order data:', JSON.stringify(orderData, null, 2));
 
         try {
           const response = await fetch('/api/v1/orders/createOrder', {
@@ -702,12 +721,19 @@ async function submitBarOrder() {
             body: JSON.stringify(orderData)
           });
 
-          if (!response.ok) throw new Error('Failed to create order');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to create order');
+          }
+
+          const result = await response.json();
+          console.log('Order created successfully:', result);
+
           showSuccess('Заказ успешно оформлен! Ожидайте доставку к вашему месту.');
           closeBarOrderModal();
         } catch (error) {
           console.error('Error creating order:', error);
-          showError('Ошибка при оформлении заказа. Попробуйте позже.');
+          showError('Ошибка при оформлении заказа: ' + (error.message || 'Попробуйте позже.'));
         }
       }
   );
@@ -955,7 +981,6 @@ function createNotification(type, title, message, duration = 5000) {
   `;
 
   container.appendChild(notification);
-
   const closeBtn = notification.querySelector('.notification-close');
   closeBtn.addEventListener('click', () => removeNotification(notification));
 

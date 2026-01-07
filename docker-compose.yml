@@ -1,87 +1,79 @@
-version: '3.8'
-
 services:
   user_db:
     image: postgres:16
-    container_name: user_db;
+    container_name: user_db
     environment:
-      - POSTGRES_DB=user-service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
+      POSTGRES_DB: user-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
     ports:
       - "5432:5432"
     volumes:
       - user_postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     networks:
       - app-network
 
   product_db:
     image: postgres:16
-    container_name: product_db;
+    container_name: product_db
     environment:
-      - POSTGRES_DB=product-service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
+      POSTGRES_DB: product-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
     ports:
       - "5433:5432"
     volumes:
       - product_postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     networks:
       - app-network
 
   inventory_db:
     image: postgres:16
-    container_name: inventory_db;
+    container_name: inventory_db
     environment:
-      - POSTGRES_DB=inventory-service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
+      POSTGRES_DB: inventory-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
     ports:
       - "5434:5432"
     volumes:
       - inventory_postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     networks:
       - app-network
 
   billing_db:
     image: postgres:16
-    container_name: billing_db;
+    container_name: billing_db
     environment:
-      - POSTGRES_DB=billing-service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
+      POSTGRES_DB: billing-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
     ports:
       - "5435:5432"
     volumes:
       - billing_postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     networks:
       - app-network
 
   payment_db:
     image: postgres:16
-    container_name: payment_db;
+    container_name: payment_db
     environment:
-      - POSTGRES_DB=payment-service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
+      POSTGRES_DB: payment-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
     ports:
-      - "5433:5432"
+      - "5436:5432"
     volumes:
       - payment_postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     networks:
       - app-network
 
   redis:
     image: redis:7-alpine
-    container_name: MyRedis
+    container_name: redis
     ports:
       - "6379:6379"
-    restart: unless-stopped
     networks:
       - app-network
 
@@ -105,67 +97,142 @@ services:
     networks:
       - app-network
 
-
   user-service:
     build:
-      context: ./userservice
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./userservice/Dockerfile
+      args:
+        SERVICE_NAME: userservice
+        COMMON_LIB_PATH: ./common-lib
     container_name: user-service
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://user_db:5432/user-service
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SERVER_PORT=8081
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - user_db
-      - redis
-    restart: unless-stopped
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user_db:5432/user-service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - app-network
 
   product-service:
     build:
-      context: ./productservice
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./productservice/Dockerfile
+      args:
+        SERVICE_NAME: productservice
+        COMMON_LIB_PATH: ./common-lib
     container_name: product-service
     ports:
-      - "8081:8081"
+      - "8082:8082"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://product_db:5432/product-service
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SERVER_PORT=8082
-    depends_on:
-      - product_db
-      - redis
-    restart: unless-stopped
+      SPRING_DATASOURCE_URL: jdbc:postgresql://product_db:5432/product-service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     networks:
       - app-network
 
   inventory-service:
     build:
-      context: ./inventoryservice
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./inventoryservice/Dockerfile
+      args:
+        SERVICE_NAME: inventoryservice
+        COMMON_LIB_PATH: ./common-lib
     container_name: inventory-service
     ports:
       - "8083:8083"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://inventory_db:5432/inventory-service
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SERVER_PORT=8083
-    depends_on:
-      - inventory_db
-      - redis
-    restart: unless-stopped
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory_db:5432/inventory-service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     networks:
       - app-network
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: ./billingservice/Dockerfile
+      args:
+        SERVICE_NAME: billingservice
+        COMMON_LIB_PATH: ./common-lib
+    container_name: billing-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://billing_db:5432/billing-service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./paymentservice/Dockerfile
+      args:
+        SERVICE_NAME: paymentservice
+        COMMON_LIB_PATH: ./common-lib
+    container_name: payment-service
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://payment_db:5432/payment-service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - app-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./apigatewayapplication/Dockerfile
+      args:
+        SERVICE_NAME: apigatewayapplication
+        COMMON_LIB_PATH: ./common-lib
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - app-network
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: ./adminservice/Dockerfile
+      args:
+        SERVICE_NAME: adminservice
+        COMMON_LIB_PATH: ./common-lib
+    container_name: admin-service
+    ports:
+      - "8085:8085"
+    networks:
+      - app-network
+
+volumes:
+  user_postgres_data:
+  product_postgres_data:
+  inventory_postgres_data:
+  billing_postgres_data:
+  payment_postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
