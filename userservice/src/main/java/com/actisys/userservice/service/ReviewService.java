@@ -34,15 +34,6 @@ public interface ReviewService {
    */
   void editVisibility(Long reviewId);
 
-  /**
-   * Updates existing review.
-   * Finds review by ID, updates text and stars count,
-   * saves changes to database.
-   *
-   * @param reviewId ID of review to update
-   * @param updateReviewDTO new review data (text, stars)
-   */
-  void updateReview(Long reviewId, CreateReviewDTO updateReviewDTO);
 
   List<ReviewDTO> getUserReview(Long userId);
 

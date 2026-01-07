@@ -13,10 +13,12 @@ import com.actisys.userservice.service.ReviewService;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewServiceImpl implements ReviewService {
 
   private final ReviewRepository reviewRepository;
@@ -43,18 +45,10 @@ public class ReviewServiceImpl implements ReviewService {
 
   @Override
   public void editVisibility(Long reviewId) {
+    log.info("reviewId:{}", reviewId);
     Review review = reviewRepository.findById(reviewId)
         .orElseThrow(()-> new ReviewNotFoundException(reviewId));
     review.setVisible(!review.isVisible());
-    reviewRepository.save(review);
-  }
-
-  @Override
-  public void updateReview(Long reviewId, CreateReviewDTO updateReviewDTO) {
-    Review review = reviewRepository.findById(reviewId)
-        .orElseThrow(()-> new ReviewNotFoundException(reviewId));
-    review.setReviewText(updateReviewDTO.getReviewText());
-    review.setStars(updateReviewDTO.getStars());
     reviewRepository.save(review);
   }
 

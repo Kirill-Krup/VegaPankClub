@@ -3,6 +3,7 @@ package com.actisys.paymentservice.controller;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
 import com.actisys.paymentservice.dto.CreateReplenishment;
 import com.actisys.paymentservice.dto.PaymentDTO;
+import com.actisys.paymentservice.dto.PaymentIDDTO;
 import com.actisys.paymentservice.service.PaymentService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class PaymentController {
     }
 
     @GetMapping("/getAllPayments")
-    public ResponseEntity<List<PaymentDTO>> getAllPayments() {
+    public ResponseEntity<List<PaymentIDDTO>> getAllPayments() {
         return ResponseEntity.ok(paymentService.getAllPayments());
     }
 

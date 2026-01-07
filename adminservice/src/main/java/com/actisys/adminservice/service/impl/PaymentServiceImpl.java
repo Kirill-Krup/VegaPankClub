@@ -100,6 +100,8 @@ public class PaymentServiceImpl implements PaymentService {
         .collectList();
   }
 
+
+
   private UserDTO createEmptyUserDTO(Long userId) {
     UserDTO dto = new UserDTO();
     dto.setId(userId);

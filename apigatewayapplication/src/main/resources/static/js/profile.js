@@ -7,6 +7,8 @@ let currentPcId = null;
 let products = [];
 let cart = [];
 let confirmationCallback = null;
+let profile = null;
+let reviews = [];
 
 async function fetchAndFillProfile() {
   try {
@@ -16,7 +18,7 @@ async function fetchAndFillProfile() {
     });
 
     if (!response.ok) throw new Error("Не удалось получить информацию о профиле");
-    const profile = await response.json();
+    profile = await response.json();
     setInfo(profile);
   } catch (err) {
     console.error(err);
@@ -773,8 +775,12 @@ function initReviews() {
         showWarning('Пожалуйста, напишите отзыв');
         return;
       }
+      if(reviews.length >= profile.sessionStats?.totalSessions){
+        showWarning('Вы уже оставили максимальное количество отзывов');
+        return;
+      }
       try {
-        await submitReview(selectedRating, text);
+        await submitReview(text, selectedRating);
         showSuccess('Спасибо за ваш отзыв!');
         reviewText.value = '';
         selectedRating = 0;
@@ -790,12 +796,12 @@ function initReviews() {
   fetchReviews();
 }
 
-async function submitReview(rating, text) {
-  const response = await fetch('/api/v1/reviews/create', {
+async function submitReview(reviewText, stars) {
+  const response = await fetch('/api/v1/reviews/addReview', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rating, text })
+    body: JSON.stringify({ reviewText, stars })
   });
   if (!response.ok) throw new Error('Failed to submit review');
   return response.json();
@@ -808,7 +814,8 @@ async function fetchReviews() {
       credentials: 'include'
     });
     if (!response.ok) throw new Error('Failed to fetch reviews');
-    const reviews = await response.json();
+    reviews = await response.json();
+    console.log(reviews);
     renderReviews(reviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -825,10 +832,10 @@ function renderReviews(reviews) {
   reviewsList.innerHTML = reviews.map(review => `
     <div class="review-card">
       <div class="review-header">
-        <div class="review-rating">${generateStars(review.rating)}</div>
+        <div class="review-rating">${generateStars(review.stars)}</div>
         <span class="review-date">${formatDate(review.createdAt)}</span>
       </div>
-      <p class="review-text">${review.text}</p>
+      <p class="review-text">${review.reviewText}</p>
       ${review.response ? `<div class="admin-response"><div class="response-header"><i class="fas fa-reply"></i><span>Ответ администратора</span></div><p class="response-text">${review.response}</p></div>` : ''}
     </div>
   `).join('');

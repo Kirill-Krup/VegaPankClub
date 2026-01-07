@@ -1588,6 +1588,257 @@ function initTariffPreview() {
   updatePreview();
 }
 
+// ========== ОТЗЫВЫ ==========
+let allReviews = [];
+let currentReviewFilter = 'all';
+
+async function fetchAllReviews() {
+  try {
+    const response = await fetch('/api/v1/reviews/getAllReviews', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch reviews');
+    }
+
+    allReviews = await response.json();
+    console.log('Reviews loaded:', allReviews);
+    renderReviews(allReviews);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    showError('Не удалось загрузить отзывы');
+  }
+}
+
+function renderReviews(reviews) {
+  const container = qs('#reviewsContainer');
+  if (!container) return;
+
+  let filtered = reviews;
+
+  // Применяем фильтры
+  if (currentReviewFilter === 'visible') {
+    filtered = reviews.filter(r => r.visible !== false);
+  } else if (currentReviewFilter === 'hidden') {
+    filtered = reviews.filter(r => r.visible === false);
+  } else if (['5', '4', '3', '2', '1'].includes(currentReviewFilter)) {
+    const rating = parseInt(currentReviewFilter);
+    filtered = reviews.filter(r => r.rating === rating || r.stars === rating);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="reviews-empty-state">
+        <i class="fas fa-star"></i>
+        <h3>Отзывы не найдены</h3>
+        <p>${currentReviewFilter !== 'all' ? 'Попробуйте изменить фильтр' : 'Пользователи еще не оставили отзывов'}</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Сортируем отзывы: сначала скрытые, потом по дате (новые сверху)
+  const sorted = [...filtered].sort((a, b) => {
+    // Сначала скрытые отзывы
+    if (a.visible === false && b.visible !== false) return -1;
+    if (a.visible !== false && b.visible === false) return 1;
+
+    // Затем по дате (новые сверху)
+    const dateA = new Date(a.createdAt || a.date || 0);
+    const dateB = new Date(b.createdAt || b.date || 0);
+    return dateB - dateA;
+  });
+
+  container.innerHTML = sorted.map(review => {
+    const isHidden = review.visible === false;
+    const rating = review.rating || review.stars || 0;
+    const createdAt = review.createdAt || review.date || '';
+    const formattedDate = formatDateForReview(createdAt);
+    const user = review.user || review.userDTO || {};
+    const adminResponse = review.response || review.adminAnswer || '';
+
+    return `
+      <div class="review-card ${isHidden ? 'hidden' : ''}" data-review-id="${review.id || review.reviewId}">
+        <div class="review-header">
+          <div class="review-user">
+            <img src="${user.photoPath || 'https://i.pravatar.cc/40?img=' + (user.id || '1')}" 
+                 alt="${user.login || 'Пользователь'}" 
+                 class="review-avatar">
+            <div class="review-user-info">
+              <div class="review-user-name">${user.login || user.username || `Пользователь #${user.id || '?'}`}</div>
+              <div class="review-date">${formattedDate}</div>
+            </div>
+          </div>
+          <div class="review-rating">
+            ${generateStarRating(rating)}
+            <span class="rating-number">${rating}/5</span>
+          </div>
+        </div>
+        
+        <div class="review-body">
+          <p class="review-text">${review.text || review.reviewText || 'Без текста'}</p>
+          
+          ${adminResponse ? `
+            <div class="admin-response">
+              <div class="response-header">
+                <i class="fas fa-reply"></i>
+                <span>Ответ администратора</span>
+              </div>
+              <p class="response-text">${adminResponse}</p>
+            </div>
+          ` : ''}
+        </div>
+        
+        <div class="review-actions">
+          ${isHidden ? `
+            <button class="btn btn-sm btn-success" onclick="handleToggleReviewVisibility(${review.id || review.reviewId}, true)">
+              <i class="fas fa-eye"></i> Показать
+            </button>
+          ` : `
+            <button class="btn btn-sm btn-warning" onclick="handleToggleReviewVisibility(${review.id || review.reviewId}, false)">
+              <i class="fas fa-eye-slash"></i> Скрыть
+            </button>
+          `}
+          
+          <button class="btn btn-sm btn-danger" onclick="handleDeleteReview(${review.id || review.reviewId})">
+            <i class="fas fa-trash"></i> Удалить
+          </button>
+          
+        </div>
+        
+        ${isHidden ? '<div class="review-hidden-badge"><i class="fas fa-eye-slash"></i> Скрыт</div>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function generateStarRating(rating) {
+  let stars = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      stars += '<i class="fas fa-star active"></i>';
+    } else {
+      stars += '<i class="fas fa-star"></i>';
+    }
+  }
+  return stars;
+}
+
+function formatDateForReview(dateString) {
+  if (!dateString) return 'Без даты';
+
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) {
+      return 'только что';
+    } else if (diffHours < 24) {
+      return `${diffHours} ${getHourWord(diffHours)} назад`;
+    } else if (diffDays < 7) {
+      return `${diffDays} ${getDayWord(diffDays)} назад`;
+    } else {
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  } catch (e) {
+    return dateString;
+  }
+}
+
+function getHourWord(hours) {
+  if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
+  if (hours % 10 >= 2 && hours % 10 <= 4 && (hours % 100 < 10 || hours % 100 >= 20)) return 'часа';
+  return 'часов';
+}
+
+function getDayWord(days) {
+  if (days % 10 === 1 && days % 100 !== 11) return 'день';
+  if (days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20)) return 'дня';
+  return 'дней';
+}
+
+async function handleToggleReviewVisibility(reviewId, makeVisible) {
+  try {
+    const response = await fetch(`/api/v1/reviews/editVisibility/${reviewId}`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle review visibility');
+    }
+
+    showSuccess(`Отзыв ${makeVisible ? 'показан' : 'скрыт'}`);
+    await fetchAllReviews();
+  } catch (error) {
+    console.error('Error toggling review visibility:', error);
+    showError('Не удалось изменить видимость отзыва');
+  }
+}
+
+async function handleDeleteReview(reviewId) {
+  if (!confirm('Вы уверены, что хотите удалить этот отзыв? Это действие необратимо.')) return;
+
+  try {
+    const response = await fetch(`/api/v1/reviews/deleteReview/${reviewId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete review');
+    }
+
+    showSuccess('Отзыв удалён');
+    await fetchAllReviews();
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    showError('Не удалось удалить отзыв');
+  }
+}
+
+function updateStarsDisplay(container, rating) {
+  container.querySelectorAll('.fa-star').forEach((star, index) => {
+    if (index < rating) {
+      star.classList.add('active');
+    } else {
+      star.classList.remove('active');
+    }
+  });
+}
+
+function closeEditReviewModal() {
+  const modal = qs('#editReviewModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function initReviewFilters() {
+  const filterBtns = qsa('#reviews .filter-btn');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentReviewFilter = btn.getAttribute('data-filter');
+      renderReviews(allReviews);
+    });
+  });
+}
+
+
+
+
 // ========== УВЕДОМЛЕНИЯ ==========
 function showToast(message, type = 'success', title = null) {
   const container = qs('#toastContainer');
@@ -1681,6 +1932,8 @@ function initNavigation() {
         await fetchAllOrders();
       } else if (sectionId === 'payments') {
         await fetchAllPayments();
+      } else if (sectionId === 'reviews') {
+        await fetchAllReviews();
       }
     });
   });
@@ -1783,6 +2036,7 @@ async function init() {
   initCategoryFilter();
   initTariffPreview();
   initComputerSearch();
+  initReviewFilters();
 
   await fetchAllUsers();
   await fetchAllComputers();

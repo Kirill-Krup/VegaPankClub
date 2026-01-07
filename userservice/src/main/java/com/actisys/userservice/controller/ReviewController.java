@@ -5,6 +5,7 @@ import com.actisys.userservice.dto.ReviewResponseDtos.ReviewDTO;
 import com.actisys.userservice.service.ReviewService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/api/v1/reviews")
 public class ReviewController {
 
@@ -25,6 +27,7 @@ public class ReviewController {
 
   @GetMapping("/getAllReviews")
   public ResponseEntity<List<ReviewDTO>> allReviews(){
+    log.info("getAllReviews" + reviewService.getAllReviews());
     return ResponseEntity.ok(reviewService.getAllReviews());
   }
 
@@ -44,13 +47,6 @@ public class ReviewController {
   @DeleteMapping("/deleteReview/{id}")
   public ResponseEntity<Void> deleteReview(@PathVariable Long id){
     reviewService.deleteReviewById(id);
-    return ResponseEntity.noContent().build();
-  }
-
-  @PutMapping("/editReview/{reviewId}")
-  public ResponseEntity<Void> editReview(@PathVariable Long reviewId,
-      @RequestBody CreateReviewDTO updateReviewDTO){
-    reviewService.updateReview(reviewId, updateReviewDTO);
     return ResponseEntity.noContent().build();
   }
 
