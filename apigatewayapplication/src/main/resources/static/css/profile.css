@@ -1816,3 +1816,75 @@ html { scroll-behavior: smooth; }
     from { opacity: 0; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1); }
 }
+
+/* Стили для контейнера аватарки без фото */
+.auth__profile.no-avatar::before,
+.profile-avatar.no-avatar::before {
+    content: '👤';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #4a5568;
+    color: white;
+    font-size: 20px;
+}
+
+/* Для больших аватарок */
+.user-avatar.no-avatar::before {
+    content: '👤';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #4a5568;
+    color: white;
+    font-size: 40px;
+}
+
+/* Скрываем img когда есть класс no-avatar */
+.no-avatar img {
+    display: none !important;
+}
+
+/* Стили для иконки аватарки */
+.avatar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #4a5568;
+    color: white;
+    font-size: 32px;
+}
+
+.user-avatar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #4a5568;
+    color: white;
+    font-size: 16px;
+}
+
+/* Для аватарки в шапке */
+.auth__profile .user-avatar-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+}
+
+/* Для превью аватарки в настройках */
+#previewAvatar {
+    border-radius: 50%;
+    object-fit: cover;
+}

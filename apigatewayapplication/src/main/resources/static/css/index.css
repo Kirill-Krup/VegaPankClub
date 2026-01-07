@@ -315,3 +315,37 @@ body {
   .hero__title{ font-size: 40px; }
   .footer__grid{ grid-template-columns: 1fr 1fr; }
 }
+
+/* Стили для контейнера аватарки без фото */
+.auth__profile.no-avatar::before,
+.profile-avatar.no-avatar::before {
+  content: '👤';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #4a5568;
+  color: white;
+  font-size: 20px;
+}
+
+/* Для больших аватарок */
+.user-avatar.no-avatar::before {
+  content: '👤';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #4a5568;
+  color: white;
+  font-size: 40px;
+}
+
+/* Скрываем img когда есть класс no-avatar */
+.no-avatar img {
+  display: none !important;
+}
