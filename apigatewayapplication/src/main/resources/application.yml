@@ -26,7 +26,7 @@ spring:
             - id: product-protected
               uri: http://localhost:8082
               predicates:
-                - Path=/api/v1/products/**
+                - Path=/api/v1/products/**,/api/v1/orders/**
             - id: productservice-images
               uri: http://localhost:8082
               predicates:
@@ -50,7 +50,7 @@ spring:
 
 
 jwt:
-  secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxIiwiZXhwIjoxNzMwMjI1MzE3fQ8fK7j9Lm2N4p6Q1r3T5v7X8z0BcD9FgH2Jk4M6oP8q"
+  secret: ${JWT_SECRET}
   ttl-seconds: 8600000
   issuer: actisys-auth
 

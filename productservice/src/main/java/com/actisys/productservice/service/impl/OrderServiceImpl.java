@@ -6,23 +6,31 @@ import com.actisys.common.events.order.CreateOrderEvent;
 import com.actisys.common.events.payment.CreatePaymentEvent;
 import com.actisys.productservice.dto.OrderDtos.CreateOrderDTO;
 import com.actisys.productservice.dto.OrderDtos.OrderDTO;
+import com.actisys.productservice.dto.OrderDtos.OrderItemDTO;
 import com.actisys.productservice.dto.Status;
 import com.actisys.productservice.exception.OrderNotFoundException;
+import com.actisys.productservice.exception.ProductNotFoundException;
 import com.actisys.productservice.mapper.OrderItemMapper;
 import com.actisys.productservice.mapper.OrderMapper;
 import com.actisys.productservice.model.Order;
+import com.actisys.productservice.model.OrderItem;
+import com.actisys.productservice.model.Product;
 import com.actisys.productservice.repository.OrderRepository;
+import com.actisys.productservice.repository.ProductRepository;
 import com.actisys.productservice.service.OrderService;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @CacheConfig(cacheNames = "orders")
 @RequiredArgsConstructor
@@ -30,18 +38,38 @@ public class OrderServiceImpl implements OrderService {
 
   private final OrderMapper orderMapper;
   private final OrderRepository orderRepository;
-  private final OrderItemMapper orderItemMapper;
+
+  private final ProductRepository productRepository;
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
   @Override
   @CacheEvict(value = "orders", allEntries = true)
   public OrderDTO createOrder(CreateOrderDTO order, Long userId) {
+    log.info("Creating order for user {}", userId);
+
+    // Создаем Order
     Order orderForSave = new Order();
     orderForSave.setCreatedAt(LocalDateTime.now());
-    orderForSave.setOrderItems(orderItemMapper.toEntityList(order.getOrderItems()));
     orderForSave.setStatus(Status.CREATED);
     orderForSave.setTotalCost(order.getTotalCost());
     orderForSave.setUserId(userId);
+
+    List<OrderItem> orderItems = new ArrayList<>();
+
+    for (OrderItemDTO itemDTO : order.getOrderItems()) {
+      Product product = productRepository.findById(itemDTO.getProductDTO().getId())
+              .orElseThrow(() -> new ProductNotFoundException(itemDTO.getProductDTO().getId()));
+
+      OrderItem orderItem = new OrderItem();
+      orderItem.setProduct(product);
+      orderItem.setQuantity(itemDTO.getQuantity());
+      orderItem.setOrder(orderForSave);
+
+      orderItems.add(orderItem);
+    }
+
+    orderForSave.setOrderItems(orderItems);
+
     Order savedOrder = orderRepository.save(orderForSave);
 
     CreateOrderEvent event = new CreateOrderEvent();

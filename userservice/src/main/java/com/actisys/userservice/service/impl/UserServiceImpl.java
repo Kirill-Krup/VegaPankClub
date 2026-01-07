@@ -245,6 +245,9 @@ public class UserServiceImpl implements UserService {
     User user = userRepository.findById(refundMoneyEvent.getUserId())
         .orElseThrow(() -> new UserNotFoundException(refundMoneyEvent.getUserId()));
     user.setWallet(user.getWallet().add(refundMoneyEvent.getAmount()));
+    BigDecimal coinsToSubtractDecimal = refundMoneyEvent.getAmount().multiply(BigDecimal.valueOf(10));
+    int coinsToSubtract = coinsToSubtractDecimal.intValue();
+    user.setBonusCoins(user.getBonusCoins() - coinsToSubtract);
     userRepository.save(user);
     WithdrawEvent withdrawEvent = new WithdrawEvent();
     withdrawEvent.setPaymentId(refundMoneyEvent.getPaymentId());

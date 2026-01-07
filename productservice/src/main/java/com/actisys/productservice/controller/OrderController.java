@@ -27,7 +27,7 @@ public class OrderController {
     this.orderService = orderService;
   }
 
-  @PostMapping
+  @PostMapping("/createOrder")
   public ResponseEntity<OrderDTO> createOrder(
       @RequestBody CreateOrderDTO order,
        @RequestHeader(value = "X-User-Id", required = false) String userId) {
