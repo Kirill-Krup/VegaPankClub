@@ -32,4 +32,64 @@
   .timeline__line{ left: 20px; transform: none; }
 }
 
+/* Стили для контейнера аватарки без фото */
+.auth__profile.no-avatar::before,
+.profile-avatar.no-avatar::before {
+  content: '👤';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #4a5568;
+  color: white;
+  font-size: 20px;
+}
 
+/* Для больших аватарок */
+.user-avatar.no-avatar::before {
+  content: '👤';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #4a5568;
+  color: white;
+  font-size: 40px;
+}
+
+/* Скрываем img когда есть класс no-avatar */
+.no-avatar img {
+  display: none !important;
+}
+
+/* Стили для контейнера аватарки без фото */
+.auth__profile.no-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.auth__profile.no-avatar::before {
+  content: '👤';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #4a5568;
+  color: white;
+  font-size: 20px;
+}
+
+/* Скрываем img когда есть класс no-avatar */
+.no-avatar img {
+  display: none !important;
+}

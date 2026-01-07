@@ -42,24 +42,143 @@ function setInfo(profile) {
   const safe = (v) => (v === null || v === undefined ? "" : v);
 
   let backendAvatar = safe(profile.photoPath);
-  if (!backendAvatar) backendAvatar = "";
+
+  // Проверяем, есть ли валидная аватарка с бэкенда
+  const hasValidBackendAvatar = backendAvatar && backendAvatar.trim().length > 0;
 
   let storedAvatar = null;
-  try { storedAvatar = localStorage.getItem(AVATAR_KEY); } catch (e) {}
+  try {
+    storedAvatar = localStorage.getItem(AVATAR_KEY);
+  } catch (e) {}
 
-  const finalAvatar = (backendAvatar && backendAvatar.trim().length > 0)
-      ? backendAvatar
-      : (storedAvatar || "https://i.pravatar.cc/160");
+  // Определяем финальную аватарку
+  let finalAvatar = null;
+  if (hasValidBackendAvatar) {
+    // Если с бэкенда пришла валидная аватарка - используем её
+    finalAvatar = backendAvatar;
+  } else if (storedAvatar && storedAvatar.trim().length > 0) {
+    // Если в localStorage есть валидная аватарка - используем её
+    finalAvatar = storedAvatar;
+  }
+  // Если нет ни одной валидной аватарки - finalAvatar останется null
 
-  try { localStorage.setItem(AVATAR_KEY, finalAvatar); } catch (e) {}
+  // Сохраняем в localStorage только валидные аватарки
+  try {
+    if (finalAvatar) {
+      localStorage.setItem(AVATAR_KEY, finalAvatar);
+    } else {
+      localStorage.removeItem(AVATAR_KEY);
+    }
+  } catch (e) {}
 
+  // Обработка аватарки в профиле
   const avatar = document.getElementById("profileAvatar");
-  if (avatar) avatar.src = finalAvatar;
-  const userAvatar = document.getElementById("userAvatar");
-  if (userAvatar) userAvatar.src = finalAvatar;
-  const previewAvatar = document.getElementById("previewAvatar");
-  if (previewAvatar) previewAvatar.src = finalAvatar;
+  if (avatar) {
+    if (finalAvatar) {
+      avatar.src = finalAvatar;
+      avatar.style.display = 'block';
+      avatar.alt = "Аватар профиля";
+      // Убираем иконку, если она есть
+      const existingIcon = avatar.parentElement?.querySelector('.avatar-icon');
+      if (existingIcon) {
+        existingIcon.remove();
+      }
+    } else {
+      // Если нет аватарки - скрываем картинку и показываем иконку
+      avatar.style.display = 'none';
+      avatar.alt = "Иконка профиля";
 
+      // Создаем или обновляем иконку
+      const parent = avatar.parentElement;
+      if (parent) {
+        // Удаляем существующую иконку
+        const existingIcon = parent.querySelector('.avatar-icon');
+        if (existingIcon) {
+          existingIcon.remove();
+        }
+
+        // Создаем новую иконку
+        const icon = document.createElement('div');
+        icon.className = 'avatar-icon';
+        icon.innerHTML = '<i class="fas fa-user"></i>';
+        icon.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background-color: #4a5568;
+          color: white;
+          font-size: 24px;
+        `;
+
+        // Вставляем иконку после картинки
+        avatar.parentNode.insertBefore(icon, avatar.nextSibling);
+      }
+    }
+  }
+
+  // Обработка аватарки пользователя в шапке
+  const userAvatar = document.getElementById("userAvatar");
+  if (userAvatar) {
+    if (finalAvatar) {
+      userAvatar.src = finalAvatar;
+      userAvatar.style.display = 'block';
+      userAvatar.alt = "Аватар пользователя";
+      // Убираем иконку, если она есть
+      const existingIcon = userAvatar.parentElement?.querySelector('.user-avatar-icon');
+      if (existingIcon) {
+        existingIcon.remove();
+      }
+    } else {
+      userAvatar.style.display = 'none';
+      userAvatar.alt = "Иконка пользователя";
+
+      // Создаем или обновляем иконку
+      const parent = userAvatar.parentElement;
+      if (parent) {
+        const existingIcon = parent.querySelector('.user-avatar-icon');
+        if (existingIcon) {
+          existingIcon.remove();
+        }
+
+        const icon = document.createElement('div');
+        icon.className = 'user-avatar-icon';
+        icon.innerHTML = '<i class="fas fa-user"></i>';
+        icon.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: #4a5568;
+          color: white;
+          font-size: 16px;
+        `;
+
+        userAvatar.parentNode.insertBefore(icon, userAvatar.nextSibling);
+      }
+    }
+  }
+
+  // Обработка превью аватарки
+  const previewAvatar = document.getElementById("previewAvatar");
+  if (previewAvatar) {
+    if (finalAvatar) {
+      previewAvatar.src = finalAvatar;
+      previewAvatar.style.display = 'block';
+      previewAvatar.alt = "Аватар превью";
+    } else {
+      // Для превью используем SVG иконку пользователя
+      previewAvatar.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160' fill='%234a5568'%3E%3Ccircle cx='80' cy='60' r='35'/%3E%3Ccircle cx='80' cy='140' r='50'/%3E%3C/svg%3E";
+      previewAvatar.style.display = 'block';
+      previewAvatar.alt = "Иконка профиля";
+    }
+  }
+
+  // Остальные поля профиля
   const profileName = document.getElementById("profileName");
   if (profileName) profileName.textContent = safe(profile.login);
   const userName = document.getElementById("userName");
@@ -163,7 +282,32 @@ async function uploadAvatar(file) {
     const newPhotoPath = user.photoPath;
 
     if (newPhotoPath && newPhotoPath.trim().length > 0) {
-      try { localStorage.setItem(AVATAR_KEY, newPhotoPath); } catch (e) {}
+      try {
+        localStorage.setItem(AVATAR_KEY, newPhotoPath);
+
+        // Обновляем аватарки на странице
+        const avatar = document.getElementById("profileAvatar");
+        if (avatar) {
+          avatar.src = newPhotoPath;
+          avatar.style.display = 'block';
+          // Убираем иконку
+          const icon = avatar.parentElement?.querySelector('.avatar-icon');
+          if (icon) icon.remove();
+        }
+
+        const userAvatar = document.getElementById("userAvatar");
+        if (userAvatar) {
+          userAvatar.src = newPhotoPath;
+          userAvatar.style.display = 'block';
+          const userIcon = userAvatar.parentElement?.querySelector('.user-avatar-icon');
+          if (userIcon) userIcon.remove();
+        }
+
+        const previewAvatar = document.getElementById("previewAvatar");
+        if (previewAvatar) {
+          previewAvatar.src = newPhotoPath;
+        }
+      } catch (e) {}
     }
     return newPhotoPath;
   } catch (err) {
