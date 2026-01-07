@@ -16,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class AllPaymentDTO {
-  private PaymentDTO paymentDTO;
+  private PaymentIDDTO paymentDTO;
   private UserDTO userDTO;
   private OrderDTO orderDTO;
   private SessionDTO sessionDTO;

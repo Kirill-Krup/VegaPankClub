@@ -1,21 +1,20 @@
-package com.actisys.adminservice.dto.paymentDtos;
+package com.actisys.paymentservice.dto;
 
-import com.actisys.adminservice.dto.PaymentStatus;
 import com.actisys.common.events.PaymentType;
+import com.actisys.paymentservice.model.PaymentStatus;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PaymentDTO {
+@ToString
+public class PaymentIDDTO {
+    private Long paymentId;
     private Long userId;
     private Long orderId;
     private BigDecimal amount;

@@ -7,20 +7,25 @@ import com.actisys.common.events.user.CreateWalletEvent;
 import com.actisys.paymentservice.dto.CreatePaymentDTO;
 import com.actisys.paymentservice.dto.CreateReplenishment;
 import com.actisys.paymentservice.dto.PaymentDTO;
+import com.actisys.paymentservice.dto.PaymentIDDTO;
 import com.actisys.paymentservice.exception.PaymentNotFoundException;
 import com.actisys.paymentservice.mapper.PaymentMapper;
 import com.actisys.paymentservice.model.Payment;
 import com.actisys.paymentservice.model.PaymentStatus;
 import com.actisys.paymentservice.repository.PaymentRepository;
 import com.actisys.paymentservice.service.PaymentService;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
@@ -107,10 +112,15 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<PaymentDTO> getAllPayments() {
+    public List<PaymentIDDTO> getAllPayments() {
+        List<Payment> payments = paymentRepository.findAll();
+        log.info("getAllPayments: {}", payments);
+        List<PaymentIDDTO> paymentIDDTOS = payments.stream() .map(paymentMapper::toIDDto)
+                .collect(Collectors.toList());
+        log.info("getAllPayments: {}", paymentIDDTOS);
         return paymentRepository.findAll()
             .stream()
-            .map(paymentMapper::toDto)
+            .map(paymentMapper::toIDDto)
             .collect(Collectors.toList());
     }
 

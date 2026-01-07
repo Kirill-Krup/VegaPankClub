@@ -1,13 +1,13 @@
 package com.actisys.userservice.dto.ReviewResponseDtos;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
+@Setter
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class CreateReviewDTO {
-  private final String reviewText;
-  private final int stars;
+  private String reviewText;
+  private int stars;
 }
