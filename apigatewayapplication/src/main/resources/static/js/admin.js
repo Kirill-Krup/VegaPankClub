@@ -513,7 +513,8 @@ async function handleUpdateComputer(event) {
     gpu,
     ram,
     monitor,
-    isEnabled: status
+    isEnabled: status,
+    isOccupied: false
   };
 
   try {
