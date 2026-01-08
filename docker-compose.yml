@@ -1,9 +1,9 @@
 services:
   user_db:
     image: postgres:16
-    container_name: user_db
+    container_name: userdb
     environment:
-      POSTGRES_DB: user-service
+      POSTGRES_DB: userservice
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
@@ -15,9 +15,9 @@ services:
 
   product_db:
     image: postgres:16
-    container_name: product_db
+    container_name: productdb
     environment:
-      POSTGRES_DB: product-service
+      POSTGRES_DB: productservice
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
@@ -29,9 +29,9 @@ services:
 
   inventory_db:
     image: postgres:16
-    container_name: inventory_db
+    container_name: inventorydb
     environment:
-      POSTGRES_DB: inventory-service
+      POSTGRES_DB: inventoryservice
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
@@ -43,9 +43,9 @@ services:
 
   billing_db:
     image: postgres:16
-    container_name: billing_db
+    container_name: billingdb
     environment:
-      POSTGRES_DB: billing-service
+      POSTGRES_DB: billingservice
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
@@ -57,9 +57,9 @@ services:
 
   payment_db:
     image: postgres:16
-    container_name: payment_db
+    container_name: paymentdb
     environment:
-      POSTGRES_DB: payment-service
+      POSTGRES_DB: paymentservice
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
@@ -104,11 +104,11 @@ services:
       args:
         SERVICE_NAME: userservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: user-service
+    container_name: userservice
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://user_db:5432/user-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://userdb:5432/userservice
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_DATA_REDIS_HOST: redis
@@ -125,11 +125,11 @@ services:
       args:
         SERVICE_NAME: productservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: product-service
+    container_name: productservice
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://product_db:5432/product-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://productdb:5432/productservice
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_DATA_REDIS_HOST: redis
@@ -145,11 +145,11 @@ services:
       args:
         SERVICE_NAME: inventoryservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: inventory-service
+    container_name: inventoryservice
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory_db:5432/inventory-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventorydb:5432/inventoryservice
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_DATA_REDIS_HOST: redis
@@ -165,11 +165,11 @@ services:
       args:
         SERVICE_NAME: billingservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: billing-service
+    container_name: billingservice
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://billing_db:5432/billing-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://billingdb:5432/billingservice
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_DATA_REDIS_HOST: redis
@@ -185,11 +185,11 @@ services:
       args:
         SERVICE_NAME: paymentservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: payment-service
+    container_name: paymentservice
     ports:
       - "8086:8086"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://payment_db:5432/payment-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://paymentdb:5432/paymentservice
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_DATA_REDIS_HOST: redis
@@ -220,7 +220,7 @@ services:
       args:
         SERVICE_NAME: adminservice
         COMMON_LIB_PATH: ./common-lib
-    container_name: admin-service
+    container_name: adminservice
     ports:
       - "8085:8085"
     networks:
