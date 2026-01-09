@@ -17,7 +17,7 @@ spring:
       server:
         webflux:
           routes:
-          # Конфигурация будет переопределена профилями
+
 
 jwt:
   secret: ${JWT_SECRET}
