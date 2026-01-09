@@ -1,0 +1,40 @@
+spring:
+  config:
+    activate-on-profile: local
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: userservice-public
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/auth/login,/api/v1/auth/register
+            - id: userservice-protected
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/users/**,/api/v1/profile/**, /api/v1/auth/logout, /api/v1/reviews/**
+            - id: product-protected
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/products/**,/api/v1/orders/**
+            - id: productservice-images
+              uri: http://localhost:8082
+              predicates:
+                - Path=/static/images/**
+            - id: inventoryservice-route
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/pcs/**
+            - id: billingservice-route
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/tariffs/**,/api/v1/sessions/**
+            - id: adminservice-route
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/v1/admin/sessions/**,/api/v1/admin/payments/**,/api/v1/admin/orders/**
+            - id: paymentservice-route
+              uri: http://localhost:8086
+              predicates:
+                - Path=/api/v1/payments/**
