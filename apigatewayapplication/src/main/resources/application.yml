@@ -10,43 +10,14 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/
+  config:
+    activate-on-profile: default
   cloud:
     gateway:
       server:
         webflux:
           routes:
-            - id: userservice-public
-              uri: http://user-service:8081
-              predicates:
-                - Path=/api/v1/auth/login,/api/v1/auth/register
-            - id: userservice-protected
-              uri: http://user-service:8081
-              predicates:
-                - Path=/api/v1/users/**,/api/v1/profile/**, /api/v1/auth/logout, /api/v1/reviews/**
-            - id: product-protected
-              uri: http://product-service:8082
-              predicates:
-                - Path=/api/v1/products/**,/api/v1/orders/**
-            - id: productservice-images
-              uri: http://product-service:8082
-              predicates:
-                  - Path=/static/images/**
-            - id: inventoryservice-route
-              uri: http://inventory-service:8083
-              predicates:
-                - Path=/api/v1/pcs/**
-            - id: billingservice-route
-              uri: http://billing-service:8084
-              predicates:
-                - Path=/api/v1/tariffs/**,/api/v1/sessions/**
-            - id: adminservice-route
-              uri: http://admin-service:8085
-              predicates:
-                - Path=/api/v1/admin/sessions/**,/api/v1/admin/payments/**,/api/v1/admin/orders/**
-            - id: payment-service-route
-              uri: http://payment-service:8086
-              predicates:
-                - Path=/api/v1/payments/**
+
 
 
 jwt:
