@@ -19,6 +19,7 @@ spring:
           routes:
 
 
+
 jwt:
   secret: ${JWT_SECRET}
   ttl-seconds: 8600000
