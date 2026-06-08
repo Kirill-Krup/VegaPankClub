@@ -122,7 +122,6 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
         }
     }
 
-    // Внутренний класс для представления ошибки
     public static class ErrorResponse {
         private final int status;
         private final String error;
