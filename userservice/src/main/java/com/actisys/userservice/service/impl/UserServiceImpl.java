@@ -10,16 +10,20 @@ import com.actisys.userservice.client.BillingServiceClient;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
-import com.actisys.userservice.exception.InsufficientFundsException;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
+import com.actisys.userservice.model.WalletOperation;
+import com.actisys.userservice.model.WalletProcessedEvent;
 import com.actisys.userservice.repository.UserRepository;
+import com.actisys.userservice.repository.WalletProcessedEventRepository;
 import com.actisys.userservice.service.UserPhotoStorageService;
 import com.actisys.userservice.service.UserService;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +32,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
@@ -38,6 +44,7 @@ import reactor.core.publisher.Mono;
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
+  private final WalletProcessedEventRepository walletProcessedEventRepository;
   private final UserMapper userMapper;
   private final BillingServiceClient billingServiceClient;
   private final UserPhotoStorageService userPhotoStorageService;
@@ -203,17 +210,20 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
   public void withdrawMoney(CreateWalletEvent event) {
-    User user = userRepository.findById(event.getUserId())
+    User user = userRepository.findByIdForUpdate(event.getUserId())
             .orElseThrow(() -> new UserNotFoundException(event.getUserId()));
-
-    WithdrawEvent withdrawEvent = new WithdrawEvent();
-    withdrawEvent.setPaymentId(event.getPaymentId());
+    if (replayIfAlreadyProcessed(event.getPaymentId(), WalletOperation.WITHDRAW)) {
+      return;
+    }
 
     if (user.getWallet().compareTo(event.getCost()) < 0) {
-      withdrawEvent.setStatus(OperationType.ERROR);
-      kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
-      throw new InsufficientFundsException(event.getUserId());
+      log.warn("Insufficient funds for user {} paymentId {}", event.getUserId(), event.getPaymentId());
+      markProcessed(event.getPaymentId(), WalletOperation.WITHDRAW, OperationType.ERROR);
+      publishWalletEvent(event.getPaymentId(), OperationType.ERROR);
+      return;
     }
 
     user.setWallet(user.getWallet().subtract(event.getCost()));
@@ -223,36 +233,82 @@ public class UserServiceImpl implements UserService {
     }
 
     userRepository.save(user);
-
-    withdrawEvent.setStatus(OperationType.SUCCESS);
-    kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+    markProcessed(event.getPaymentId(), WalletOperation.WITHDRAW, OperationType.SUCCESS);
+    publishWalletEvent(event.getPaymentId(), OperationType.SUCCESS);
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
   public void replenishmentMoney(CreateWalletEvent createWalletEvent) {
-    User user = userRepository.findById(createWalletEvent.getUserId())
+    User user = userRepository.findByIdForUpdate(createWalletEvent.getUserId())
         .orElseThrow(() -> new UserNotFoundException(createWalletEvent.getUserId()));
+    if (replayIfAlreadyProcessed(createWalletEvent.getPaymentId(), WalletOperation.REPLENISHMENT)) {
+      return;
+    }
+
     user.setWallet(user.getWallet().add(createWalletEvent.getCost()));
     userRepository.save(user);
-    WithdrawEvent withdrawEvent = new WithdrawEvent();
-    withdrawEvent.setPaymentId(createWalletEvent.getPaymentId());
-    withdrawEvent.setStatus(OperationType.SUCCESS);
-    kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+    markProcessed(createWalletEvent.getPaymentId(), WalletOperation.REPLENISHMENT, OperationType.SUCCESS);
+    publishWalletEvent(createWalletEvent.getPaymentId(), OperationType.SUCCESS);
   }
 
   @Override
+  @Transactional
+  @CacheEvict(value = "allUsers", allEntries = true)
   public void refundMoneys(RefundMoneyEvent refundMoneyEvent) {
-    User user = userRepository.findById(refundMoneyEvent.getUserId())
+    User user = userRepository.findByIdForUpdate(refundMoneyEvent.getUserId())
         .orElseThrow(() -> new UserNotFoundException(refundMoneyEvent.getUserId()));
+    if (replayIfAlreadyProcessed(refundMoneyEvent.getPaymentId(), WalletOperation.REFUND)) {
+      return;
+    }
+
     user.setWallet(user.getWallet().add(refundMoneyEvent.getAmount()));
     BigDecimal coinsToSubtractDecimal = refundMoneyEvent.getAmount().multiply(BigDecimal.valueOf(10));
     int coinsToSubtract = coinsToSubtractDecimal.intValue();
     user.setBonusCoins(user.getBonusCoins() - coinsToSubtract);
     userRepository.save(user);
-    WithdrawEvent withdrawEvent = new WithdrawEvent();
-    withdrawEvent.setPaymentId(refundMoneyEvent.getPaymentId());
-    withdrawEvent.setStatus(OperationType.REFUNDED);
-    kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+    markProcessed(refundMoneyEvent.getPaymentId(), WalletOperation.REFUND, OperationType.REFUNDED);
+    publishWalletEvent(refundMoneyEvent.getPaymentId(), OperationType.REFUNDED);
+  }
+
+  private boolean replayIfAlreadyProcessed(Long paymentId, WalletOperation operation) {
+    Optional<WalletProcessedEvent> processed =
+        walletProcessedEventRepository.findByPaymentIdAndOperation(paymentId, operation);
+    if (processed.isEmpty()) {
+      return false;
+    }
+    log.warn("Duplicate wallet {} event for paymentId={}, replaying status {}",
+        operation, paymentId, processed.get().getStatus());
+    publishWalletEvent(paymentId, processed.get().getStatus());
+    return true;
+  }
+
+  private void markProcessed(Long paymentId, WalletOperation operation, OperationType status) {
+    WalletProcessedEvent processedEvent = new WalletProcessedEvent();
+    processedEvent.setPaymentId(paymentId);
+    processedEvent.setOperation(operation);
+    processedEvent.setStatus(status);
+    processedEvent.setProcessedAt(LocalDateTime.now());
+    walletProcessedEventRepository.save(processedEvent);
+  }
+
+  private void publishWalletEvent(Long paymentId, OperationType status) {
+    WithdrawEvent withdrawEvent = WithdrawEvent.builder()
+        .paymentId(paymentId)
+        .status(status)
+        .build();
+    Runnable send = () -> kafkaTemplate.send("WALLET_EVENT", withdrawEvent);
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          send.run();
+        }
+      });
+    } else {
+      send.run();
+    }
   }
 
   @Override

@@ -6,7 +6,6 @@ import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserAllProfileDTO;
 import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
-import com.actisys.userservice.exception.InsufficientFundsException;
 import com.actisys.userservice.exception.UserNotFoundException;
 import java.util.List;
 import reactor.core.publisher.Mono;
@@ -131,9 +130,10 @@ public interface UserService {
    * Processes wallet withdrawal for a user according to incoming event. [web:9]
    * Decreases wallet balance, may add bonus coins, and publishes Kafka status event. [web:9]
    *
+   * Duplicate events for the same paymentId are ignored and only replay the original status.
+   *
    * @param createWalletEvent event containing paymentId, userId and cost
    * @throws UserNotFoundException if user with given id does not exist
-   * @throws InsufficientFundsException if wallet balance is too low
    */
   void withdrawMoney(CreateWalletEvent createWalletEvent);
 

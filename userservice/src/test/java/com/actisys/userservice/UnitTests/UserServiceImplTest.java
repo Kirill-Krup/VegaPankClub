@@ -1,5 +1,9 @@
 package com.actisys.userservice.UnitTests;
 
+import com.actisys.common.events.OperationType;
+import com.actisys.common.events.PaymentType;
+import com.actisys.common.events.user.CreateWalletEvent;
+import com.actisys.common.events.user.WithdrawEvent;
 import com.actisys.common.user.UserDTO;
 import com.actisys.userservice.client.BillingServiceClient;
 import com.actisys.userservice.dto.UserResponseDtos.UpdateUserProfileDTO;
@@ -8,8 +12,12 @@ import com.actisys.userservice.dto.UserResponseDtos.UserSimpleProfileDTO;
 import com.actisys.userservice.exception.UserNotFoundException;
 import com.actisys.userservice.mapper.UserMapper;
 import com.actisys.userservice.model.User;
+import com.actisys.userservice.model.WalletOperation;
+import com.actisys.userservice.model.WalletProcessedEvent;
 import com.actisys.userservice.repository.UserRepository;
+import com.actisys.userservice.repository.WalletProcessedEventRepository;
 import com.actisys.userservice.service.impl.UserServiceImpl;
+import org.springframework.kafka.core.KafkaTemplate;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +48,12 @@ class UserServiceImplTest {
 
   @Mock
   private BillingServiceClient billingServiceClient;
+
+  @Mock
+  private WalletProcessedEventRepository walletProcessedEventRepository;
+
+  @Mock
+  private KafkaTemplate<String, Object> kafkaTemplate;
 
   @InjectMocks
   private UserServiceImpl userService;
@@ -448,5 +462,58 @@ class UserServiceImplTest {
     assertFalse(userAlreadyUnblocked.isBanned());
     assertNotNull(result);
     verify(userRepository, times(1)).save(any(User.class));
+  }
+
+  @Test
+  @DisplayName("Should deduct wallet once and ignore duplicate withdraw event")
+  void testWithdrawMoneyDuplicateIsIgnored() {
+    CreateWalletEvent event = new CreateWalletEvent();
+    event.setUserId(1L);
+    event.setPaymentId(10L);
+    event.setCost(BigDecimal.valueOf(20));
+    event.setPaymentType(PaymentType.BAR_BUY);
+
+    when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser));
+    when(walletProcessedEventRepository.findByPaymentIdAndOperation(10L, WalletOperation.WITHDRAW))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(processed(10L, WalletOperation.WITHDRAW, OperationType.SUCCESS)));
+    when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+    userService.withdrawMoney(event);
+    userService.withdrawMoney(event);
+
+    assertEquals(0, BigDecimal.valueOf(80.0).compareTo(testUser.getWallet()));
+    verify(userRepository, times(1)).save(any(User.class));
+    verify(walletProcessedEventRepository, times(1)).save(any(WalletProcessedEvent.class));
+    verify(kafkaTemplate, times(2)).send(eq("WALLET_EVENT"), any(WithdrawEvent.class));
+  }
+
+  @Test
+  @DisplayName("Should not change wallet on insufficient funds")
+  void testWithdrawMoneyInsufficientFunds() {
+    CreateWalletEvent event = new CreateWalletEvent();
+    event.setUserId(1L);
+    event.setPaymentId(11L);
+    event.setCost(BigDecimal.valueOf(500));
+    event.setPaymentType(PaymentType.BAR_BUY);
+
+    when(walletProcessedEventRepository.findByPaymentIdAndOperation(11L, WalletOperation.WITHDRAW))
+        .thenReturn(Optional.empty());
+    when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser));
+
+    userService.withdrawMoney(event);
+
+    assertEquals(0, BigDecimal.valueOf(100.0).compareTo(testUser.getWallet()));
+    verify(userRepository, never()).save(any(User.class));
+    verify(walletProcessedEventRepository).save(any(WalletProcessedEvent.class));
+    verify(kafkaTemplate).send(eq("WALLET_EVENT"), any(WithdrawEvent.class));
+  }
+
+  private WalletProcessedEvent processed(Long paymentId, WalletOperation operation, OperationType status) {
+    WalletProcessedEvent event = new WalletProcessedEvent();
+    event.setPaymentId(paymentId);
+    event.setOperation(operation);
+    event.setStatus(status);
+    return event;
   }
 }

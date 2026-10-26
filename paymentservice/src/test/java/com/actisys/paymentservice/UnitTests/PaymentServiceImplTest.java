@@ -89,7 +89,7 @@ class PaymentServiceImplTest {
 
   @Test
   void updateStatus_whenPaymentNotFound_shouldThrow() {
-    when(paymentRepository.findById(1L)).thenReturn(Optional.empty());
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
 
     assertThrows(PaymentNotFoundException.class,
             () -> paymentService.updateStatus(1L, OperationType.SUCCESS));
@@ -106,7 +106,7 @@ class PaymentServiceImplTest {
     payment.setPaymentType(PaymentType.BOOKING);
     payment.setStatus(PaymentStatus.CREATED);
 
-    when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
 
     paymentService.updateStatus(1L, OperationType.REFUNDED);
 
@@ -123,7 +123,7 @@ class PaymentServiceImplTest {
     payment.setPaymentType(PaymentType.REPLENISHMENT);
     payment.setStatus(PaymentStatus.CREATED);
 
-    when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
 
     paymentService.updateStatus(1L, OperationType.SUCCESS);
 
@@ -140,7 +140,7 @@ class PaymentServiceImplTest {
     payment.setPaymentType(PaymentType.BOOKING);
     payment.setStatus(PaymentStatus.CREATED);
 
-    when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
 
     paymentService.updateStatus(1L, OperationType.SUCCESS);
 
@@ -167,7 +167,7 @@ class PaymentServiceImplTest {
     payment.setPaymentType(PaymentType.BAR_BUY);
     payment.setStatus(PaymentStatus.CREATED);
 
-    when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
 
     paymentService.updateStatus(1L, OperationType.SUCCESS);
 
@@ -194,7 +194,7 @@ class PaymentServiceImplTest {
     payment.setPaymentType(PaymentType.BOOKING);
     payment.setStatus(PaymentStatus.CREATED);
 
-    when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
 
     paymentService.updateStatus(1L, OperationType.ERROR);
 
@@ -209,6 +209,22 @@ class PaymentServiceImplTest {
     assertEquals(1L, sentEvent.getPaymentId());
     assertEquals(OperationType.SUCCESS, sentEvent.getStatus());
     assertEquals(99L, sentEvent.getOrderId());
+  }
+
+  @Test
+  void updateStatus_whenAlreadyPaid_shouldSkipDuplicateKafkaEvent() {
+    Payment payment = new Payment();
+    payment.setPaymentId(1L);
+    payment.setOrderId(99L);
+    payment.setPaymentType(PaymentType.BOOKING);
+    payment.setStatus(PaymentStatus.PAID);
+
+    when(paymentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(payment));
+
+    paymentService.updateStatus(1L, OperationType.SUCCESS);
+
+    verify(paymentRepository, never()).save(any());
+    verifyNoInteractions(kafkaTemplate);
   }
 
   @Test

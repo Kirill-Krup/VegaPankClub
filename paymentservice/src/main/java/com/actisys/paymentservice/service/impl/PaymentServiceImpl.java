@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -59,20 +60,31 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
     public void updateStatus(Long paymentId, OperationType status) {
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() ->
+        Payment payment = paymentRepository.findByIdForUpdate(paymentId).orElseThrow(() ->
             new PaymentNotFoundException(paymentId));
         if(OperationType.REFUNDED.equals(status)){
+            if (payment.getStatus() == PaymentStatus.REFUNDED) {
+                log.info("Skip duplicate refund status for payment {}", paymentId);
+                return;
+            }
             payment.setStatus(PaymentStatus.REFUNDED);
             paymentRepository.save(payment);
             return;
         }
+        PaymentStatus targetStatus = statusHandler(status);
+        if (isTerminalStatus(payment.getStatus())) {
+            log.info("Skip duplicate wallet status event for payment {}, currentStatus={}",
+                paymentId, payment.getStatus());
+            return;
+        }
         if(payment.getOrderId()==0){
-            payment.setStatus(statusHandler(status));
+            payment.setStatus(targetStatus);
             paymentRepository.save(payment);
             return;
         }
-        payment.setStatus(statusHandler(status));
+        payment.setStatus(targetStatus);
         paymentRepository.save(payment);
         CreatePaymentEvent paymentCreteEvent = new CreatePaymentEvent();
         paymentCreteEvent.setPaymentId(paymentId);
@@ -84,6 +96,14 @@ public class PaymentServiceImpl implements PaymentService {
             kafkaTemplate.send("UPDATE_PAYMENT_STATUS_FOR_BAR_BUY", paymentCreteEvent);
         }
 
+    }
+
+    private boolean isTerminalStatus(PaymentStatus status) {
+        return status == PaymentStatus.PAID
+            || status == PaymentStatus.FAILED
+            || status == PaymentStatus.REFUNDED
+            || status == PaymentStatus.CANCELLED
+            || status == PaymentStatus.SUCCESSFULLY;
     }
 
     @Override

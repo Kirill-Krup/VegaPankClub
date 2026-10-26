@@ -94,4 +94,28 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="user_service_5" author="vega">
+        <createTable tableName="wallet_processed_event">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="payment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="operation" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="processed_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint
+          tableName="wallet_processed_event"
+          columnNames="payment_id, operation"
+          constraintName="uk_wallet_processed_payment_operation"/>
+    </changeSet>
+
 </databaseChangeLog>
